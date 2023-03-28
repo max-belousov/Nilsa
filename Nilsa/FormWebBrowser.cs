@@ -653,7 +653,7 @@ namespace Nilsa
                             {
                                 var response = x.Result;
                                 //callToBrowser += "document.getElementsByClassName('page_avatar_img')[0].src;\n";
-                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('page_avatar_img')[0].src;\n", Encoding.UTF8);
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line 656\ndocument.getElementsByClassName('page_avatar_img')[0].src;\n", Encoding.UTF8);
                                 if (response.Success && response.Result != null)
                                 {
                                     var startDate = response.Result;
@@ -1587,7 +1587,7 @@ namespace Nilsa
             return browser.EvaluateScriptAsync("document.getElementById('" + id + "')").ContinueWith(x =>
             {
                 //callToBrowser += "document.getElementById('" + id + "')\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('" + id + "')\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line 1590\ndocument.getElementById('" + id + "')\n", Encoding.UTF8);
                 var response = x.Result;
                 object retval = null;
                 if (response.Success && response.Result != null)
@@ -1603,14 +1603,16 @@ namespace Nilsa
             try
             {
                 browser.EvaluateScriptAsync("document.getElementById('top_logout_link').click()");
+                //EvaluateScriptAsync
                 //callToBrowser += "document.getElementById('top_logout_link').click()\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('top_logout_link').click()\n", Encoding.UTF8);
-
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1607\ndocument.getElementById('top_logout_link').click()\n", Encoding.UTF8);
                 return true;
             }
-            catch
+
+            catch (Exception e)
             {
 
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "line1615\n" + e.ToString(), Encoding.UTF8);
             }
             return false;
         }
@@ -1622,13 +1624,21 @@ namespace Nilsa
                 browser.ExecuteScriptAsync("document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'');
                 browser.ExecuteScriptAsync("document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'');
                 browser.ExecuteScriptAsync("document.getElementById('quick_login_form').submit()");
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1627\ndocument.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' + 
+                    "\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
                 return true;
             }
-            catch
+            //catch
+            //{
+
+            //}
+            catch (Exception e)
             {
 
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), e.ToString(), Encoding.UTF8);
             }
             return false;
+
         }
 
         bool initBrowser = false;
@@ -1688,10 +1698,36 @@ namespace Nilsa
                     {
                         if (blogin)
                         {
-                            browser.ExecuteScriptAsync("document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'');
-                            browser.ExecuteScriptAsync("document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'');
-                            browser.ExecuteScriptAsync("document.getElementById('quick_login_form').submit()");
-                            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' +
+                            var c = "";
+                            browser.ExecuteScriptAsync("document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'',  c) ;
+                            File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "line1703\n" + c, Encoding.UTF8);
+
+                            browser.EvaluateScriptAsync("document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'').ContinueWith(x =>
+                            {
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "\nline1707\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\n", Encoding.UTF8);
+                                var response = x.Result;
+                                string retval = "";
+                                if (response.Success && response.Result != null)
+                                {
+                                    var startDate = response.Result;
+                                    retval = startDate.ToString();
+                                    File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "\nline1714\n"+retval, Encoding.UTF8);
+                                }
+                            });
+
+                            browser.EvaluateScriptAsync("document.getElementById('quick_login_form').submit()").ContinueWith(x =>
+                            {
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "\nline1720\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
+                                var response = x.Result;
+                                string retval = "";
+                                if (response.Success && response.Result != null)
+                                {
+                                    var startDate = response.Result;
+                                    retval = startDate.ToString();
+                                    File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "\nline1727\n" + retval, Encoding.UTF8);
+                                }
+                            });
+                            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line 1704\ndocument.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' +
                                 "\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
                         }
 
@@ -1701,11 +1737,13 @@ namespace Nilsa
                         if (mContacterID >= 0 || mGroupsList.Length > 0 || mCommand == WebBrowserCommand.ShowFriendsPage || mCommand == WebBrowserCommand.Autorize/* || mCommand == WebBrowserCommand.GetPhotoURL*//* || mCommand == WebBrowserCommand.GetPersoneAttributes*//* || mCommand == WebBrowserCommand.GetContactAttributes*/ || mCommand == WebBrowserCommand.LoginPersone || mCommand == WebBrowserCommand.GoToPersonePage/* || mCommand == WebBrowserCommand.ReadMessages*/)
                             enableTimer(0);
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "line 1718\n" + e.ToString(), Encoding.UTF8);
                         autoclosedelay = autoclosedelaydefault;
                         blogin = true;
                     }
+
                 }
             }
 
@@ -1873,7 +1911,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "посылаем...");
                     browser.ExecuteScriptAsync("document.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'');
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1888\ndocument.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
                     enableTimer(2);
 
                 }
@@ -1930,7 +1968,7 @@ namespace Nilsa
                     {
                         setStatusMessage(statusText + "меню...");
                         browser.ExecuteScriptAsync("document.getElementsByClassName('flat_button button_wide secondary page_actions_btn')[0].click()");
-                        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('flat_button button_wide secondary page_actions_btn')[0].click()", Encoding.UTF8);
+                        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1945\ndocument.getElementsByClassName('flat_button button_wide secondary page_actions_btn')[0].click()", Encoding.UTF8);
                         iStep = 2;
                         enableTimer(1);
                     }
@@ -1952,7 +1990,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "новое сообщение...");
                     browser.ExecuteScriptAsync("document.getElementsByClassName('page_actions_item')[1].click()");
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('page_actions_item')[1].click()", Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1967\ndocument.getElementsByClassName('page_actions_item')[1].click()", Encoding.UTF8);
 
                     iStep = 3;
                     enableTimer(1);
@@ -1967,7 +2005,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "вводим текст...");
                     browser.ExecuteScriptAsync("document.getElementById('preq_input').value=" + '\'' + mMessageToSend + '\'');
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('preq_input').value=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1982\ndocument.getElementById('preq_input').value=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
 
                     enableTimer(2);
 
@@ -1988,7 +2026,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "добавляем...");
                     browser.ExecuteScriptAsync("document.getElementsByClassName('flat_button button_wide')[0].click()");
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('flat_button button_wide')[0].click()", Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2003\ndocument.getElementsByClassName('flat_button button_wide')[0].click()", Encoding.UTF8);
                     enableTimer(1);
 
                 }
@@ -2010,14 +2048,14 @@ namespace Nilsa
             return browser.EvaluateScriptAsync("document.getElementById('" + id + "').value;").ContinueWith(x =>
                  {
                      //callToBrowser += "document.getElementById('" + id + "').value;\n";
-                     File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('" + id + "').value;\n", Encoding.UTF8);
+                     File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2025\ndocument.getElementById('" + id + "').value;\n", Encoding.UTF8);
                      var response = x.Result;
                      string retval = defval;
                      if (response.Success && response.Result != null)
                      {
                          var startDate = response.Result;
                          retval = startDate.ToString();
-                         File.WriteAllText(Path.Combine(Application.StartupPath, "answer_from_browser.txt"), retval, Encoding.UTF8);
+                         File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
                      }
                      return retval;
                  });
@@ -2028,14 +2066,14 @@ namespace Nilsa
             return browser.EvaluateScriptAsync("document.getElementsByClassName('" + id + "')[0].innerText;").ContinueWith(x =>
             {
                 //callToBrowser += "document.getElementsByClassName('" + id + "')[0].innerText;\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('" + id + "')[0].innerText;\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2043\ndocument.getElementsByClassName('" + id + "')[0].innerText;\n", Encoding.UTF8);
                 var response = x.Result;
                 string retval = defval;
                 if (response.Success && response.Result != null)
                 {
                     var startDate = response.Result;
                     retval = startDate.ToString();
-                    File.WriteAllText(Path.Combine(Application.StartupPath, "answer_from_browser.txt"), retval, Encoding.UTF8);
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), x.ToString(), Encoding.UTF8);
                 }
                 return retval;
             });
@@ -2143,7 +2181,7 @@ namespace Nilsa
             {
                 setStatusMessage(statusText + "послали...");
                 browser.ExecuteScriptAsync("document.getElementById('mail_box_send').click()");
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('mail_box_send').click()", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2158\ndocument.getElementById('mail_box_send').click()", Encoding.UTF8);
                 errorSendMessage = false;
                 autoclosedelay = 4;
             }
@@ -2151,7 +2189,7 @@ namespace Nilsa
             {
                 setStatusMessage(statusText + "послали...");
                 browser.ExecuteScriptAsync("document.getElementById('preq_submit').click()");
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('preq_submit').click()", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2166\ndocument.getElementById('preq_submit').click()", Encoding.UTF8);
                 errorSendMessage = false;
                 autoclosedelay = 4;
             }
@@ -2199,7 +2237,7 @@ namespace Nilsa
             try
             {
                 browser.ExecuteScriptAsync("document.getElementById('" + elementID + "').click()");
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('" + elementID + "').click()", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2214\ndocument.getElementById('" + elementID + "').click()", Encoding.UTF8);
                 if (timerNextIdx >= 0)
                     enableTimer(timerNextIdx);
                 retval = true;
@@ -2219,7 +2257,7 @@ namespace Nilsa
             {
                 browser.ExecuteScriptAsync("document.getElementsByClassName('" + elementID + "')[0].click()");
                 //callToBrowser += "document.getElementsByClassName('" + elementID + "')[0].click()\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('" + elementID + "')[0].click()\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2234\ndocument.getElementsByClassName('" + elementID + "')[0].click()\n", Encoding.UTF8);
 
                 if (timerNextIdx >= 0)
                     enableTimer(timerNextIdx);
@@ -2244,7 +2282,7 @@ namespace Nilsa
             try
             {
                 browser.ExecuteScriptAsync("document.getElementById('like_share_send').click()");
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('like_share_send').click()", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2259\ndocument.getElementById('like_share_send').click()", Encoding.UTF8);
                 enableTimer(4);
             }
             catch
@@ -2380,7 +2418,7 @@ namespace Nilsa
                 {
                     var response = x.Result;
                     //callToBrowser += "document.getElementById('profile_photo_link').href;\n";
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('profile_photo_link').href;\n", Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2395\ndocument.getElementById('profile_photo_link').href;\n", Encoding.UTF8);
 
 
                     long persID = -1;
@@ -2454,7 +2492,7 @@ namespace Nilsa
                         {
                             var response = x.Result;
                             //callToBrowser += "document.getElementById('top_profile_link').href;\n";
-                            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('top_profile_link').href;\n", Encoding.UTF8);
+                            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2469\ndocument.getElementById('top_profile_link').href;\n", Encoding.UTF8);
 
 
                             long persID = -1;

@@ -18850,6 +18850,11 @@ namespace Nilsa
                 System.Diagnostics.Process.Start(sHelpFile);
         }
 
+        private void contextMenuStripEQOutMsgValues_Opening(object sender, CancelEventArgs e)
+        {
+
+        }
+
         private void tbMessagesDBEqOutDeleteMessage_Click(object sender, EventArgs e)
         {
             if (listBoxOutMsg.SelectedIndex < 0)
