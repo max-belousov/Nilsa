@@ -17,6 +17,7 @@ using CefSharp.Internals;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
+using VkNet.Model.Attachments;
 
 namespace Nilsa
 {
@@ -215,7 +216,7 @@ namespace Nilsa
                 TopLevel = true;
                 //buttonExit.Enabled = false;
                 AutoSize = false;
-                toolStrip1.Visible = false;
+                toolStrip1.Visible = true;
 
                 //scaleBrowser = -2;
                 //this.Location = new Point(Screen.PrimaryScreen.WorkingArea.Size.Width / 2, Screen.PrimaryScreen.WorkingArea.Size.Height / 2);
@@ -1698,9 +1699,9 @@ namespace Nilsa
                     {
                         if (blogin)
                         {
-                            var c = "";
-                            browser.ExecuteScriptAsync("document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'',  c) ;
-                            File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "line1703\n" + c, Encoding.UTF8);
+                            //var c = "";
+                            browser.ExecuteScriptAsync("document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'') ;
+                            //File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "line1703\n" + c, Encoding.UTF8);
 
                             browser.EvaluateScriptAsync("document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'').ContinueWith(x =>
                             {
@@ -1901,19 +1902,52 @@ namespace Nilsa
             }
         }
 
-        private async Task sendMessageTask()
+        //private async Task sendMessageTask()
+        //{
+        //    try
+        //    {
+        //        string source = await browser.GetBrowser().MainFrame.GetSourceAsync();
+
+        //        if (source.Contains("mail_box_editable"))
+        //        {
+        //            setStatusMessage(statusText + "посылаем...");
+        //            browser.ExecuteScriptAsync("document.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'');
+        //            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1888\ndocument.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
+        //            enableTimer(2);
+
+        //        }
+        //        else
+        //        {
+        //            setStatusMessage(statusText + "ошибка...");
+
+        //            autoclosedelay = 2;
+        //            LoadUrl("https://vk.com/im");
+        //        }
+
+        //    }
+        //    catch (Exception)
+        //    {
+        //    }
+        //}
+
+        public async Task sendMessageTask()
         {
             try
             {
                 string source = await browser.GetBrowser().MainFrame.GetSourceAsync();
 
-                if (source.Contains("mail_box_editable"))
+                if (source.Contains("im_editable0"))
                 {
                     setStatusMessage(statusText + "посылаем...");
-                    browser.ExecuteScriptAsync("document.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'');
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1888\ndocument.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
-                    enableTimer(2);
 
+                    // Write the request to file
+                    //File.WriteAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('im_editable0').innerHTML=" + '\'' + mMessageToSend + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_send')[0].click()", Encoding.UTF8);
+                    //Test message line
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()", Encoding.UTF8);
+
+                    await readMessageFromRequestFile();
+                    enableTimer(2);
+                    
                 }
                 else
                 {
@@ -1922,12 +1956,30 @@ namespace Nilsa
                     autoclosedelay = 2;
                     LoadUrl("https://vk.com/im");
                 }
-
             }
             catch (Exception)
             {
             }
         }
+
+        public async Task readMessageFromRequestFile()
+        {
+            try
+            {
+                // Read the request from file
+                string request = File.ReadAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), Encoding.UTF8);
+
+                // Execute the request in the browser
+                var response = await browser.EvaluateScriptAsync(request);
+
+                // Write the response to file
+                File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_server.txt"), response.Result.ToString(), Encoding.UTF8);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
 
         //private async Task addToFriendsSendMessageTaskEnd()
         //{
@@ -2865,6 +2917,16 @@ namespace Nilsa
         private void groupBox1_Enter(object sender, EventArgs e)
         {
 
+        }
+
+        private async void toolStripButton1_Click(object sender, EventArgs e)
+        {
+            await sendMessageTask();
+        }
+
+        private async void toolStripButton2_Click(object sender, EventArgs e)
+        {
+            await readMessageFromRequestFile();
         }
     }
 }
