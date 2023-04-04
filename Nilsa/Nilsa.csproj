@@ -430,10 +430,13 @@
       <DependentUpon>FormWebBrowser.cs</DependentUpon>
     </Compile>
     <Compile Include="ImportContactsFromGroup.cs" />
+    <Compile Include="NilsaOperatingMode.cs" />
+    <Compile Include="ResponseFromInterface.cs" />
     <Compile Include="UI\AGCProgressBar.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="User32.cs" />
+    <Compile Include="VkInterfaceCommands.cs" />
     <Compile Include="WorkGroups.cs" />
     <Compile Include="ImportGroups.cs" />
     <Compile Include="NilsaUtils.cs" />

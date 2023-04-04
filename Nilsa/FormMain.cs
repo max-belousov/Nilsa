@@ -26,6 +26,7 @@ using System.Runtime.InteropServices;
 using Nilsa.Data;
 using VkNet.Model.Attachments;
 using mevoronin.RuCaptchaNETClient;
+using Newtonsoft.Json;
 
 namespace Nilsa
 {
@@ -54,6 +55,8 @@ namespace Nilsa
         bool externalActivatedProcess = false; //!!!
 
         public const int MaxMarkerCount = 16;
+
+        VkInterfaceCommands vkInterface;
 
         public static VkNet.VkApi api = null;
         public static String sDataPath;
@@ -6454,6 +6457,7 @@ namespace Nilsa
         String externalUserPassword;//"nilsa1990";
         const String externalUser = "2C/U4YxOKl3RrUUApXxb+Tj5vIG7mykzFr+ewQjwknREHgOzwlewTEq1dxmoUot8";
 
+        //Авторизация персонажа в Autorize
         private bool Autorize(String sUsrSelLogin = "", String sUsrSelPwd = "", String sUsrSelID = "")
         {
             Boolean bShowAutorizeForm = sUsrSelLogin.Length == 0 || sUsrSelPwd.Length == 0;
@@ -6586,6 +6590,12 @@ namespace Nilsa
                                 fwbVKontakte.Init();
                             }
 
+
+                            if (vkInterface == null)
+                            {
+                                vkInterface = new VkInterfaceCommands(this);
+                            }
+
                             //stopTimers();
 
                             long curuid = -1;
@@ -6616,7 +6626,9 @@ namespace Nilsa
                                     fwbVKontakte.Show();
                                 }
                                 fwbVKontakte.WaitResult();
-
+                                //vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
+                                var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
+                                var autorizeResult = JsonConvert.DeserializeObject<ResponseFromInterface>(autorizeResultJSON);
                                 HideBrowserCommand();
                             }
                             iPersUserID = fwbVKontakte.loggedPersoneID;
@@ -7261,8 +7273,10 @@ namespace Nilsa
             fwbVKontakte.WaitResult();
 
             HideBrowserCommand();
-
-            return fwbVKontakte.loggedPersoneID != -1;
+            //var autorizeResultJSON = vkInterface.Setup(sUsrSelLogin, sUsrSelPwd, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
+            //var autorizeResult = JsonConvert.DeserializeObject<ResponseFromInterface>(autorizeResultJSON);
+            return fwbVKontakte.loggedPersoneID != -1; //|| autorizeResult.Result == "OK";
+            //return autorizeResult.Result == "OK";
             /*
             api = new VkApi();
 
@@ -7932,6 +7946,11 @@ namespace Nilsa
                 if (lstReceivedMessages.Count == 0)
                     timerReadMessagesOn();
             }
+        }
+
+        public string AppplicationStarupPath()
+        {
+            return Application.StartupPath;
         }
 
         private System.Collections.ObjectModel.Collection<VkNet.Model.Message> api_Messages_GetHistory(long id, bool isChat, out int totalCount, int? offset = default(int?), int? count = default(int?))
