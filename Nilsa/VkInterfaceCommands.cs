@@ -14,7 +14,7 @@ namespace Nilsa
         private ResponseFromInterface mResponseFromInterface;
         private string mUserLogin;
         private string mUserPassword;
-        private uint operatingMode = NilsaOperatingMode.None;
+        private string operatingMode = NilsaOperatingMode.None;
         private uint mCommand = WebBrowserCommand.None;
         private long mContacterID = -1;
         private string mPostsToRepost = "";
@@ -49,7 +49,7 @@ namespace Nilsa
             mFormMain = formMain;
         }
 
-        public string Setup(String sLogin, String sPassword, uint _iCommand, uint _iOperatingMode, long _contacterID = -1, string _FirstList = "", string _SecondList = "", string _personeName = "")
+        public string Setup(String sLogin, String sPassword, uint _iCommand, string _iOperatingMode, long _contacterID = -1, string _FirstList = "", string _SecondList = "", string _personeName = "")
         {
             var stringJSON = "";
             errorSendMessage = false;
@@ -94,7 +94,7 @@ namespace Nilsa
                     //Task.Delay(1000).Wait();
                     do
                     {
-                        //Task.Delay(1000).Wait();
+                        Task.Delay(1000).Wait();
                         stringJSON = NilsaReadFromResponseFile();
                         mResponseFromInterface = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
                     } while (mResponseFromInterface.Time == lastResponseTime);
