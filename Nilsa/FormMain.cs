@@ -57,6 +57,7 @@ namespace Nilsa
         public const int MaxMarkerCount = 16;
 
         VkInterfaceCommands vkInterface;
+        PersoneVkAttributes personeVkAtt;
 
         public static VkNet.VkApi api = null;
         public static String sDataPath;
@@ -3100,6 +3101,13 @@ namespace Nilsa
 
             fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetContactAttributes, id);
             fwbVKontakte.WaitResult();
+
+            var stringJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.GetContactAttributes, NilsaOperatingMode.SeleniumMode, id);
+            //раскоментить, когда научим интерфейс отвечать
+            //var result = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
+            //personeVkAtt = new PersoneVkAttributes(result.PersonId, result.FirstName, result.LastName,
+            //    result.Relation, result.BirthDate, result.City, result.Country, result.CountersFriends, result.Online, result.LastSeen);
+
             FormWebBrowser.Persone usrAdr = fwbVKontakte.contactAtrributes;
 
             HideBrowserCommand();

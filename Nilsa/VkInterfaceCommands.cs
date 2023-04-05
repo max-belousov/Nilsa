@@ -18,6 +18,7 @@ namespace Nilsa
         private string operatingMode = NilsaOperatingMode.None;
         private uint mCommand = WebBrowserCommand.None;
         private string stringJSON = "";
+        private string outputJSON = "";
         private long mContacterID = -1;
         private string mPostsToRepost = "";
         private string mGroupsList = "";
@@ -77,112 +78,49 @@ namespace Nilsa
 
             switch (mCommand)
             {
-                case WebBrowserCommand.Autorize:
-                    //enableTimeoutTimer = false;
-                    blogin = false;
-                    blogout = true;
-                    mContacterID = _contacterID;
-                    break;
-                case WebBrowserCommand.CheckPersonePage:
-                    blogin = false;
-                    blogout = true;
-                    break;
-
                 case WebBrowserCommand.LoginPersone:                    // Done!
-                    var outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'LoginPersone', 'User Login': '{mUserLogin}', 'User Password': '{mUserPassword}'" + "}";
+                    outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'LoginPersone', 'User Login': '{mUserLogin}', 'User Password': '{mUserPassword}'" + "}";
                     NilsaWriteToRequestFile(outputJSON);
                     Task.Delay(1000).Wait();
                     NilsaReadFromResponseFile();
                     LogingRequestFile(outputJSON);
                     break;
 
-                case WebBrowserCommand.GoToPersonePage:
-                    //enableTimeoutTimer = false;
-                    mContacterID = _contacterID;
-                    break;
-
                 case WebBrowserCommand.GetPhotoURL:                     // Done!
-
                     mContacterID = _contacterID;
-
-                    
+                    outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetPhotoURL', 'User ID': '{mContacterID}'" + "}";
+                    NilsaWriteToRequestFile(outputJSON);
+                    Task.Delay(1000).Wait();
+                    NilsaReadFromResponseFile();
+                    LogingRequestFile(outputJSON);
                     break;
 
                 case WebBrowserCommand.GetPersoneAttributes:                     // Done!
                     mContacterID = _contacterID;
-                    //personeAtrributes = new Persone();
-                    //personeAtrributes.id = mContacterID;
-
-                    statusText = "Получение хар-к Персонажа... ";
-                    autoclosedelaydefault = 25;
-
-                    //workTimersInterval[5] = 7;
-                    //workTimersInterval[1] = 6;
-                    bStart = false;
-
-                    //if (browserAddress.StartsWith("https://vk.com"))
-                    //{
-                    //    iStep = 1;
-                    //    doAction();
-                    //}
-                    //if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                    //{
-                    //    iStep = 1;
-                    //    doAction();
-                    //}
-                    //else
-                    //    startPage = "https://vk.com/id" + mContacterID.ToString();
+                    outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetPersoneAttributes', 'User ID': '{mContacterID}'" + "}";
+                    NilsaWriteToRequestFile(outputJSON);
+                    Task.Delay(1000).Wait();
+                    NilsaReadFromResponseFile();
+                    LogingRequestFile(outputJSON);
                     break;
 
-
-                case WebBrowserCommand.GetPersoneFriendsCount:                     // Done!
-                    mContacterID = _contacterID;
-                    //personeAtrributesFriends = new Persone();
-                    //personeAtrributesFriends.id = mContacterID;
-
-                    statusText = "Получение кол-ва друзей Персонажа... ";
-                    autoclosedelaydefault = 25;
-
-                    bStart = false;
-
-                    //if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                    //{
-                    //    iStep = 1;
-                    //    doAction();
-                    //}
-                    //else
-                    //    startPage = "https://vk.com/id" + mContacterID.ToString();
-                    break;
+                    //Если суть посчитать друзей, то реализовано через атрибуты
+                //case WebBrowserCommand.GetPersoneFriendsCount:                     // Done!
+                //    mContacterID = _contacterID;
+                //    outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetPersoneFriendsCount', 'User ID': '{mContacterID}'" + "}";
+                //    NilsaWriteToRequestFile(outputJSON);
+                //    Task.Delay(1000).Wait();
+                //    NilsaReadFromResponseFile();
+                //    LogingRequestFile(outputJSON);
+                //    break;
 
                 case WebBrowserCommand.GetContactAttributes:                     // Done!
                     mContacterID = _contacterID;
-                    //contactAtrributes = new Persone();
-                    //contactAtrributes.id = mContacterID;
-
-                    statusText = "Получение хар-к Контактёра... ";
-                    autoclosedelaydefault = 25;
-
-                    //workTimersInterval[5] = 7;
-                    //workTimersInterval[1] = 6;
-                    bStart = false;
-
-                    //if (mContacterID != 330643598)
-                    //{
-                    //    if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                    //    {
-                    //        iStep = 1;
-                    //        doAction();
-                    //    }
-                    //    else
-                    //        startPage = "https://vk.com/id" + mContacterID.ToString();
-                    //}
-                    //else
-                    //{
-                    //    contactAtrributes.FirstName = "Internal";
-                    //    contactAtrributes.LastName = "Persone";
-                    //    iStep = -1;
-                    //    autoclosedelay = 1;
-                    //}
+                    outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetContactAttributes', 'User ID': '{mContacterID}'" + "}";
+                    NilsaWriteToRequestFile(outputJSON);
+                    Task.Delay(1000).Wait();
+                    NilsaReadFromResponseFile();
+                    LogingRequestFile(outputJSON);
                     break;
 
                 case WebBrowserCommand.GoToContactPage:
@@ -317,278 +255,6 @@ namespace Nilsa
         //to do
         // в свитче в сетупе убрать все условия, оставить запуск разных методов и возврат строки JSON
         // для каждой команды написать свой метод с логикой, на случай негативного результата
-        private void DoAction()
-        {
-
-            switch (mCommand)
-            {
-                case WebBrowserCommand.GetPhotoURL:
-                    //if (iStep == 1)
-                    //{
-                    //    try
-                    //    {
-                    //        browser.EvaluateScriptAsync("document.getElementsByClassName('page_avatar_img')[0].src;").ContinueWith(x =>
-                    //        {
-                    //            var response = x.Result;
-                    //            //callToBrowser += "document.getElementsByClassName('page_avatar_img')[0].src;\n";
-                    //            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('page_avatar_img')[0].src;\n", Encoding.UTF8);
-                    //            if (response.Success && response.Result != null)
-                    //            {
-                    //                var startDate = response.Result;
-
-                    //                if (startDate != null)
-                    //                {
-                    //                    photoURL = startDate.ToString();
-                    //                }
-                    //            }
-
-                    //            autoclosedelay = 1;
-                    //        });
-                    //    }
-                    //    catch
-                    //    {
-
-                    //    }
-                    //}
-                    break;
-
-                case WebBrowserCommand.GetContactAttributes:
-                    if (iStep == 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //TryToClickElementByClassName("profile_more_info_link", -1, -1);
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = getContactAttributesTask();
-                    }
-                    break;
-
-                case WebBrowserCommand.GetPersoneFriendsCount:
-                    if (iStep == 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //TryToClickElementByClassName("profile_more_info_link", -1, -1);
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = getPersoneAttributesFriendsTask();
-                    }
-                    break;
-
-                case WebBrowserCommand.GetPersoneAttributes:
-                    if (iStep == 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //if (!TryToClickElementByID("top_edit_link", -1, -1))
-                        //if (!TryToClickElementByID("profile_edit_act", -1, -1))
-                        //    iStep = -1;
-                    }
-                    else if (iStep > 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = getPersoneAttributesTask();
-                    }
-                    break;
-
-                case WebBrowserCommand.LoginPersone:
-                    if (iStep == 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = logoutTask();
-                    }
-                    else if (iStep == 2)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = loginTask();
-                    }
-                    else if (iStep == 3)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = checkLoginTask();
-                    }
-                    break;
-
-                case WebBrowserCommand.ReadMessages:
-                    if (iStep == 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = getPeers();
-                    }
-                    else if (iStep == 2)
-                    {
-                        //if (peers.Count > 0)
-                        //{
-                        //    autoclosedelay = autoclosedelaydefault;
-                        //    currentPeer = peers[0];
-                        //    peers.RemoveAt(0);
-                        //    Task ts = getMessages();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-
-                case WebBrowserCommand.ReadHistory:
-                    if (iStep == 1)
-                    {
-                        autoclosedelay = autoclosedelaydefault;
-                        //Task ts = getHistory();
-                    }
-                    else if (iStep == 2)
-                    {
-                        autoclosedelay = 1;
-                    }
-                    break;
-            }
-
-            if (iStep == -1)
-            {
-                autoclosedelay = 1;
-            }
-
-            //File.WriteAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), callToBrowser, Encoding.UTF8);
-        }
-
-        private void DoCondition()
-        {
-            switch (mCommand)
-            {
-                case WebBrowserCommand.GetPhotoURL:
-                    if (iStep == 0)
-                    {
-                        //if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                        //{
-                        //    iStep = 1;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-
-                case WebBrowserCommand.GetContactAttributes:
-                    if (iStep == 0)
-                    {
-                        //if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                        //{
-                        //    iStep = 1;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-
-                case WebBrowserCommand.GetPersoneFriendsCount:
-                    if (iStep == 0)
-                    {
-                        //if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                        //{
-                        //    iStep = 1;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-
-                case WebBrowserCommand.GetPersoneAttributes:
-                    if (iStep == 0)
-                    {
-                        //if (browserAddress.StartsWith("https://vk.com"))
-                        //{
-                        //    iStep = 1;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    else if (iStep == 1)
-                    {
-                        //if (browserAddress.StartsWith("https://vk.com"))
-                        //{
-                        //    iStep++;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    else if (iStep > 1)
-                    {
-                        //if (browserAddress.StartsWith("https://vk.com"))
-                        //{
-                        //    //iStep++;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-
-                case WebBrowserCommand.LoginPersone:
-                    if (iStep == 0)
-                    {
-                        //if (browserAddress.StartsWith("https://vk.com"))
-                        //{
-                        //    iStep = 2;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    else
-                    {
-                        //if (browserAddress.StartsWith("https://vk.com"))
-                        //    doAction();
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-
-                case WebBrowserCommand.ReadHistory:
-                    if (iStep == 0)
-                    {
-                        //if (browserAddress.Equals("https://vk.com/im?sel=" + mContacterID.ToString()))
-                        //{
-                        //    iStep = 1;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    else if (iStep == 1)
-                    {
-                        iStep = 2;
-                        DoAction();
-                    }
-                    break;
-
-                case WebBrowserCommand.ReadMessages:
-                    if (iStep == 0)
-                    {
-                        //if ("https://vk.com/im?tab=unread".Equals(browserAddress))
-                        //{
-                        //    iStep = 1;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    else if (iStep == 1)
-                    {
-                        //if (browserAddress.StartsWith("https://vk.com/im?sel="))
-                        //{
-                        //    iStep = 2;
-                        //    doAction();
-                        //}
-                        //else
-                        //    iStep = -1;
-                    }
-                    break;
-            }
-
-            if (iStep == -1)
-            {
-                autoclosedelay = 1;
-            }
-        }
 
         private void NilsaWriteToRequestFile(string request)
         {
@@ -605,20 +271,21 @@ namespace Nilsa
 
         private void NilsaReadFromResponseFile()
         {
-            do
-            {
-                try
-                {
-                    string responsePath = Path.Combine(mFormMain.AppplicationStarupPath(), "_response_from_browser.txt");
+            //раскоментить после реализации записи интерфейса в файл
+            //do
+            //{
+            //    try
+            //    {
+            //        string responsePath = Path.Combine(mFormMain.AppplicationStarupPath(), "_response_from_browser.txt");
 
-                    // Read the request from file
+            //        // Read the request from file
 
-                    stringJSON = File.ReadAllText(responsePath);
-                }
-                catch (Exception) { }
-                mResponseFromInterface = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
-            } while (mResponseFromInterface.Time == lastResponseTime);
-            lastResponseTime = mResponseFromInterface.Time;
+            //        stringJSON = File.ReadAllText(responsePath);
+            //    }
+            //    catch (Exception) { }
+            //    mResponseFromInterface = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
+            //} while (mResponseFromInterface.Time == lastResponseTime);
+            //lastResponseTime = mResponseFromInterface.Time;
         }
 
         private void LogingRequestFile(string request)
@@ -626,10 +293,7 @@ namespace Nilsa
             try
             {
                 string path = Path.Combine(mFormMain.AppplicationStarupPath(), "_loging_requests.txt");
-
-                // Read the request from file
-
-                File.WriteAllText(path, request, Encoding.UTF8);
+                File.AppendAllText(path, DateTime.Now.ToString() + "|" + request + "\n", Encoding.UTF8);
             }
             catch (Exception) { }
         }
