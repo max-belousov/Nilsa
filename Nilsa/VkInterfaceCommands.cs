@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CefSharp;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text;
@@ -16,6 +17,7 @@ namespace Nilsa
         private string mUserPassword;
         private string operatingMode = NilsaOperatingMode.None;
         private uint mCommand = WebBrowserCommand.None;
+        private string stringJSON = "";
         private long mContacterID = -1;
         private string mPostsToRepost = "";
         private string mGroupsList = "";
@@ -51,7 +53,6 @@ namespace Nilsa
 
         public string Setup(String sLogin, String sPassword, uint _iCommand, string _iOperatingMode, long _contacterID = -1, string _FirstList = "", string _SecondList = "", string _personeName = "")
         {
-            var stringJSON = "";
             errorSendMessage = false;
             personeName = _personeName;
             autoclosedelaydefault = 45;
@@ -88,17 +89,11 @@ namespace Nilsa
                     break;
 
                 case WebBrowserCommand.LoginPersone:                    // Done!
-                    var outputJSON = "{" + $@"'Model': '{_iOperatingMode}', 'Command': 'LoginPersone', 'User Login': '{mUserLogin}', 'User Password': '{mUserPassword}'" + "}";
+                    var outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'LoginPersone', 'User Login': '{mUserLogin}', 'User Password': '{mUserPassword}'" + "}";
                     NilsaWriteToRequestFile(outputJSON);
-                    //нужно задержку добавить?
-                    //Task.Delay(1000).Wait();
-                    do
-                    {
-                        Task.Delay(1000).Wait();
-                        stringJSON = NilsaReadFromResponseFile();
-                        mResponseFromInterface = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
-                    } while (mResponseFromInterface.Time == lastResponseTime);
-                    lastResponseTime = mResponseFromInterface.Time;
+                    Task.Delay(1000).Wait();
+                    NilsaReadFromResponseFile();
+                    LogingRequestFile(outputJSON);
                     break;
 
                 case WebBrowserCommand.GoToPersonePage:
@@ -107,31 +102,10 @@ namespace Nilsa
                     break;
 
                 case WebBrowserCommand.GetPhotoURL:                     // Done!
-                    photoURL = "";
+
                     mContacterID = _contacterID;
 
-                    statusText = "Получение адреса фотографии... ";
-                    autoclosedelaydefault = 25;
-
-                    bStart = false;
-
-                    //if (mContacterID != 330643598)
-                    //{
-                    //    if (browserAddress.Equals("https://vk.com/id" + mContacterID.ToString()))
-                    //    {
-                    //        iStep = 1;
-                    //        doAction();
-                    //    }
-                    //    else
-                    //        startPage = "https://vk.com/id" + mContacterID.ToString();
-                    //}
-                    //else
-                    //{
-                    //    contactAtrributes.FirstName = "Internal";
-                    //    contactAtrributes.LastName = "Persone";
-                    //    iStep = -1;
-                    //    autoclosedelay = 1;
-                    //}
+                    
                     break;
 
                 case WebBrowserCommand.GetPersoneAttributes:                     // Done!
@@ -629,19 +603,35 @@ namespace Nilsa
             catch (Exception) { }
         }
 
-        private string NilsaReadFromResponseFile()
+        private void NilsaReadFromResponseFile()
         {
-            var response = "Error no response";
+            do
+            {
+                try
+                {
+                    string responsePath = Path.Combine(mFormMain.AppplicationStarupPath(), "_response_from_browser.txt");
+
+                    // Read the request from file
+
+                    stringJSON = File.ReadAllText(responsePath);
+                }
+                catch (Exception) { }
+                mResponseFromInterface = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
+            } while (mResponseFromInterface.Time == lastResponseTime);
+            lastResponseTime = mResponseFromInterface.Time;
+        }
+
+        private void LogingRequestFile(string request)
+        {
             try
             {
-                string responsePath = Path.Combine(mFormMain.AppplicationStarupPath(), "_response_from_browser.txt");
+                string path = Path.Combine(mFormMain.AppplicationStarupPath(), "_loging_requests.txt");
 
                 // Read the request from file
 
-                response = File.ReadAllText(responsePath);
+                File.WriteAllText(path, request, Encoding.UTF8);
             }
             catch (Exception) { }
-            return response;
         }
     }
 }

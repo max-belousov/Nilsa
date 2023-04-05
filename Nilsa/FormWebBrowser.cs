@@ -1296,7 +1296,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "login...");
                     iStep = 3;
-                    //loginPersone();
+                    loginPersone();
                     //var flag = NilsaWriteToRequestFile("ndocument.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' +
                     //"\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()");
                     //while (flag != true)
@@ -1643,15 +1643,15 @@ namespace Nilsa
                 //    "\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()");
                 return true;
             }
-            //catch
-            //{
-
-            //}
-            catch (Exception e)
+            catch
             {
 
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), e.ToString(), Encoding.UTF8);
             }
+            //catch (Exception e)
+            //{
+
+            //    File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), e.ToString(), Encoding.UTF8);
+            //}
             return false;
 
         }
@@ -3020,7 +3020,7 @@ namespace Nilsa
 
         private async void toolStripButton1_Click(object sender, EventArgs e)
         {
-            await sendMessageTask();
+            //await sendMessageTask();
         }
 
         private async void toolStripButton2_Click(object sender, EventArgs e)

@@ -5278,6 +5278,10 @@ namespace Nilsa
                         ShowBrowserCommand();
 
                         fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPhotoURL, userid);
+                        //для взаимодействия через файловую систему
+                        var stringJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.GetPhotoURL, NilsaOperatingMode.SeleniumMode, userid);
+                        //var result = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON); //раскоментить при удалении встроенного браузера
+                        //string photoURL = result.PhotoUrl;                                             //раскоментить при удалении встроенного браузера
                         fwbVKontakte.WaitResult();
                         string photoURL = fwbVKontakte.photoURL;
 
@@ -7264,7 +7268,7 @@ namespace Nilsa
 
             ShowBrowserCommand();
 
-            fwbVKontakte.Setup(sUsrSelLogin, sUsrSelPwd, WebBrowserCommand.LoginPersone);
+            //fwbVKontakte.Setup(sUsrSelLogin, sUsrSelPwd, WebBrowserCommand.LoginPersone);
             if (fwbVKontakteFirstShow)
             {
                 fwbVKontakteFirstShow = true;
