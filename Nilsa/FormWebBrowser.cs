@@ -653,7 +653,7 @@ namespace Nilsa
                     {
                         try
                         {
-                            browser.EvaluateScriptAsync("document.getElementsByClassName('page_avatar_img')[0].src;").ContinueWith(x =>
+                            browser.EvaluateScriptAsync("document.getElementsByClassName('AvatarRich__img')[0].src;").ContinueWith(x =>
                             {
                                 var response = x.Result;
                                 //callToBrowser += "document.getElementsByClassName('page_avatar_img')[0].src;\n";

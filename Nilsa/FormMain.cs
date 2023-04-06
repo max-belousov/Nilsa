@@ -27,6 +27,7 @@ using Nilsa.Data;
 using VkNet.Model.Attachments;
 using mevoronin.RuCaptchaNETClient;
 using Newtonsoft.Json;
+using System.Linq.Expressions;
 
 namespace Nilsa
 {
@@ -5292,49 +5293,55 @@ namespace Nilsa
                         //string photoURL = result.PhotoUrl;                                             //раскоментить при удалении встроенного браузера
                         fwbVKontakte.WaitResult();
                         string photoURL = fwbVKontakte.photoURL;
+                        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "photoURL: " + photoURL + "\n", Encoding.UTF8);
 
                         HideBrowserCommand();
 
                         bool bRead = false;
-                        if (photoURL.Length > 0)
+                        try
                         {
-                            var request = WebRequest.Create(photoURL);
-
-                            using (var response = request.GetResponse())
-                            using (var stream = response.GetResponseStream())
+                            if (photoURL.Length > 0)
                             {
-                                bitmapPicture = Bitmap.FromStream(stream);
-                                bRead = true;
-                                button.BackgroundImage = bitmapPicture;
+                                var request = WebRequest.Create(photoURL);
+
+                                using (var response = request.GetResponse())
+                                using (var stream = response.GetResponseStream())
+                                {
+                                    bitmapPicture = Bitmap.FromStream(stream);
+                                    bRead = true;
+                                    button.BackgroundImage = bitmapPicture;
+                                    if (bPerson)
+                                    {
+                                        personPicture = bitmapPicture;
+                                        personPictureID = userid;
+                                        //btnB4.BackgroundImage = bitmapPicture;
+                                    }
+                                    else
+                                    {
+                                        contactPicture = bitmapPicture;
+                                        contactPictureID = userid;
+                                        //pathContacterImageFromGroup();
+                                    }
+                                }
+                            }
+
+                            if (!bRead)
+                            {
                                 if (bPerson)
                                 {
-                                    personPicture = bitmapPicture;
-                                    personPictureID = userid;
-                                    //btnB4.BackgroundImage = bitmapPicture;
+                                    personPicture = null;
+                                    personPictureID = -1;
+                                    //btnB4.BackgroundImage = Nilsa.Properties.Resources.nilsa_pers;
                                 }
                                 else
                                 {
-                                    contactPicture = bitmapPicture;
-                                    contactPictureID = userid;
-                                    //pathContacterImageFromGroup();
+                                    contactPicture = null;
+                                    contactPictureID = -1;
                                 }
                             }
                         }
+                        catch (Exception){ }
 
-                        if (!bRead)
-                        {
-                            if (bPerson)
-                            {
-                                personPicture = null;
-                                personPictureID = -1;
-                                //btnB4.BackgroundImage = Nilsa.Properties.Resources.nilsa_pers;
-                            }
-                            else
-                            {
-                                contactPicture = null;
-                                contactPictureID = -1;
-                            }
-                        }
                     }
                     /*
                     try
@@ -6630,6 +6637,7 @@ namespace Nilsa
                             if (!bAutorizeAccept)
                             {
                                 ShowBrowserCommand();
+                                var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
 
                                 fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone);
                                 if (!fwbVKontakteFirstShow)
@@ -6638,10 +6646,10 @@ namespace Nilsa
                                     fwbVKontakte.Show();
                                 }
                                 fwbVKontakte.WaitResult();
-                                //vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
-                                var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
-                                var autorizeResult = JsonConvert.DeserializeObject<ResponseFromInterface>(autorizeResultJSON);
                                 HideBrowserCommand();
+                                //vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
+                                //var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
+                                //var autorizeResult = JsonConvert.DeserializeObject<ResponseFromInterface>(autorizeResultJSON);
                             }
                             iPersUserID = fwbVKontakte.loggedPersoneID;
 
