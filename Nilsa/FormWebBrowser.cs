@@ -18,6 +18,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
 using VkNet.Model.Attachments;
+using System.Xml.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace Nilsa
 {
@@ -33,9 +35,6 @@ namespace Nilsa
         string mGroupsList = "";
         string mMessageToSend = "";
         string statusText = "";
-        private int _responseFromBrowserReadLines = Convert.ToInt32(File.ReadAllText(Path.Combine(Application.StartupPath, "_response_from_browser_Read_Lines.txt")));
-        private int _requestToBrowserReadLines = Convert.ToInt32(File.ReadAllText(Path.Combine(Application.StartupPath, "_requset_to_browser_Read_Lines.txt")));
-        private string _actualResponse = ""; 
 
         bool blogin = false;
         bool blogout = false;
@@ -472,6 +471,20 @@ namespace Nilsa
                         startPage = "https://vk.com/id" + mContacterID.ToString();
                     break;
 
+                case WebBrowserCommand.GetPersoneName:                     // Done!
+                    mContacterID = _contacterID;
+                    personeAtrributes = new Persone();
+                    personeAtrributes.id = mContacterID;
+
+                    statusText = "Получение имени Персонажа... ";
+                    setStatusMessage(statusText + "ждите...");
+                    autoclosedelaydefault = 25;
+
+                    bStart = false;
+                    Task ts = getPersoneNameTask();
+
+                    break;
+
                 case WebBrowserCommand.GetContactAttributes:                     // Done!
                     mContacterID = _contacterID;
                     contactAtrributes = new Persone();
@@ -683,7 +696,7 @@ namespace Nilsa
                     {
                         setStatusMessage(statusText + "читаем атрибуты Контактёра...");
                         autoclosedelay = autoclosedelaydefault;
-                        TryToClickElementByClassName("profile_more_info_link", -1, -1);
+                        TryToClickElementByClassName("ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse", -1, -1);
                         autoclosedelay = autoclosedelaydefault;
                         Task ts = getContactAttributesTask();
                     }
@@ -692,10 +705,10 @@ namespace Nilsa
                 case WebBrowserCommand.GetPersoneFriendsCount:
                     if (iStep == 1)
                     {
-                        setStatusMessage(statusText + "читаем атрибуты Персонажа...");
+                        setStatusMessage(statusText + "считаем друзей Персонажа...");
                         autoclosedelay = autoclosedelaydefault;
-                        TryToClickElementByClassName("profile_more_info_link", -1, -1);
-                        autoclosedelay = autoclosedelaydefault;
+                        //TryToClickElementByClassName("ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse", -1, -1);
+                        //autoclosedelay = autoclosedelaydefault;
                         Task ts = getPersoneAttributesFriendsTask(); 
                     }
                     break;
@@ -706,8 +719,8 @@ namespace Nilsa
                         setStatusMessage(statusText + "читаем атрибуты Персонажа...");
                         autoclosedelay = autoclosedelaydefault;
                         //if (!TryToClickElementByID("top_edit_link", -1, -1))
-                        if (!TryToClickElementByID("profile_edit_act", -1, -1))
-                            iStep = -1;
+                        //if (!TryToClickElementByID("profile_edit_act", -1, -1))
+                        //    iStep = -1;
                     }
                     else if (iStep > 1)
                     {
@@ -720,16 +733,19 @@ namespace Nilsa
                     if (iStep == 1)
                     {
                         autoclosedelay = autoclosedelaydefault;
+                        //Task nm = getPersoneNameTask();
                         Task ts = logoutTask();
                     }
                     else if (iStep == 2)
                     {
                         autoclosedelay = autoclosedelaydefault;
+                        //Task nm = getPersoneNameTask();
                         Task ts = loginTask();
                     }
                     else if (iStep == 3)
                     {
                         autoclosedelay = autoclosedelaydefault;
+                        //Task nm = getPersoneNameTask();
                         Task ts = checkLoginTask();
                     }
                     break;
@@ -958,6 +974,11 @@ namespace Nilsa
                 LastSeen = "";
             }
 
+            public override string ToString()
+            {
+                return $"{id.ToString()} / {FirstName} / {LastName} / {Sex} / {Relation} / {BirthDate} / {City} / {Country} / {CountersFriends} / {Online} / {LastSeen}";
+            }
+
         }
 
         private async Task getContactAttributesTask()
@@ -967,7 +988,10 @@ namespace Nilsa
                 string value;
                 int idx;
 
-                value = await getBrowserFieldValueByClassName("page_name", "");
+                //value = await getBrowserFieldValueByClassName("page_name", "");
+                LoadUrl("https://vk.com/id" + mContacterID.ToString());
+                //value = await getBrowserFieldValueByID("owner_page_name", "");
+                value = browser.EvaluateScriptAsync("document.getElementsByClassName('OwnerPageName vkuiTitle vkuiTitle--l-2 vkuiTitle--w-1')[0].textContent").Result.Result.ToString();
                 idx = value.IndexOf(' ');
                 if (idx > 0)
                 {
@@ -976,21 +1000,44 @@ namespace Nilsa
                 }
                 else
                     contactAtrributes.FirstName = value;
-
+                
                 contactAtrributes.Sex = "Не указан";
-                contactAtrributes.CountersFriends = await getBrowserFieldValueByClassName("count", "");
 
-                value = await getBrowserFieldValueByClassName("profile_online_lv", "");
-                if (value.StartsWith("Online"))
+                //LoadUrl("https://vk.com/friends");
+                //browser.ExecuteScriptAsyncWhenPageLoaded("document.getElementsByClassName('ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[length].click()");
+                //WaitNSeconds(2);
+                var friendsPath = browser.EvaluateScriptAsync("document.getElementsByClassName('ProfileGroupHeader vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[0].href").Result.Result.ToString();
+                LoadUrl(friendsPath);
+                WaitNSeconds(5);
+                var counter = browser.EvaluateScriptAsync("document.getElementsByClassName('ui_tab_count_new')[0].textContent").Result.Result.ToString();
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "friends: " + counter, Encoding.UTF8);
+                contactAtrributes.CountersFriends = counter;
+
+
+                LoadUrl("https://vk.com/id" + mContacterID.ToString());
+                WaitNSeconds(5);
+                browser.ExecuteScriptAsync("document.getElementsByClassName('vkuiButton__in')[0].click()");
+                WaitNSeconds(5);
+                browser.ExecuteScriptAsync("document.getElementsByClassName('mail_box_header_link')[0].click()");
+                WaitNSeconds(5);
+                //value = await getBrowserFieldValueByClassName("im-page--title-meta _im_page_peer_online", "");
+                value = browser.EvaluateScriptAsync("document.getElementsByClassName('im-page--title-meta _im_page_peer_online')[0].textContent").Result.Result.ToString();
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "Sex: " + value, Encoding.UTF8);
+
+                //value = await getBrowserFieldValueByClassName("profile_online_lv", "")
+                if (value.Equals("Online"))
+                {
                     contactAtrributes.Online = "ON line";
+                    contactAtrributes.Sex = "ON line";
+                }
                 else
                 {
-                    if (value.ToLower().StartsWith("заходил "))
+                    if (value.ToLower().StartsWith(" был "))
                     {
                         contactAtrributes.Sex = "Мужской";
                         contactAtrributes.LastSeen = value;
                     }
-                    else if (value.ToLower().StartsWith("заходила "))
+                    else if (value.ToLower().StartsWith(" была "))
                     {
                         contactAtrributes.Sex = "Женский";
                         contactAtrributes.LastSeen = value;
@@ -998,6 +1045,8 @@ namespace Nilsa
 
                     contactAtrributes.Online = "OFF line";
                 }
+
+                LoadUrl("https://vk.com/id" + mContacterID.ToString());
 
                 //value = await getBrowserFieldValueByClassName("profile_time_lv", "");
                 //contactAtrributes.LastSeen = value;
@@ -1133,6 +1182,48 @@ namespace Nilsa
                     }
                 }
 
+                //забираем статус онлайна из сообщений
+                //LoadUrl("https://vk.com/im");
+                //var retval = "";
+                //var id = -1;
+                //do
+                //{
+                //    id++;
+                //    await browser.EvaluateScriptAsync("document.getElementsByClassName('_im_dialog_link')[" + id + "].innerText;").ContinueWith(x =>
+                //    {
+                //        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line1262\ndocument.getElementsByClassName('_im_dialog_link')[0].innerText;\n", Encoding.UTF8);
+                //        var response = x.Result;
+                //        if (response.Success && response.Result != null)
+                //        {
+                //            var startDate = response.Result;
+                //            retval = startDate.ToString();
+                //        }
+                //    });
+                //} while (!retval.StartsWith(personeAtrributes.FirstName));
+                //browser.ExecuteScriptAsync("document.getElementsByClassName('_im_dialog_link')[" + id + "].click()");
+
+
+            }
+            catch (Exception)
+            {
+            }
+
+            autoclosedelay = 1;
+            File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "Contact Attributes: " + contactAtrributes.ToString(), Encoding.UTF8);
+        }
+
+        private async Task getPersoneAttributesFriendsTask()
+        {
+            try
+            {
+                LoadUrl("https://vk.com/friends");
+                //browser.ExecuteScriptAsyncWhenPageLoaded("document.getElementsByClassName('ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[length].click()");
+                WaitNSeconds(2);
+                var counter = browser.EvaluateScriptAsync("document.getElementsByClassName('ui_tab_count_new')[0].textContent").Result.Result.ToString();
+                personeAtrributesFriends.CountersFriends = counter;
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "friends: " + counter, Encoding.UTF8);
+                personeAtrributesFriends.CountersFriends = counter;
+                LoadUrl("https://vk.com/id" + mContacterID.ToString());
             }
             catch (Exception)
             {
@@ -1141,15 +1232,28 @@ namespace Nilsa
             autoclosedelay = 1;
         }
 
-        private async Task getPersoneAttributesFriendsTask()
+        private async Task getPersoneNameTask()
         {
             try
             {
                 string value;
                 int idx;
 
-                personeAtrributesFriends.CountersFriends = await getBrowserFieldValueByClassName("count", "");
+                if (!browserAddress.Equals("https://vk.com/id" + mContacterID.ToString())) LoadUrl("https://vk.com/id" + mContacterID.ToString());
 
+                WaitNSeconds(4);
+                //value = await getBrowserFieldValueByID("owner_page_name", "");
+                value = browser.EvaluateScriptAsync("document.getElementsByClassName('OwnerPageName vkuiTitle vkuiTitle--l-2 vkuiTitle--w-1')[0].textContent").Result.Result.ToString();
+                WaitNSeconds(2);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "persnameWebBrowser: " + value, Encoding.UTF8);
+                idx = value.IndexOf(' ');
+                if (idx > 0)
+                {
+                    personeAtrributes.FirstName = value.Substring(0, idx);
+                    personeAtrributes.LastName = value.Substring(idx + 1);
+                }
+                else
+                    contactAtrributes.FirstName = value;
             }
             catch (Exception)
             {
@@ -1160,20 +1264,35 @@ namespace Nilsa
 
         private async Task getPersoneAttributesTask()
         {
+
+
             if (iStep == 2)
             {
                 try
                 {
                     string value;
+                    LoadUrl("https://vk.com/edit");
+                    WaitNSeconds(2);
+                    value = browser.EvaluateScriptAsync("document.getElementsByClassName('ProfileEditName')[0].textContent").Result.Result.ToString();
+                    var idx = value.IndexOf(' ');
+                    if (idx > 0)
+                    {
+                        personeAtrributes.FirstName = value.Substring(0, idx);
+                        //personeAtrributes.FirstName = "test";
+                        personeAtrributes.LastName = value.Substring(idx + 1);
+                    }
+                    else
+                        personeAtrributes.FirstName = value;
 
-                    value = await getBrowserFieldValueByID("pedit_first_name", "");
-                    personeAtrributes.FirstName = value != null ? value : "";
+                    //browser.ExecuteScriptAsync("document.getElementsByClassName('ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[2].click()");
 
-                    value = await getBrowserFieldValueByID("pedit_last_name", "");
-                    personeAtrributes.LastName = value != null ? value : "";
+                    //value = await getBrowserFieldValueByID("pedit_first_name", "");
+                    //personeAtrributes.FirstName = value != null ? value : "";
 
-                    value = await getBrowserFieldValueByID("pedit_sex", "0");
-                    personeAtrributes.Sex = (value == null) ? "Не указан" : ("2".Equals(value) ? "Мужской" : ("1".Equals(value) ? "Женский" : "Не указан"));
+                    //value = await getBrowserFieldValueByID("pedit_last_name", "");
+                    //personeAtrributes.LastName = value != null ? value : "";
+
+                    //document.getElementsByClassName('ProfileModalInfoLink vkuiLink vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[2].text
 
                     value = await getBrowserFieldValueByID("pedit_home_town", "0");
                     personeAtrributes.City = value != null ? value : "";
@@ -1186,7 +1305,8 @@ namespace Nilsa
                     if (personeAtrributes.BirthDate.Length < 5)
                         personeAtrributes.BirthDate = "";
 
-                    value = await getBrowserFieldValueByID("pedit_status", "");
+                    //value = await getBrowserFieldValueByID("pedit_status", "");
+                    value = browser.EvaluateScriptAsync("document.getElementsByClassName('ProfileModalInfoLink vkuiLink vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[2].text").Result.ToString();
                     personeAtrributes.Relation = "Не указано";
                     if ("1".Equals(value))
                         personeAtrributes.Relation = "Не женат (не замужем)";
@@ -1204,6 +1324,11 @@ namespace Nilsa
                         personeAtrributes.Relation = "Влюблен(-а)";
                     else if ("8".Equals(value))
                         personeAtrributes.Relation = "Есть друг (подруга)";
+
+                    LoadUrl("https://id.vk.com/account/#/personal");
+
+                    personeAtrributes.Sex = await getBrowserFieldValueByClassName("vkuiSelectTypography vkuiSelectTypography--android vkuiSelectTypography--sizeY-none vkuiSelect__title", "0");
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "Personal sex: " + personeAtrributes.Sex, Encoding.UTF8);
                 }
                 catch (Exception)
                 {
@@ -1252,15 +1377,44 @@ namespace Nilsa
             }
             else if (iStep == 4)
             {
-                personeAtrributes.CountersFriends = await getBrowserFieldValueByClassName("count", "");
-                personeAtrributes.Online = await getBrowserFieldValueByClassName("profile_online_lv", "");
-                if (personeAtrributes.Online.StartsWith("Online"))
-                    personeAtrributes.Online = "ON line";
-                else
-                    personeAtrributes.Online = "OFF line";
+                //LoadUrl("https://vk.com/friends");
+                ////browser.ExecuteScriptAsyncWhenPageLoaded("document.getElementsByClassName('ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse')[length].click()");
+                //WaitNSeconds(2);
+                //var counter = browser.EvaluateScriptAsync("document.getElementsByClassName('ui_tab_count_new')[0].textContent").Result.Result.ToString();
+                //File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "friends: " + counter, Encoding.UTF8);
+                //personeAtrributesFriends.CountersFriends = counter;
+                //LoadUrl("https://vk.com/id" + mContacterID.ToString());
+
+                //забираем статус онлайна из сообщений
+                //LoadUrl("https://vk.com/im");
+                //var retval = "";
+                //var id = -1;
+                //do
+                //{
+                //    id = 0;
+                //    await browser.EvaluateScriptAsync("document.getElementsByClassName('_im_dialog_link')["+ id +"].innerText;").ContinueWith(x =>
+                //    {
+                //        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line1262\ndocument.getElementsByClassName('_im_dialog_link')[0].innerText;\n", Encoding.UTF8);
+                //        var response = x.Result;
+                //        if (response.Success && response.Result != null)
+                //        {
+                //            var startDate = response.Result;
+                //            retval = startDate.ToString();
+                //        }
+                //    });
+                //} while (!retval.StartsWith(personeAtrributes.FirstName));
+                //browser.ExecuteScriptAsync("document.getElementsByClassName('_im_dialog_link')[" + id + "].click()");
+
+                //personeAtrributes.Online = await getBrowserFieldValueByClassName("im-page--title-meta _im_page_peer_online", "");
+                //if (personeAtrributes.Online.StartsWith("Online"))
+                //    personeAtrributes.Online = "ON line";
+                //else
+                //    personeAtrributes.Online = "OFF line";
 
                 autoclosedelay = 1;
             }
+           
+            File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "Personal Attributes: " + personeAtrributes.ToString(), Encoding.UTF8);
         }
 
         private async Task logoutTask()
@@ -1600,7 +1754,7 @@ namespace Nilsa
             return browser.EvaluateScriptAsync("document.getElementById('" + id + "')").ContinueWith(x =>
             {
                 //callToBrowser += "document.getElementById('" + id + "')\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('" + id + "')\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line1647\ndocument.getElementById('" + id + "')\n", Encoding.UTF8);
                 var response = x.Result;
                 object retval = null;
                 if (response.Success && response.Result != null)
@@ -1618,7 +1772,7 @@ namespace Nilsa
                 browser.EvaluateScriptAsync("document.getElementById('top_logout_link').click()");
                 //EvaluateScriptAsync
                 //callToBrowser += "document.getElementById('top_logout_link').click()\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('top_logout_link').click()\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line1665\ndocument.getElementById('top_logout_link').click()\n", Encoding.UTF8);
                 return true;
             }
 
@@ -1637,7 +1791,7 @@ namespace Nilsa
                 browser.ExecuteScriptAsync("document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'');
                 browser.ExecuteScriptAsync("document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'');
                 browser.ExecuteScriptAsync("document.getElementById('quick_login_form').submit()");
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' + 
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line1684\ndocument.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' + 
                     "\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
                 //NilsaWriteToRequestFile("ndocument.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' +
                 //    "\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()");
@@ -1719,30 +1873,30 @@ namespace Nilsa
 
                             browser.EvaluateScriptAsync("document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'').ContinueWith(x =>
                             {
-                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\n", Encoding.UTF8);
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line1766\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\n", Encoding.UTF8);
                                 var response = x.Result;
                                 string retval = "";
                                 if (response.Success && response.Result != null)
                                 {
                                     var startDate = response.Result;
                                     retval = startDate.ToString();
-                                    File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
+                                    File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
                                 }
                             });
 
                             browser.EvaluateScriptAsync("document.getElementById('quick_login_form').submit()").ContinueWith(x =>
                             {
-                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('quick_login_form').submit()", Encoding.UTF8);
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() +  "line1779\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
                                 var response = x.Result;
                                 string retval = "";
                                 if (response.Success && response.Result != null)
                                 {
                                     var startDate = response.Result;
                                     retval = startDate.ToString();
-                                    File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
+                                    File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
                                 }
                             });
-                            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' +
+                            File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line1789\ndocument.getElementById('quick_email').value=" + '\'' + mUserLogin + '\'' +
                                 "\ndocument.getElementById('quick_pass').value=" + '\'' + mUserPassword + '\'' + "\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
                         }
 
@@ -1948,32 +2102,43 @@ namespace Nilsa
         {
             try
             {
-                string source = await browser.GetBrowser().MainFrame.GetSourceAsync();
+                //LoadUrl("http://vk.com/id" + mContacterID.ToString());
+                WaitNSeconds(5);
+                browser.ExecuteScriptAsync("document.getElementsByClassName('vkuiButton__in')[0].click()");
+                WaitNSeconds(1);
+                browser.ExecuteScriptAsync("document.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'');
+                WaitNSeconds(1);
+                browser.ExecuteScriptAsync("document.getElementById('mail_box_send').click()");
+                enableTimer(2);
 
-                if (source.Contains("im_editable0"))
-                {
-                    setStatusMessage(statusText + "посылаем...");
+                //string source = await browser.GetBrowser().MainFrame.GetSourceAsync();
 
-                    // Write the request to file
-                    //File.WriteAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('im_editable0').innerHTML=" + '\'' + mMessageToSend + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_send')[0].click()", Encoding.UTF8);
-                    //Test message line
-                    //File.WriteAllText(Path.Combine(Application.StartupPath, "_request_to_browser.txt"), "document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()", Encoding.UTF8);
-                    //var flag = NilsaWriteToRequestFile("document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()");
-                    //while (flag!=true)
-                    //{
-                    //    flag = NilsaWriteToRequestFile("document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()");
-                    //}
-                    //await BrowserReadFromRequestFile();
-                    enableTimer(2);
-                    //NilsaReadFromResponseFile();
-                }
-                else
-                {
-                    setStatusMessage(statusText + "ошибка...");
+                //if (source.Contains("mail_box_editable"))
+                //{
+                //    setStatusMessage(statusText + "посылаем...");
 
-                    autoclosedelay = 2;
-                    LoadUrl("https://vk.com/im");
-                }
+                //    browser.ExecuteScriptAsync("document.getElementsByClassName('vkuiButton__in')[0].click()");
+                //    // Write the request to file
+                //    //File.WriteAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('im_editable0').innerHTML=" + '\'' + mMessageToSend + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_send')[0].click()", Encoding.UTF8);
+                //    //Test message line
+                //    //File.WriteAllText(Path.Combine(Application.StartupPath, "_request_to_browser.txt"), "document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()", Encoding.UTF8);
+                //    //var flag = NilsaWriteToRequestFile("document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()");
+                //    //while (flag!=true)
+                //    //{
+                //    //    flag = NilsaWriteToRequestFile("document.getElementById('im_editable0').innerHTML=" + '\'' + "Привет, мир" + '\'' + "\ndocument.getElementsByClassName('im-send-btn im-chat-input--send _im_send im-send-btn_audio')[0].click()");
+                //    //}
+                //    //await BrowserReadFromRequestFile();
+                //    browser.ExecuteScriptAsync("document.getElementById('mail_box_editable').innerHTML=" + '\'' + mMessageToSend + '\'');
+                //    enableTimer(2);
+                //    //NilsaReadFromResponseFile();
+                //}
+                //else
+                //{
+                //    setStatusMessage(statusText + "ошибка...");
+
+                //    autoclosedelay = 2;
+                //    LoadUrl("https://vk.com/im");
+                //}
             }
             catch (Exception)
             {
@@ -2119,7 +2284,7 @@ namespace Nilsa
                     {
                         setStatusMessage(statusText + "меню...");
                         browser.ExecuteScriptAsync("document.getElementsByClassName('flat_button button_wide secondary page_actions_btn')[0].click()");
-                        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('flat_button button_wide secondary page_actions_btn')[0].click()", Encoding.UTF8);
+                        File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2166\ndocument.getElementsByClassName('flat_button button_wide secondary page_actions_btn')[0].click()", Encoding.UTF8);
                         iStep = 2;
                         enableTimer(1);
                     }
@@ -2141,7 +2306,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "новое сообщение...");
                     browser.ExecuteScriptAsync("document.getElementsByClassName('page_actions_item')[1].click()");
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementsByClassName('page_actions_item')[1].click()", Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2188\ndocument.getElementsByClassName('page_actions_item')[1].click()", Encoding.UTF8);
 
                     iStep = 3;
                     enableTimer(1);
@@ -2156,7 +2321,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "вводим текст...");
                     browser.ExecuteScriptAsync("document.getElementById('preq_input').value=" + '\'' + mMessageToSend + '\'');
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "document.getElementById('preq_input').value=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2203\ndocument.getElementById('preq_input').value=" + '\'' + mMessageToSend + '\'', Encoding.UTF8);
 
                     enableTimer(2);
 
@@ -2177,7 +2342,7 @@ namespace Nilsa
                 {
                     setStatusMessage(statusText + "добавляем...");
                     browser.ExecuteScriptAsync("document.getElementsByClassName('flat_button button_wide')[0].click()");
-                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2003\ndocument.getElementsByClassName('flat_button button_wide')[0].click()", Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2003\ndocument.getElementsByClassName('flat_button button_wide')[0].click()", Encoding.UTF8);
                     enableTimer(1);
 
                 }
@@ -2199,14 +2364,14 @@ namespace Nilsa
             return browser.EvaluateScriptAsync("document.getElementById('" + id + "').value;").ContinueWith(x =>
                  {
                      //callToBrowser += "document.getElementById('" + id + "').value;\n";
-                     File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2025\ndocument.getElementById('" + id + "').value;\n", Encoding.UTF8);
+                     File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2025\ndocument.getElementById('" + id + "').value;\n", Encoding.UTF8);
                      var response = x.Result;
                      string retval = defval;
                      if (response.Success && response.Result != null)
                      {
                          var startDate = response.Result;
                          retval = startDate.ToString();
-                         File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
+                         File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), retval, Encoding.UTF8);
                      }
                      return retval;
                  });
@@ -2214,17 +2379,20 @@ namespace Nilsa
 
         private Task<string> getBrowserFieldValueByClassName(String id, String defval)
         {
-            return browser.EvaluateScriptAsync("document.getElementsByClassName('" + id + "')[0].innerText;").ContinueWith(x =>
+            var elementId = 0;
+            //для верстки вк
+            if (id.Equals("vkuiHeader__indicator vkuiCaption vkuiCaption--l-1 vkuiCaption--w-1")) { elementId = 1; }
+            return browser.EvaluateScriptAsync("document.getElementsByClassName('" + id + "')[" + elementId + "].innerText;").ContinueWith(x =>
             {
                 //callToBrowser += "document.getElementsByClassName('" + id + "')[0].innerText;\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2043\ndocument.getElementsByClassName('" + id + "')[0].innerText;\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2043\ndocument.getElementsByClassName('" + id + "')[0].innerText;\n", Encoding.UTF8);
                 var response = x.Result;
                 string retval = defval;
                 if (response.Success && response.Result != null)
                 {
                     var startDate = response.Result;
                     retval = startDate.ToString();
-                    File.WriteAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), x.ToString(), Encoding.UTF8);
+                    File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), x.ToString(), Encoding.UTF8);
                 }
                 return retval;
             });
@@ -2404,11 +2572,13 @@ namespace Nilsa
         private bool TryToClickElementByClassName(string elementID, int timerNextIdx = -1, int timerPrevousIdx = -1)
         {
             bool retval = false;
+            var htmlId = 0;
+            if (elementID.Equals("ProfileInfo__fullInfoButton vkuiTappable vkuiTappable--sizeX-regular vkuiTappable--hasActive vkuiTappable--mouse")) htmlId = 2;
             try
             {
-                browser.ExecuteScriptAsync("document.getElementsByClassName('" + elementID + "')[0].click()");
+                browser.ExecuteScriptAsync("document.getElementsByClassName('" + elementID + "')[" + htmlId + "].click()");
                 //callToBrowser += "document.getElementsByClassName('" + elementID + "')[0].click()\n";
-                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "line2234\ndocument.getElementsByClassName('" + elementID + "')[0].click()\n", Encoding.UTF8);
+                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() + "line2234\ndocument.getElementsByClassName('" + elementID + "')[0].click()\n", Encoding.UTF8);
 
                 if (timerNextIdx >= 0)
                     enableTimer(timerNextIdx);
@@ -3016,16 +3186,6 @@ namespace Nilsa
         private void groupBox1_Enter(object sender, EventArgs e)
         {
 
-        }
-
-        private async void toolStripButton1_Click(object sender, EventArgs e)
-        {
-            //await sendMessageTask();
-        }
-
-        private async void toolStripButton2_Click(object sender, EventArgs e)
-        {
-            //await BrowserReadFromRequestFile();
         }
     }
 }

@@ -32,6 +32,7 @@ namespace Nilsa
         public const uint GetContactAttributes = 17;
         public const uint GetPersoneFriendsCount = 18;
         public const uint AddToFriends = 19;
+        public const uint GetPersoneName = 20;
 
         public const uint None = 100;
         public const int Count = 20;

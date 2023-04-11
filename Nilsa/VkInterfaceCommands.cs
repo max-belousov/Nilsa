@@ -271,6 +271,7 @@ namespace Nilsa
 
         private void NilsaReadFromResponseFile()
         {
+            //File.Exists
             //раскоментить после реализации записи интерфейса в файл
             //do
             //{

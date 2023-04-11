@@ -431,6 +431,7 @@
     </Compile>
     <Compile Include="ImportContactsFromGroup.cs" />
     <Compile Include="NilsaOperatingMode.cs" />
+    <Compile Include="PersoneTinderAttributes.cs" />
     <Compile Include="PersoneVkAttributes.cs" />
     <Compile Include="ResponseFromInterface.cs" />
     <Compile Include="UI\AGCProgressBar.cs">

@@ -2085,8 +2085,8 @@ namespace Nilsa
             iPersUserID = 0;
             userLogin = "";
             userName = "";
-            userNameFamily = "";
-            userNameName = "";
+            //userNameFamily = "";
+            //userNameName = "";
             userPassword = "";
 
             if (!CheckLicense())
@@ -2130,7 +2130,7 @@ namespace Nilsa
                 sUsrSelPwd = "";
                 sUsrSelID = "";
             }
-
+            
             PersonenList_Load();
             PersonenList_SavePersoneLogin();
 
@@ -5085,7 +5085,7 @@ namespace Nilsa
             tbNewInMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
             tbInitContactDialogContacter.Enabled = iPersUserID >= 0 && (iContUserID >= 0 || iContUserID < -1);
             tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
-            UpdatePersoneParametersValues_Friends();
+            //UpdatePersoneParametersValues_Friends();
             UpdatePersoneParametersValues_Algorithm();
         }
 
@@ -5240,6 +5240,32 @@ namespace Nilsa
             labelPers1Family.Text = userNameFamily;
             labelPers1FIO.Text = userNameName + " " + userNameFamily;
             toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
+
+            //FormWebBrowser.Persone usrAdr = null;
+            //if (fwbVKontakte != null)
+            //{
+            //    if (fwbVKontakteFirstShow)
+            //    {
+            //        if (fwbVKontakte.personeAtrributes != null)
+            //            usrAdr = fwbVKontakte.personeAtrributes;
+            //    }
+            //}
+
+            //if (usrAdr != null)
+            //    if (usrAdr.id != fwbVKontakte.loggedPersoneID)
+            //        usrAdr = null;
+            //if (usrAdr == null)
+            //    usrAdr = loadPersoneAttributes(fwbVKontakte.loggedPersoneID);
+
+            //labelPers1Name.Text = usrAdr.FirstName;
+            //labelPers1Family.Text = usrAdr.LastName;
+            //labelPers1FIO.Text = usrAdr.FirstName + " " + usrAdr.LastName;
+            //toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
+
+
+
+            //contName = usrAdr.FirstName + " " + usrAdr.LastName;
+
             /*
             if (cbPers1.Items.Contains(userName))
                 cbPers1.SelectedIndex = cbPers1.Items.IndexOf(userName);
@@ -5619,6 +5645,29 @@ namespace Nilsa
             startTimers();
             return usrAdr;
         }
+
+        //private FormWebBrowser.Persone loadPersoneAttributes(long id)
+        //{
+        //    stopTimers();
+
+        //    ShowBrowserCommand();
+
+        //    fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPersoneAttributes, id);
+        //    fwbVKontakte.WaitResult();
+
+        //    var stringJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.GetPersoneAttributes, NilsaOperatingMode.SeleniumMode, id);
+        //    //раскоментить, когда научим интерфейс отвечать
+        //    //var result = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
+        //    //personeVkAtt = new PersoneVkAttributes(result.PersonId, result.FirstName, result.LastName,
+        //    //    result.Relation, result.BirthDate, result.City, result.Country, result.CountersFriends, result.Online, result.LastSeen);
+
+        //    FormWebBrowser.Persone usrAdr = fwbVKontakte.personeAtrributes;
+
+        //    HideBrowserCommand();
+
+        //    startTimers();
+        //    return fwbVKontakte.personeAtrributes;
+        //}
 
         private void UpdatePersoneParametersValues_Friends()
         {
@@ -6657,11 +6706,54 @@ namespace Nilsa
 
                             if (iPersUserID > 0)
                             {
+                                fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPersoneName, iPersUserID);
+                                if (!fwbVKontakteFirstShow)
+                                {
+                                    fwbVKontakteFirstShow = true;
+                                    fwbVKontakte.Show();
+                                }
+                                fwbVKontakte.WaitResult();
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "persname: " + fwbVKontakte.personeAtrributes.FirstName + fwbVKontakte.personeAtrributes.LastName, Encoding.UTF8);
+
+
+
                                 userName = PersonenList_GetUserField(iPersUserID.ToString(), 1);
-                                string[] name = userName.Split(' ');
-                                userNameName = name.Length > 0 ? name[0] : "";
-                                userNameFamily = name.Length > 1 ? name[1] : "";
+                                //string[] name = userName.Split(' ');
+                                //userNameName = name.Length > 0 ? name[0] : "";
+                                //userNameFamily = name.Length > 1 ? name[1] : "";
+
+                                //FormWebBrowser.Persone usrAdr = fwbVKontakte.personeAtrributes;
+
+                                userNameName = fwbVKontakte.personeAtrributes.FirstName;
+                                userNameFamily = fwbVKontakte.personeAtrributes.LastName;
+
+                                File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "persname by consts: " + userNameName + userNameFamily, Encoding.UTF8);
+
+                                //labelPers1Name.Text = userNameName;
+                                //labelPers1Family.Text = userNameFamily;
+                                //labelPers1FIO.Text = userNameName + " " + userNameFamily;
+                                //toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
+
+
+
+                                //userNameName = fwbVKontakte.personeAtrributes.FirstName;
+                                //userNameFamily = fwbVKontakte.personeAtrributes.LastName;
+
+                                //if (userNameName.Equals(""))
+                                //{
+                                //    //fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPersoneName, iPersUserID);
+                                //    //if (!fwbVKontakteFirstShow)
+                                //    //{
+                                //    //    fwbVKontakteFirstShow = true;
+                                //    //    fwbVKontakte.Show();
+                                //    //}
+                                //    //fwbVKontakte.WaitResult();
+                                //    userNameName = fwbVKontakte.personeAtrributes.FirstName;
+                                //    userNameFamily = fwbVKontakte.personeAtrributes.LastName;
+                                //}
+
                                 setStandardCaption();
+                                SetPersoneParametersValues();
                                 SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
                                 return true;
                             }
