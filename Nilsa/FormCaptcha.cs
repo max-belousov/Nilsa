@@ -34,7 +34,7 @@ namespace Nilsa
             if (doNotStart)
                 bStatusService = false;
             else
-                mFormMain.tbStopService_Click(null, null);
+                mFormMain.StopService();
 
             labelInfo.Text = NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_1", this.Name, "Загрузка капчи, пожалуйста, ждите...");
             _DownloadFileName = Path.Combine(Application.StartupPath, "captha_"+ sid.ToString() + ".bmp");
@@ -122,7 +122,7 @@ namespace Nilsa
             DeleteSIDPictures();
             timerRecognize.Enabled = false;
             if (bStatusService)
-                mFormMain.tbStartService_Click(null, null);
+                mFormMain.StartService();
         }
 
         private void FormCaptcha_Shown(object sender, EventArgs e)
@@ -132,7 +132,7 @@ namespace Nilsa
                 timerRecognize.Enabled = false;
                 DeleteSIDPictures();
                 if (bStatusService)
-                    mFormMain.tbStartService_Click(null, null);
+                    mFormMain.StartService();
                 DialogResult = DialogResult.OK;
                 Application.DoEvents();
             }
@@ -171,7 +171,7 @@ namespace Nilsa
                 CaptchaKey.Text = answerCaptchaClient;
                 timerRecognize.Enabled = false;
                 if (bStatusService)
-                    mFormMain.tbStartService_Click(null, null);
+                    mFormMain.StartService();
                 DialogResult = DialogResult.OK;
                 Application.DoEvents();
             }
@@ -189,7 +189,7 @@ namespace Nilsa
             DeleteSIDPictures();
             timerRecognize.Enabled = false;
             if (bStatusService)
-                mFormMain.tbStartService_Click(null, null);
+                mFormMain.StartService();
         }
     }
 }

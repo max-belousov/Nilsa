@@ -51,7 +51,7 @@ namespace Nilsa
             Application.EnableVisualStyles();
             mFormMain = _formmain;
             InitializeComponent();
-            button11.Visible = false;
+            //button11.Visible = false;
 
             NilsaUtils.Dictonary_ApplyAllControlsText(mFormMain.userInterface, this, this.Name);
             NilsaUtils.Dictonary_AddAllControlsText(mFormMain.userInterface, this, this.Name);
@@ -145,7 +145,7 @@ namespace Nilsa
             button7.Enabled = false;
             button8.Enabled = false;
             button12.Enabled = false;
-            button11.Enabled = false;
+            //button11.Enabled = false;
             button23.Enabled = false;
             buttonCopyParameters.Enabled = false;
             buttonPasteParameters.Enabled = false;
@@ -272,7 +272,7 @@ namespace Nilsa
             button5.Enabled = false;
             button7.Enabled = false;
             button8.Enabled = false;
-            button11.Enabled = false;
+            //button11.Enabled = false;
             button23.Enabled = false;
             buttonCopyParameters.Enabled = false;
             buttonPasteParameters.Enabled = false;
@@ -815,7 +815,7 @@ namespace Nilsa
                                     button5.Enabled = false;
                                     button7.Enabled = false;
                                     button8.Enabled = false;
-                                    button11.Enabled = false;
+                                    //button11.Enabled = false;
                                     buttonCopyParameters.Enabled = false;
                                     buttonPasteParameters.Enabled = false;
                                     toolStripButtonCopyToClipboard.Enabled = false;

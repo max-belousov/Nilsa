@@ -38,6 +38,31 @@ namespace Nilsa
         public const int Count = 20;
     }
 
+    struct TinderCommands
+    {
+        public const uint LoadPersone = 0;
+        public const uint PhoneAuthorization = 1;
+        public const uint EmailAuthorization = 2;
+        public const uint CheckAuthorization = 3;
+        public const uint GetPersoneAttribures = 4;
+        public const uint GetContactAttributes = 5;
+        public const uint FindNewContact = 6;
+        public const uint Like = 7;
+        public const uint Dislike = 8;
+        public const uint CheckIncomeLikes = 9;
+        public const uint GetIncomeLikeAttributes = 10;
+        public const uint AcceptPair = 11;
+        public const uint DeclinePair = 12;
+        public const uint GetPair = 13;
+        public const uint SendMessage = 14;
+        public const uint DeletePair = 15;
+        public const uint GetNewMessages = 16;
+
+        public const uint None = 100;
+        public const int Count = 17;
+    }
+
+
     static class NilsaUtils
     {
         public static String TextToString(String Text)

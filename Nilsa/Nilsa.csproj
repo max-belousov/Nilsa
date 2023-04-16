@@ -431,9 +431,10 @@
     </Compile>
     <Compile Include="ImportContactsFromGroup.cs" />
     <Compile Include="NilsaOperatingMode.cs" />
-    <Compile Include="PersoneTinderAttributes.cs" />
+    <Compile Include="TinderAssistent\PersoneTinderAttributes.cs" />
     <Compile Include="PersoneVkAttributes.cs" />
     <Compile Include="ResponseFromInterface.cs" />
+    <Compile Include="TinderAssistent\TinderResponse.cs" />
     <Compile Include="UI\AGCProgressBar.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -618,6 +619,7 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\social_tinder.png" />
     <None Include="Resources\base_filter.png" />
     <None Include="Resources\copy_parameters1.png" />
     <None Include="Resources\paste_parameters1.png" />

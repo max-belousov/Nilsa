@@ -1231,7 +1231,6 @@ namespace Nilsa
 
             autoclosedelay = 1;
         }
-
         private async Task getPersoneNameTask()
         {
             try
