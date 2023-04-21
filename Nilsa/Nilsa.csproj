@@ -430,10 +430,18 @@
       <DependentUpon>FormWebBrowser.cs</DependentUpon>
     </Compile>
     <Compile Include="ImportContactsFromGroup.cs" />
+    <Compile Include="InputForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="InputForm.Designer.cs">
+      <DependentUpon>InputForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="NilsaOperatingMode.cs" />
     <Compile Include="TinderAssistent\PersoneTinderAttributes.cs" />
     <Compile Include="PersoneVkAttributes.cs" />
     <Compile Include="ResponseFromInterface.cs" />
+    <Compile Include="TinderAssistent\Tinder.cs" />
+    <Compile Include="TinderAssistent\TinderRequest.cs" />
     <Compile Include="TinderAssistent\TinderResponse.cs" />
     <Compile Include="UI\AGCProgressBar.cs">
       <SubType>Component</SubType>
@@ -578,6 +586,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormWebBrowser.resx">
       <DependentUpon>FormWebBrowser.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="InputForm.resx">
+      <DependentUpon>InputForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

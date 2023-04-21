@@ -1021,7 +1021,12 @@ namespace Nilsa
                 browser.ExecuteScriptAsync("document.getElementsByClassName('mail_box_header_link')[0].click()");
                 WaitNSeconds(5);
                 //value = await getBrowserFieldValueByClassName("im-page--title-meta _im_page_peer_online", "");
-                value = browser.EvaluateScriptAsync("document.getElementsByClassName('im-page--title-meta _im_page_peer_online')[0].textContent").Result.Result.ToString();
+                try
+                {
+                    value = browser.EvaluateScriptAsync("document.getElementsByClassName('im-page--title-meta _im_page_peer_online')[0].textContent").Result.Result.ToString();
+
+                }
+                catch (Exception) { }
                 File.AppendAllText(Path.Combine(Application.StartupPath, "_answer_from_browser.txt"), "Sex: " + value, Encoding.UTF8);
 
                 //value = await getBrowserFieldValueByClassName("profile_online_lv", "")
@@ -1885,7 +1890,7 @@ namespace Nilsa
 
                             browser.EvaluateScriptAsync("document.getElementById('quick_login_form').submit()").ContinueWith(x =>
                             {
-                                File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() +  "line1779\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
+                                //File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), DateTime.Now.ToString() +  "line1779\ndocument.getElementById('quick_login_form').submit()", Encoding.UTF8);
                                 var response = x.Result;
                                 string retval = "";
                                 if (response.Success && response.Result != null)
@@ -2796,6 +2801,7 @@ namespace Nilsa
             bool done = false;
             try
             {
+                WaitNSeconds(2);
                 string source = await browser.GetBrowser().MainFrame.GetSourceAsync();
 
                 if (source.Contains("quick_login_form"))

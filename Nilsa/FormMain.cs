@@ -30,6 +30,7 @@ using Newtonsoft.Json;
 using System.Linq.Expressions;
 using static Nilsa.FormWebBrowser;
 using VkNet.Model;
+using Nilsa.TinderAssistent;
 
 namespace Nilsa
 {
@@ -61,13 +62,14 @@ namespace Nilsa
 		private long contactPictureID = -1;
 		public Image personPicture = null;
 		private long personPictureID = -1;
-
+		private Tinder _tinder;
 		private string sessionStartTime;
 
 		const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
+		private bool needResetName = true;
 
-		public const int MaxMarkerCount = 16;
+        public const int MaxMarkerCount = 16;
 
 		VkInterfaceCommands vkInterface;
 		PersoneVkAttributes personeVkAtt;
@@ -2096,6 +2098,7 @@ namespace Nilsa
 
 
 			ShowFormWait();
+			//ShowBrowserCommand();
 			//sLastRemovedMessage = "";
 			bSetupDone = false;
 			bSessionAnswerSended = false;
@@ -2190,7 +2193,6 @@ namespace Nilsa
 				notAutorize(sUsrSelLogin, sUsrSelPwd, sUsrSelID);
             }
 			needAutorize = false;
-
 
 
 			PersonenList_Load();
@@ -2330,7 +2332,7 @@ namespace Nilsa
 				setBtnB4(iPersUserID.ToString());
 			StopService();
 			HideFormWait();
-
+			//HideBrowserCommand();
 			//if(tbStartServiceIsClickedNow) StartService();
 
 		}
@@ -3167,13 +3169,13 @@ namespace Nilsa
 			fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetContactAttributes, id);
 			fwbVKontakte.WaitResult();
 
-			var stringJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.GetContactAttributes, NilsaOperatingMode.SeleniumMode, id);
+			//var stringJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.GetContactAttributes, NilsaOperatingMode.SeleniumMode, id);
 			//раскоментить, когда научим интерфейс отвечать
 			//var result = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON);
 			//personeVkAtt = new PersoneVkAttributes(result.PersonId, result.FirstName, result.LastName,
 			//    result.Relation, result.BirthDate, result.City, result.Country, result.CountersFriends, result.Online, result.LastSeen);
 
-			FormWebBrowser.Persone usrAdr = fwbVKontakte.contactAtrributes;
+			//FormWebBrowser.Persone usrAdr = fwbVKontakte.contactAtrributes;
 
 			HideBrowserCommand();
 
@@ -4747,13 +4749,18 @@ namespace Nilsa
 			iGroupAnswerCommentID = -1;
 			//labelCont1.Text = "";
 			//cbCont1.SelectedIndex = -1;
-			contName = contNameFamily = contNameName = "";
-			labelCont1Family.Text = "";
-			labelCont1Name.Text = "";
-			labelCont1FIO.Text = "";
-			sGroupAdditinalUsers = "";
-			toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
-			for (int i = 0; i < iContHarCount; i++)
+			if (needResetName)
+			{
+                contName = contNameFamily = contNameName = "";
+                labelCont1Family.Text = "";
+                labelCont1Name.Text = "";
+                labelCont1FIO.Text = "";
+                sGroupAdditinalUsers = "";
+                toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+            }
+            needResetName = true;
+
+            for (int i = 0; i < iContHarCount; i++)
 			{
 				lblContHarValues[i].Text = "";
 				//toolTipMessage.SetToolTip(lblContHarNames[i], lblContHarNames[i].Text);
@@ -5929,7 +5936,8 @@ namespace Nilsa
                         {
                             try
                             {
-                                var dbContName = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"));
+								photoContURL = "";
+								var dbContName = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"));
 								string sUID = "";
 								int i = 0;
                                 for (; i < dbContName.Count(); i++)
@@ -5948,12 +5956,20 @@ namespace Nilsa
                                 labelCont1Name.Text = contNameName;
                                 labelCont1FIO.Text = contName;
                                 toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
-                                var request = WebRequest.Create(photoContURL);
-                                using (var response = request.GetResponse())
-                                using (var stream = response.GetResponseStream())
-                                {
-                                    var bitmapPicture = Bitmap.FromStream(stream);
-                                    buttonEditContHarValues.BackgroundImage = bitmapPicture;
+								if (photoContURL == "")
+								{
+                                    SetUserPictureFromID(iContUserID, buttonEditContHarValues, false);
+
+                                }
+								else
+								{
+                                    var request = WebRequest.Create(photoContURL);
+                                    using (var response = request.GetResponse())
+                                    using (var stream = response.GetResponseStream())
+                                    {
+                                        var bitmapPicture = Bitmap.FromStream(stream);
+                                        buttonEditContHarValues.BackgroundImage = bitmapPicture;
+                                    }
                                 }
                             }
                             catch (Exception e)
@@ -6087,8 +6103,10 @@ namespace Nilsa
 				}
 			}
 			*/
-			SetUserPictureFromID(iContUserID, buttonEditContHarValues, false);
+			//SetUserPictureFromID(iContUserID, buttonEditContHarValues, false);
 			LoadContactParametersDescription();
+			HideFormWait();
+			HideBrowserCommand();
 		}
 
 		private void SavePersoneParametersDescription()
@@ -6255,10 +6273,10 @@ namespace Nilsa
 
 			if (iContUserID >= 0)
 			{
-				if (lstContHarValues.Count > 0)
+                File.WriteAllText(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), iContUserID.ToString() + "|" + contName + "|" + photoContURL, Encoding.UTF8);
+                if (lstContHarValues.Count > 0)
 				{
                     FileWriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + Convert.ToString(iContUserID) + ".txt"), lstContHarValues, Encoding.UTF8);
-                    File.WriteAllText(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), iContUserID.ToString() + "|" + contName + "|" + photoContURL, Encoding.UTF8);
                 }
             }
 			else
@@ -6770,7 +6788,7 @@ namespace Nilsa
 			{
 				if (bShowAutorizeForm)
 				{
-					HideFormWait();
+					//HideFormWait();
 
 					bool prevTopmost = false;
 					if (fwbVKontakte != null)
@@ -6832,7 +6850,7 @@ namespace Nilsa
 						userPassword = formEditPersoneDb.suSelPwd;
 						userID = formEditPersoneDb.suSelID;
 						bShowAutorizeForm = userPassword.Length == 0 || userLogin.Length == 0;
-						ShowFormWait();
+						//ShowFormWait();
 
 					}
 					else
@@ -6851,7 +6869,7 @@ namespace Nilsa
 							bShowAutorizeForm = false;
 							OnSocialNetworkChanged();
 						}
-						ShowFormWait();
+						//ShowFormWait();
 					}
 				}
 
@@ -6894,13 +6912,12 @@ namespace Nilsa
 							}
 
 							bool bAutorizeAccept = false;
-							if (curuid != -1 && curuid == fwbVKontakte.loggedPersoneID)
-								bAutorizeAccept = true;
+							if (curuid != -1 && curuid == fwbVKontakte.loggedPersoneID) bAutorizeAccept = true;
 
 							if (!bAutorizeAccept)
 							{
-								ShowBrowserCommand();
-								var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
+								//ShowBrowserCommand();
+								//var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
 
 								fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone);
 								if (!fwbVKontakteFirstShow)
@@ -6909,7 +6926,7 @@ namespace Nilsa
 									fwbVKontakte.Show();
 								}
 								fwbVKontakte.WaitResult();
-								HideBrowserCommand();
+								//HideBrowserCommand();
 								//vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
 								//var autorizeResultJSON = vkInterface.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, NilsaOperatingMode.SeleniumMode);
 								//var autorizeResult = JsonConvert.DeserializeObject<ResponseFromInterface>(autorizeResultJSON);
@@ -7042,7 +7059,7 @@ namespace Nilsa
 						{
 							ExceptionToLogList("Autorize", userLogin + "/" + userPassword, e);
 						}
-						finally { }
+						//finally { }
 					}
 					else if (SocialNetwork == 1)
 					{
@@ -7067,7 +7084,7 @@ namespace Nilsa
 							return true;
 						}
 					}
-					HideFormWait();
+					//HideFormWait();
 					if (SocialNetwork == 0)
 					{
 						if (MessageBox.Show("Авторизация не прошла. Пожалуйста, проверьте правильность логина и пароля для Авторизации, либо выберите Другой Персонаж для входа.\n\n Скопировать Контактёров этого Персонажа перед выбором другого Персонажа Мастер Персонажу?", NilsaUtils.Dictonary_GetText(userInterface, "messageboxText_15", this.Name, "NILSA - Ошибка авторизации"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
@@ -7087,7 +7104,7 @@ namespace Nilsa
 					}
 					else
 						MessageBox.Show(NilsaUtils.Dictonary_GetText(userInterface, "messageboxText_14", this.Name, "Авторизация не прошла. Пожалуйста, проверьте правильность логина и пароля для Авторизации, либо выберите Другой Персонаж для входа."), NilsaUtils.Dictonary_GetText(userInterface, "messageboxText_15", this.Name, "NILSA - Ошибка авторизации"));
-					ShowFormWait();
+					//ShowFormWait();
 					bShowAutorizeForm = true;
 				}
 			} while (true);
@@ -7272,9 +7289,11 @@ namespace Nilsa
                     //}
                     //else
                     //    MessageBox.Show(NilsaUtils.Dictonary_GetText(userInterface, "messageboxText_14", this.Name, "Авторизация не прошла. Пожалуйста, проверьте правильность логина и пароля для Авторизации, либо выберите Другой Персонаж для входа."), NilsaUtils.Dictonary_GetText(userInterface, "messageboxText_15", this.Name, "NILSA - Ошибка авторизации"));
-                    ShowFormWait();
-                    bShowAutorizeForm = true;
+                    //ShowFormWait();
+                    //bShowAutorizeForm = true;
                 }
+                HideFormWait();
+				HideBrowserCommand();
             } while (true);
 
             //return false;
@@ -11223,8 +11242,77 @@ namespace Nilsa
 			}
 			return "-1";
 		}
+		//дописать айди перса
+		public void UpdatePersoneName()
+		{
+            fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPersoneName, iPersUserID);
+            fwbVKontakte.WaitResult();
+			userNameName = fwbVKontakte.personeAtrributes.FirstName;
+			userNameFamily = fwbVKontakte.personeAtrributes.LastName;
+			userName = userNameName + " " + userNameFamily;
+			SetPersoneParametersValues();
+			SavePersoneParamersValues();
+        }
 
-		private void tbSendOutMessage_Click(object sender, EventArgs e)
+        public void UpdatePersonePhoto()
+        {
+            fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPhotoURL, iPersUserID);
+            fwbVKontakte.WaitResult();
+			photoPersURL = fwbVKontakte.photoURL;
+            SetPersoneParametersValues();
+            SavePersoneParamersValues();
+        }
+
+        public void UpdateContName()
+        {
+            fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetContactAttributes, iContUserID);
+            fwbVKontakte.WaitResult();
+			contNameName = fwbVKontakte.contactAtrributes.FirstName;
+            contNameFamily = fwbVKontakte.contactAtrributes.LastName;
+			contName = contNameName + " " + contNameFamily;
+            labelCont1Family.Text = contNameFamily;
+            labelCont1Name.Text = contNameName;
+            labelCont1FIO.Text = contName;
+            toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+            needResetName = false;
+            //SetContactParametersValues();
+            //SaveContactParamersValues();
+            File.WriteAllText(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), iContUserID.ToString() + "|" + contName + "|" + photoContURL, Encoding.UTF8);
+        }
+
+        public void UpdateContPhoto()
+        {
+            fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPhotoURL, iContUserID);
+            fwbVKontakte.WaitResult();
+            photoContURL = fwbVKontakte.photoURL;
+            var request = WebRequest.Create(photoContURL);
+            using (var response = request.GetResponse())
+            using (var stream = response.GetResponseStream())
+            {
+                var bitmapPicture = Bitmap.FromStream(stream);
+                buttonEditContHarValues.BackgroundImage = bitmapPicture;
+            }
+            //SaveContactParamersValues();
+            needResetName = false;
+            File.WriteAllText(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), iContUserID.ToString() + "|" + contName + "|" + photoContURL, Encoding.UTF8);
+        }
+
+		public void LoadPersoneTinder()
+		{
+
+		}
+
+        //     public void UpdatePersoneFriendsCount()
+        //     {
+        //         fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.GetPersoneFriendsCount, iPersUserID);
+        //         fwbVKontakte.WaitResult();
+        //         SetPersoneParametersValues();
+        //         SavePersoneParamersValues();
+        //UpdatePersoneParametersValues_Friends();
+        //     }
+
+
+        private void tbSendOutMessage_Click(object sender, EventArgs e)
 		{
 			if (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0)
 			{
@@ -11295,15 +11383,18 @@ namespace Nilsa
 
 					ApplyEQOutMessageMarker();
 					SaveLastMessage();
-
-					if ((cmd_line.StartsWith("like_")) || cmd_line.StartsWith("authorize_VK") || (cmd_line.StartsWith("join_community")) || 
+                    // todo: команды: update_cont_photo; update_cont_name; update_pers_friendscount;update_cont_friendscount
+                    if ((cmd_line.StartsWith("like_")) || (cmd_line.StartsWith("authorize_vk"))  || (cmd_line.StartsWith("join_community")) || 
 						(cmd_line.StartsWith("remove_delayed_messages")) || (cmd_line.StartsWith("command1_operator")) || 
 						(cmd_line.StartsWith("save_contacter")) || (cmd_line.StartsWith("load_contacter")) || (cmd_line.StartsWith("command2_operator")) || 
 						(cmd_line.StartsWith("command3_operator")) || (cmd_line.StartsWith("repost_ava")) || (cmd_line.StartsWith("send_operator")) || 
 						(cmd_line.StartsWith("info_operator")) || (cmd_line.StartsWith("resend_operator")) || (cmd_line.StartsWith("leave_community")) || 
 						(cmd_line.StartsWith("repost_wall")) || (cmd_line.StartsWith("repost_group")) || (cmd_line.StartsWith("like_wall")) || 
-						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) || (cmd_line.StartsWith("friends_delete")))
-					{
+						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) || (cmd_line.StartsWith("friends_delete")) || 
+						(cmd_line.StartsWith("update_pers_photo")) || (cmd_line.StartsWith("update_pers_name")) || (cmd_line.StartsWith("update_cont_name")) || 
+						(cmd_line.StartsWith("update_cont_photo")) || (cmd_line.StartsWith("update_pers_friendscount")) || (cmd_line.StartsWith("update_cont_friendscount")) || 
+						(cmd_line.StartsWith("loadpersonetinder")) || (cmd_line.StartsWith("phoneauthorization")))
+                    {
 						if (cmd_line.StartsWith("remove_delayed_messages")) // Done!
 						{
 							bool bStatusService = !tbStartService.Enabled;
@@ -11317,26 +11408,189 @@ namespace Nilsa
 							if (bStatusService)
 								StartService();
 						}
-						else if (cmd_line.StartsWith("authorize_VK")) 
+						else if (cmd_line.StartsWith("authorize_vk")) 
 						{
-                            MessageBox.Show("Авторизоваться");
                             bool bStatusService = !tbStartService.Enabled;
 							StopService();
 
-							if (iPersUserID >= 0 && SocialNetwork == 0)
+                            MessageBox.Show("Авторизоваться");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
 							{
 								//ShowBrowserCommand();
 								//fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.LoginPersone, iContUserID);
 								//fwbVKontakte.WaitResult();
 								//MessageBox.Show("Команда авторизации");
 								//HideBrowserCommand();
-								Autorize(userLogin, userPassword, userID);
-							}
+								ShowBrowserCommand();
+								needAutorize = true;
+								Setup(userLogin, userPassword, userID);
+								HideBrowserCommand();
+                                needAutorize = false;
+                                //Autorize(userLogin, userPassword, userID);
+                            }
 
-							if (bStatusService)
-								StartService();
+							//if (bStatusService)
+								//StartService();
 						}
-						else if (cmd_line.StartsWith("like_ava")) // Done!
+                        else if (cmd_line.StartsWith("phoneauthorization")) 
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+							string code = "";
+							//MessageBox.Show("","")
+                            InputForm inputForm = new InputForm();
+							inputForm.Text = "Верификация телефона";
+							//inputForm.label1.Text = "Введите проверочный код с номера телефона";
+							inputForm.Show("Введите проверочный код с номера телефона");
+							//code = inputForm.returnString;
+
+							if (inputForm.ShowDialog() == DialogResult.OK)
+							{
+								code = inputForm.returnString;
+							}
+                            code = inputForm.returnString;
+                            if (iPersUserID >= 0 && SocialNetwork == 0 && code != "")
+                            {
+                                ShowBrowserCommand();
+								if (_tinder == null)
+								{
+									_tinder = new Tinder(this);
+                                }
+                                _tinder.authorisationCode = code;
+                                _tinder.Setup(userLogin, userPassword, TinderCommands.PhoneAuthorization, NilsaOperatingMode.SeleniumMode);
+                                HideBrowserCommand();
+                            }
+                        }
+                        else if (cmd_line.StartsWith("loadpersonetinder"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("LoadPersoneTinder");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+                                if (_tinder == null)
+                                {
+                                    _tinder = new Tinder(this);
+                                }
+                                _tinder.Setup(userLogin, userPassword, TinderCommands.LoadPersone, NilsaOperatingMode.SeleniumMode);
+                                HideBrowserCommand();
+                            }
+                        }
+                        else if (cmd_line.StartsWith("update_pers_photo"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("Обновление фото персонажа");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+                                if (fwbVKontakte == null) MessageBox.Show("Для обновления данных персонажа необходимо предварительно авторизоваться",
+                                    "Ошибка. Не выполнена авторизация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                else
+                                {
+                                    UpdatePersonePhoto();
+                                }
+                                HideBrowserCommand();
+                            }
+                        }
+						//протестировать на работоспособность метода на обновление
+                        else if (cmd_line.StartsWith("update_pers_friendscount"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("Обновление количества друзей персонажа");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+                                if (fwbVKontakte == null) MessageBox.Show("Для обновления данных персонажа необходимо предварительно авторизоваться",
+                                    "Ошибка. Не выполнена авторизация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                else
+                                {
+                                    UpdatePersoneParametersValues_Friends();
+                                }
+                                HideBrowserCommand();
+                            }
+                        }
+                        else if (cmd_line.StartsWith("update_pers_name"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("Обновление имени персонажа");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+								if(fwbVKontakte == null) MessageBox.Show("Для обновления данных персонажа необходимо предварительно авторизоваться",
+									"Ошибка. Не выполнена авторизация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+								else
+								{
+									UpdatePersoneName();
+								}
+                                HideBrowserCommand();
+                            }
+
+                            //if (bStatusService)
+                            //StartService();
+                        }
+                        else if (cmd_line.StartsWith("update_cont_name"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("Обновление имени контактера");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+                                if (fwbVKontakte == null) MessageBox.Show("Для обновления данных персонажа необходимо предварительно авторизоваться",
+                                    "Ошибка. Не выполнена авторизация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                else
+                                {
+									UpdateContName();
+                                }
+                                HideBrowserCommand();
+                            }
+                        }
+                        else if (cmd_line.StartsWith("update_cont_photo"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("Обновление фото контактера");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+                                if (fwbVKontakte == null) MessageBox.Show("Для обновления данных персонажа необходимо предварительно авторизоваться",
+                                    "Ошибка. Не выполнена авторизация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                else
+                                {
+                                    UpdateContPhoto();
+                                }
+                                HideBrowserCommand();
+                            }
+                        }
+                        else if (cmd_line.StartsWith("update_cont_friendscount"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+
+                            MessageBox.Show("Обновление количества друзей контактера");
+                            if (iPersUserID >= 0 && SocialNetwork == 0)
+                            {
+                                ShowBrowserCommand();
+                                if (fwbVKontakte == null) MessageBox.Show("Для обновления данных персонажа необходимо предварительно авторизоваться",
+                                    "Ошибка. Не выполнена авторизация", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                else
+                                {
+                                    //UpdatePersonePhoto();
+                                }
+                                HideBrowserCommand();
+                            }
+                        }
+                        else if (cmd_line.StartsWith("like_ava")) // Done!
 						{
 							bool bStatusService = !tbStartService.Enabled;
 							StopService();
@@ -11385,11 +11639,10 @@ namespace Nilsa
 								fwb.ShowDialog();
 								*/
 								ShowBrowserCommand();
-
-								fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.LikeContacterAva, iContUserID);
+                                //MessageBox.Show("Лайкнуть аву");
+                                fwbVKontakte.Setup(userLogin, userPassword, WebBrowserCommand.LikeContacterAva, iContUserID);
 								//fwbVKontakte.Show();
 								fwbVKontakte.WaitResult();
-								MessageBox.Show("Лайкнуть аву");
 								HideBrowserCommand();
 								//}
 							}
@@ -14321,6 +14574,7 @@ namespace Nilsa
 					Setup();
 				}
 			}
+			HideFormWait();
 		}
 
 		private void buttonEditPersHarValues_Click_1(object sender, EventArgs e)
