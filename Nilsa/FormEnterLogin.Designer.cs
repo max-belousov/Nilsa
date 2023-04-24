@@ -109,7 +109,8 @@
             this.cbSocialNetwork.Items.AddRange(new object[] {
             "VKontakte",
             "NILSA",
-            "Facebook"});
+            "Facebook",
+            "Tinder"});
             this.cbSocialNetwork.Location = new System.Drawing.Point(10, 36);
             this.cbSocialNetwork.Name = "cbSocialNetwork";
             this.cbSocialNetwork.SelectorColor = System.Drawing.Color.PaleGoldenrod;

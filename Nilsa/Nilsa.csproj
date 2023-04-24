@@ -171,6 +171,7 @@
     </Compile>
     <Compile Include="Data\DBPerson.cs" />
     <Compile Include="Data\DBPersonListItem.cs" />
+    <Compile Include="Data\PersoneAllData.cs" />
     <Compile Include="FormCaptcha.cs">
       <SubType>Form</SubType>
     </Compile>
