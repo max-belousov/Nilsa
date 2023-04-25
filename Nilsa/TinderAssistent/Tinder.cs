@@ -9,8 +9,8 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using Nilsa.Data;
-
-
+using Nilsa.ConfigFiles;
+using System.Windows.Forms;
 
 namespace Nilsa.TinderAssistent
 {
@@ -53,19 +53,35 @@ namespace Nilsa.TinderAssistent
 		//private int iStep = -1;
 		private bool bStart = false;
 		public string authorisationCode = "";
+		private FilesNilsaToInterfacePath path;
 
 		public Tinder(FormMain formMain)
 		{
 			mFormMain = formMain;
 		}
 
-		public string Setup(String sLogin, String sPassword, uint _iCommand, string _iOperatingMode, PersoneAllData persone, string cookies = null,long _contacterID = -1, string _FirstList = "", string _SecondList = "", string _personeName = "")
+		private void SetPathConfig()
 		{
+			path = new FilesNilsaToInterfacePath();
+			var configPath = Path.Combine(Path.Combine(mFormMain.AppplicationStarupPath(), "Data"), "FilesNilsaToInterfacePath.json");
+            try
+			{
+				if (File.Exists(configPath)) 
+				{
+					var config = File.ReadAllText(configPath);
+					path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+				}
+			}
+			catch (Exception) { }
+		}
+		public string Setup(String sLogin, String sPassword, uint _iCommand, string _iOperatingMode, PersoneAllData persone, int socialNetwork,string cookies = null,long _contacterID = -1, string _FirstList = "", string _SecondList = "", string _personeName = "")
+		{
+			SetPathConfig();
 			errorSendMessage = false;
 			personeName = _personeName;
 			autoclosedelaydefault = 45;
 			tinderResponse = new TinderResponse();
-            tinderResponse.ResponseCode = "0";
+            tinderResponse.Status = 0;
             autoclosedelay = autoclosedelaydefault;
 			mCommand = _iCommand;
 			operatingMode = _iOperatingMode;
@@ -86,28 +102,28 @@ namespace Nilsa.TinderAssistent
 			switch (mCommand)
 			{
 				case TinderCommands.LoadPersone:
-					_tinderRequest = new TinderRequest(_iOperatingMode, "LoadPersone", _persPhone, _tinderId, persone, cookies);
+					_tinderRequest = new TinderRequest(_iOperatingMode, "LoadPersone", _persPhone, _tinderId, persone, socialNetwork, cookies);
 					NilsaWriteToRequestFile(_tinderRequest);
-					//NilsaReadFromResponseFile();
+					NilsaReadFromResponseFile();
 					break;
 
                 case TinderCommands.PhoneAuthorization:
-                    _tinderRequest = new TinderRequest(_iOperatingMode, "PhoneAuthorization", _persPhone, _tinderId, persone, cookies);
+                    _tinderRequest = new TinderRequest(_iOperatingMode, "PhoneAuthorization", _persPhone, _tinderId, persone, socialNetwork, cookies);
 					_tinderRequest.AuthorisationCode = authorisationCode;
                     NilsaWriteToRequestFile(_tinderRequest);
-                    //NilsaReadFromResponseFile();
+                    NilsaReadFromResponseFile();
                     break;
 
                 case TinderCommands.EmailAuthorization:
-                    _tinderRequest = new TinderRequest(_iOperatingMode, "EmailAuthorization", _persPhone, _tinderId, persone, cookies);
+                    _tinderRequest = new TinderRequest(_iOperatingMode, "EmailAuthorization", _persPhone, _tinderId, persone, socialNetwork, cookies);
                     _tinderRequest.AuthorisationCode = authorisationCode;
                     NilsaWriteToRequestFile(_tinderRequest);
-                    //NilsaReadFromResponseFile();
+                    NilsaReadFromResponseFile();
                     break;
                 case TinderCommands.CheckAuthorization:
-                    _tinderRequest = new TinderRequest(_iOperatingMode, "CheckAuthorization", _persPhone, _tinderId, persone, cookies);
+                    _tinderRequest = new TinderRequest(_iOperatingMode, "CheckAuthorization", _persPhone, _tinderId, persone, socialNetwork, cookies);
                     NilsaWriteToRequestFile(_tinderRequest);
-                    //NilsaReadFromResponseFile();
+                    NilsaReadFromResponseFile();
                     break;
 
                 case WebBrowserCommand.GetPhotoURL:                     // Done!
@@ -283,12 +299,12 @@ namespace Nilsa.TinderAssistent
             var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
             try
 			{
-				string requestPath = Path.Combine(Path.Combine(mFormMain.AppplicationStarupPath(), "output"), "_request_to_browser.txt");
+				string requestPath = Path.Combine(path.PathNilsa, path.FileData);
 
 				// Write the request to file
 
 				File.WriteAllText(requestPath, request, Encoding.UTF8);
-				File.Create(Path.Combine(Path.Combine(mFormMain.AppplicationStarupPath(), "output"), "flag.txt"));
+				File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
 
             }
 			catch (Exception) { }
@@ -296,20 +312,21 @@ namespace Nilsa.TinderAssistent
 
 		private void NilsaReadFromResponseFile()
 		{
-			string path = "";
+			string flagPath = Path.Combine(path.PathWebDriver, path.FileFlag);
 			try
 			{
-				while (!File.Exists(path)) WaitNSeconds(3);
+				while (!File.Exists(flagPath)) WaitNSeconds(3);
 
-				string responsePath = Path.Combine(mFormMain.AppplicationStarupPath(), "_response_from_browser.txt");
+				string responsePath = Path.Combine(path.PathWebDriver, path.FileData);
 
 				// Read the request from file
 
 				stringJSON = File.ReadAllText(responsePath);
-				File.Delete(path);
+				File.Delete(flagPath);
 			}
             catch (Exception) { }
             tinderResponse = JsonConvert.DeserializeObject<TinderResponse>(stringJSON);
+			MessageBox.Show($"Status: {tinderResponse.Status}\nMessage: {tinderResponse.Message}");
             //File.Exists
             //раскоментить после реализации записи интерфейса в файл
             //do

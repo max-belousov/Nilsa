@@ -169,6 +169,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>autogenerate_version_number.tt</DependentUpon>
     </Compile>
+    <Compile Include="ConfigFiles\FilesNilsaToInterfacePath.cs" />
     <Compile Include="Data\DBPerson.cs" />
     <Compile Include="Data\DBPersonListItem.cs" />
     <Compile Include="Data\PersoneAllData.cs" />

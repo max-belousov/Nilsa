@@ -40,7 +40,7 @@ namespace Nilsa
 		private static byte[] iv = new byte[8] { 1, 2, 3, 4, 5, 6, 7, 8 };
 
 		public bool bDebugVersion = false;
-		private string callBackCode = "-1";
+		//private int callBackCode;
 		private PersoneAllData personeAllData;
 		public bool FormWebBrowserEnabled = true;
 		public static int userAppId = 6157695;//4435644;//6268414;//6222822;//6222824;//6032776;//6183596; //4435644; // id приложения
@@ -7096,15 +7096,30 @@ namespace Nilsa
 					}
                     if (SocialNetwork == 3)
                     {
+						//временная мера, кукис лежат в пароле
+						cookiesTinder = personeAllData.Password;
+						if (_tinder == null)
+                        {
+                            _tinder = new Tinder(this);
+                        }
                         try
                         {
 							if (cookiesTinder == "" || cookiesTinder == null)
 							{
-								CommandLoadPersoneTinder();
-								if (callBackCode.Equals("200")) CommandPhoneAuthorisation();
-								if (callBackCode.Equals("200")) CommandEmailAuthorisation();
-							}
+								CommandLoadPersoneTinder(); //_tinder.tinderResponse.Status
+                                                            //                        if (callBackCode.Equals("200")) CommandPhoneAuthorisation();
+                                                            //if (callBackCode.Equals("200")) CommandEmailAuthorisation();
+
+                                if (_tinder.tinderResponse.Status == 200) CommandPhoneAuthorisation();
+                                if (_tinder.tinderResponse.Status == 200) CommandEmailAuthorisation();
+                            }
 							else CommandCheckAuthorisation();
+
+							if (_tinder.tinderResponse.Status == 200)
+							{
+                                iPersUserID = 1;
+								MessageBox.Show("Успешная авторизация в тиндер\nFormMain.Setup.Authorize Line7166");
+                            }
 
                             if (iPersUserID > 0)
                             {
@@ -11383,9 +11398,9 @@ namespace Nilsa
                 {
                     _tinder = new Tinder(this);
                 }
-                _tinder.Setup(userLogin, userPassword, TinderCommands.LoadPersone, NilsaOperatingMode.SeleniumMode, personeAllData);
+                _tinder.Setup(userLogin, userPassword, TinderCommands.LoadPersone, NilsaOperatingMode.SeleniumMode, personeAllData, SocialNetwork);
                 HideBrowserCommand();
-				callBackCode = _tinder.tinderResponse.ResponseCode;
+				//callBackCode = _tinder.tinderResponse.Status;
             }
         }
 
@@ -11412,8 +11427,8 @@ namespace Nilsa
                     _tinder = new Tinder(this);
                 }
                 _tinder.authorisationCode = code;
-                _tinder.Setup(userLogin, userPassword, TinderCommands.PhoneAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData);
-                callBackCode = _tinder.tinderResponse.ResponseCode;
+                _tinder.Setup(userLogin, userPassword, TinderCommands.PhoneAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData, SocialNetwork);
+                //callBackCode = _tinder.tinderResponse.Status;
                 HideBrowserCommand();
             }
         }
@@ -11441,8 +11456,8 @@ namespace Nilsa
                     _tinder = new Tinder(this);
                 }
                 _tinder.authorisationCode = code;
-                _tinder.Setup(userLogin, userPassword, TinderCommands.EmailAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData);
-                callBackCode = _tinder.tinderResponse.ResponseCode;
+                _tinder.Setup(userLogin, userPassword, TinderCommands.EmailAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData, SocialNetwork);
+                //callBackCode = _tinder.tinderResponse.Status;
                 HideBrowserCommand();
             }
         }
@@ -11457,9 +11472,9 @@ namespace Nilsa
                     _tinder = new Tinder(this);
                 }
 				//решено для тиндера передавать кукис в пароле
-                _tinder.Setup(userLogin, userPassword, TinderCommands.CheckAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData, personeAllData.Password);
+                _tinder.Setup(userLogin, userPassword, TinderCommands.CheckAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData, SocialNetwork, personeAllData.Password);
+                //callBackCode = _tinder.tinderResponse.Status;
                 HideBrowserCommand();
-                callBackCode = _tinder.tinderResponse.ResponseCode;
             }
         }
         private void tbSendOutMessage_Click(object sender, EventArgs e)
