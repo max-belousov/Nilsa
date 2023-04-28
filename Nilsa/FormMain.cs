@@ -67,8 +67,10 @@ namespace Nilsa
 		private Tinder _tinder;
 		private string sessionStartTime;
 		public string cookiesTinder;
+		private bool _onChangePersoneStartServiceBool;
 
-		const bool externalCommandProcess = false; //!!!
+
+        const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
 		private bool needResetName = true;
 
@@ -236,7 +238,7 @@ namespace Nilsa
 		string labelOutEqMsgHarTitleValue_Text;
 		bool bSessionAnswerSended = false;
 
-		public static int SocialNetwork = 0; // 0 - VK, 1 - Local
+		public static int SocialNetwork;// = 0; // 0 - VK, 1 - Local
 
 		string PersonColor1;
 		string PersonColor2;
@@ -2101,6 +2103,7 @@ namespace Nilsa
 
 
 			ShowFormWait();
+			SocialNetwork = 3;
 			//ShowBrowserCommand();
 			//sLastRemovedMessage = "";
 			bSetupDone = false;
@@ -2484,7 +2487,7 @@ namespace Nilsa
 					ChangeModeWhenFree = 0;
 				}
 			}
-			toolStripButtonChangeModeWhenFree.Checked = lstPersoneChange.Count > 0 && SocialNetwork == 0;
+			toolStripButtonChangeModeWhenFree.Checked = lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/;
 			setChangeModeWhenFreeButtonIcon();
 		}
 
@@ -3582,7 +3585,7 @@ namespace Nilsa
 			else
 				SaveTimersSettings();
 
-			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 && SocialNetwork == 0)
+			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0)// && SocialNetwork == 0)
 			{
 				if (timerDefaultChangePersoneCycle != timersValues[7])
 				{
@@ -3593,7 +3596,7 @@ namespace Nilsa
 					timerChangePersone_Tick(null, null);
 				}
 			}
-			else if (lstPersoneChange.Count > 0 && SocialNetwork == 0)
+			else if (lstPersoneChange.Count > 0)// && SocialNetwork == 0)
 			{
 				if (timerDefaultChangePersoneCycle != timersValues[7] && timerDefaultChangePersoneCycle == 0)
 				{
@@ -7117,16 +7120,38 @@ namespace Nilsa
 
 							if (_tinder.tinderResponse.Status == 200)
 							{
-                                iPersUserID = 1;
-								MessageBox.Show("Успешная авторизация в тиндер\nFormMain.Setup.Authorize Line7166");
+								iPersUserID = 200; //успешно - далее переназначаем уже из нашей базы
+								MessageBox.Show("Успешная авторизация в соцсети");
                             }
 
                             if (iPersUserID > 0)
                             {
-                                userName = PersonenList_GetUserField(iPersUserID.ToString(), 1);
-                                SetStandardCaption();
-                                SetPersoneParametersValues();
-                                return true;
+                                String PersoneData = TinderGetUserRecord(userLogin, userPassword);
+                                if (PersoneData != null)
+                                {
+                                    var persId = NILSA_GetFieldFromStringRec(PersoneData, 0);
+                                    if (!persId.Equals("")) iPersUserID = Convert.ToInt64(persId);
+                                    else
+                                    {
+                                        persId = null;
+                                        iPersUserID = Convert.ToInt64(persId);
+                                    }
+                                    //iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
+                                    userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
+                                    if (userName.IndexOf(" ") > 0)
+                                    {
+                                        userNameName = userName.Substring(0, userName.IndexOf(" ")); ;
+                                        userNameFamily = userName.Substring(userName.IndexOf(" ") + 1);
+                                    }
+                                    else
+                                    {
+                                        userNameName = userName;
+                                        userNameFamily = "";
+                                    }
+                                    SetStandardCaption();
+                                    SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
+                                    return true;
+                                }
                             }
                         }
                         catch (Exception e)
@@ -7304,6 +7329,35 @@ namespace Nilsa
                         {
                             iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(sur, 0));
                             userName = NILSA_GetFieldFromStringRec(sur, 1);
+                            if (userName.IndexOf(" ") > 0)
+                            {
+                                userNameName = userName.Substring(0, userName.IndexOf(" ")); ;
+                                userNameFamily = userName.Substring(userName.IndexOf(" ") + 1);
+                            }
+                            else
+                            {
+                                userNameName = userName;
+                                userNameFamily = "";
+                            }
+                            SetStandardCaption();
+                            SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
+                            return true;
+                        }
+                    }
+					else if (SocialNetwork == 3)
+					{
+                        String PersoneData = TinderGetUserRecord(userLogin, userPassword);
+                        if (PersoneData != null)
+                        {
+							var persId = NILSA_GetFieldFromStringRec(PersoneData, 0);
+							if (!persId.Equals("")) iPersUserID = Convert.ToInt64(persId);
+							else
+							{
+								persId = null;
+								iPersUserID = Convert.ToInt64(persId);
+                            }
+							//iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
+                            userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
                             if (userName.IndexOf(" ") > 0)
                             {
                                 userNameName = userName.Substring(0, userName.IndexOf(" ")); ;
@@ -8069,7 +8123,8 @@ namespace Nilsa
 		}
 
 		List<String> lstNILSA_UserDB;
-		private void NILSA_LoadUserDB()
+        List<String> listTinderUserDB;
+        private void NILSA_LoadUserDB()
 		{
 			lstNILSA_UserDB = new List<String>();
 			if (File.Exists(Path.Combine(Application.StartupPath, "nilsa_userdb.txt")))
@@ -8096,8 +8151,24 @@ namespace Nilsa
 				NILSA_SaveUserDB();
 			}
 		}
+        private void TinderLoadUserDB()
+        {
+            listTinderUserDB = new List<String>();
+            if (File.Exists(Path.Combine(Application.StartupPath, "tinder_userdb.txt")))
+            {
+                try
+                {
+                    var srcFile = File.ReadAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"));
+                    listTinderUserDB = new List<String>(srcFile);
+                }
+                catch (Exception e)
+                {
+                    ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+                }
+            }
+        }
 
-		private void NILSA_SaveUserDB()
+        private void NILSA_SaveUserDB()
 		{
 			if (lstNILSA_UserDB.Count > 0)
 				FileWriteAllLines(Path.Combine(Application.StartupPath, "nilsa_userdb.txt"), lstNILSA_UserDB, Encoding.UTF8);
@@ -8157,7 +8228,22 @@ namespace Nilsa
 			return null;
 		}
 
-		public String NILSA_getUserRecord(String uID)
+        public String TinderGetUserRecord(String ulogin, String upwd)
+        {
+            TinderLoadUserDB();
+            var srec = "";
+            foreach (var c in listTinderUserDB)
+            {
+                if (c.EndsWith("|" + ulogin + "|" + upwd))
+                {
+                    srec = c;
+                    break;
+                }
+            }
+            return srec;
+        }
+
+        public String NILSA_getUserRecord(String uID)
 		{
 			NILSA_LoadUserDB();
 			foreach (String srec in lstNILSA_UserDB)
@@ -8344,7 +8430,7 @@ namespace Nilsa
 			int totalCount; // общее кол-во участников
 			int unreadCount;
 
-			if (timerChangePersoneCycle != 0 || timerDefaultChangePersoneCycle == 0 || lstPersoneChange.Count == 0 || SocialNetwork != 0)
+			if (timerChangePersoneCycle != 0 || timerDefaultChangePersoneCycle == 0 || lstPersoneChange.Count == 0)// || SocialNetwork != 0)
 			{
 				if (iContactsGroupsMode == 1)
 				{
@@ -11463,7 +11549,7 @@ namespace Nilsa
         }
 		public void CommandCheckAuthorisation()
 		{
-            MessageBox.Show("CheckAuthorisation");
+            //MessageBox.Show("CheckAuthorisation");
             if (iPersUserID >= 0 && SocialNetwork == 3)
             {
                 ShowBrowserCommand();
@@ -11602,13 +11688,15 @@ namespace Nilsa
                         {
                             bool bStatusService = !tbStartService.Enabled;
                             StopService();
-							CommandPhoneAuthorisation();
+                            ChangeSocialNetwork(3);
+                            CommandPhoneAuthorisation();
 
                         }
                         else if (cmd_line.StartsWith("emailauthorization"))
                         {
                             bool bStatusService = !tbStartService.Enabled;
                             StopService();
+                            ChangeSocialNetwork(3);
                             CommandEmailAuthorisation();
 
                         }
@@ -11616,16 +11704,17 @@ namespace Nilsa
                         {
                             bool bStatusService = !tbStartService.Enabled;
                             StopService();
-							//personeAllData = new PersoneAllData();
-							//lblPersHarValues[i]
-							CommandLoadPersoneTinder();
+                            ChangeSocialNetwork(3);
+                            //personeAllData = new PersoneAllData();
+                            //lblPersHarValues[i]
+                            CommandLoadPersoneTinder();
                         }
                         else if (cmd_line.StartsWith("authorizetinder"))
                         {
                             bool bStatusService = !tbStartService.Enabled;
                             StopService();
 							ChangeSocialNetwork(3);
-                            MessageBox.Show("Авторизоваться в тиндере");
+                            //MessageBox.Show("Авторизоваться в тиндере");
                             if (iPersUserID >= 0 && SocialNetwork == 3)
                             {
                                 //ShowBrowserCommand();
@@ -11638,6 +11727,8 @@ namespace Nilsa
                                 Setup(userLogin, userPassword, userID);
                                 HideBrowserCommand();
                                 needAutorize = false;
+                                if (_onChangePersoneStartServiceBool)
+                                    StartService();
                                 //Autorize(userLogin, userPassword, userID);
                             }
 
@@ -11646,7 +11737,8 @@ namespace Nilsa
                         {
                             bool bStatusService = !tbStartService.Enabled;
                             StopService();
-							CommandCheckAuthorisation();
+                            ChangeSocialNetwork(3);
+                            CommandCheckAuthorisation();
                         }
                         else if (cmd_line.StartsWith("update_pers_photo"))
                         {
@@ -13387,12 +13479,13 @@ namespace Nilsa
 
 		private void onChangePersoneByTimer(bool bDirection, bool _startservice, bool _bskipReinitDialogs = false)
 		{
+			_onChangePersoneStartServiceBool = _startservice;
 
-			setMonitorTime(true);
+            setMonitorTime(true);
 
 			if (!_bskipReinitDialogs)
 			{
-				if (lstPersoneChange.Count > 0 && SocialNetwork == 0)
+				if (lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/)
 				{
 					if (ChangeModeWhenFree == 2)
 					{
@@ -13483,7 +13576,7 @@ namespace Nilsa
 
 			Random rnd = new Random();
 			bool bAutorizeAccept = false;
-			while (randomizeRotatePersonenShuffle || lstWork.Count > 1)
+			while (randomizeRotatePersonenShuffle || lstWork.Count >= 1)
 			{
 				bool bCanPresoneShuffleChange = false;
 				if (randomizeRotatePersonenShuffle)
@@ -13606,11 +13699,12 @@ namespace Nilsa
 					}
 
 					bAutorizeAccept = false;
-					if (curuid != -1 && curuid == fwbVKontakte.loggedPersoneID)
+					if (curuid != -1 /* && curuid == fwbVKontakte.loggedPersoneID*/)
 						bAutorizeAccept = true;
 
 					if (!bAutorizeAccept)
-						bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
+						//bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
+						MessageBox.Show("Need authorization in social network");
 
 					/*
 					if (SocialNetwork == 0 && FormWebBrowserEnabled && !bAutorizeAccept)
@@ -13710,7 +13804,12 @@ namespace Nilsa
 				StopService();
 				SaveReceivedMessagesPull();
 				SaveOutgoingMessagesPull();
-				Setup(sULogin, sUPwd, sUID);
+                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                SelectNextReceivedMessage(false);
+				//Setup(sULogin, sUPwd, sUID);
+				userLogin = sULogin;
+				userPassword = sUPwd;
+				userID = sUID;
 				if (_startservice)
 					StartService();
 			}
@@ -14047,7 +14146,7 @@ namespace Nilsa
 				else
 				{
 					tbSkipMessage_Click(null, null);
-					if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && SocialNetwork == 0 && bServiceStart)
+					if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
 					{
 						bNotChanged = false;
 						onChangePersoneByTimer(true, true);
@@ -14140,7 +14239,7 @@ namespace Nilsa
 
 			timerCountersStart.Enabled = true;
 
-			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 && SocialNetwork == 0) timerChangePersone.Enabled = true;
+			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/) timerChangePersone.Enabled = true;
 
 			bServiceStart = true;
 
@@ -14594,7 +14693,7 @@ namespace Nilsa
 			}
 			formEditPersonenDB.iContHarCount = iPersHarCount;
 			formEditPersonenDB.iContHarAttrCount = iPersHarAttrCount;
-			formEditPersonenDB.Setup(iPersUserID.ToString() + " (" + userLogin + ", " + userPassword + ")", iPersUserID, true);
+			formEditPersonenDB.Setup(iPersUserID.ToString() + " (" + userLogin + ", " + userPassword + ")", iPersUserID);
 
 			if (lstPersoneChange.Count > 0)
 			{
@@ -14650,6 +14749,8 @@ namespace Nilsa
 				LoadPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
+				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+				SelectNextReceivedMessage(false);
 				Setup(formEditPersonenDB.suSelLogin, formEditPersonenDB.suSelPwd, formEditPersonenDB.suSelID);
             }
 			else if (formEditPersonenDB.bNeedPersoneReread)
@@ -14661,6 +14762,8 @@ namespace Nilsa
 				LoadPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
+				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+				//SelectNextReceivedMessage(false);
 				Setup(userLogin, userPassword, userID);
             }
 			else
@@ -14675,7 +14778,10 @@ namespace Nilsa
 					LoadAlgorithmSettings();
 					StartAnswerTimer();
 					onAfterPersonenListChanged();
-				}
+                    lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+					_onChangePersoneStartServiceBool = true;
+                    SelectNextReceivedMessage(false);
+                }
 				else
 				{
 					StopService();
@@ -15537,7 +15643,7 @@ namespace Nilsa
 			}
 			return formEditPersonenDB.bNeedPersoneChange;
 		}
-
+		
 		private void OnSocialNetworkChanged()
 		{
 			if (SocialNetwork == 1)
@@ -15559,13 +15665,13 @@ namespace Nilsa
 			}
 			else if (SocialNetwork == 3)
 			{
-				tbChangeCommunicationModeGroups.Enabled = false;
+				tbChangeCommunicationModeGroups.Enabled = true;
 				tbChangeSocialNetwork.Image = global::Nilsa.Properties.Resources.social_tinder;
 
-				iContactsGroupsMode = 0;
-				tbChangeCommunicationMode.Image = Nilsa.Properties.Resources._mode_contacter;
-				toolStripButtonChangeModeWhenFree.Checked = lstPersoneChange.Count > 0 && SocialNetwork == 3;
-                if (fwbVKontakte != null) fwbVKontakte.Close();
+				iContactsGroupsMode = (lstPersoneChange.Count > 0 && SocialNetwork == 3) ? (ChangeModeWhenFree < 2 ? ChangeModeWhenFree : 1) : 0;
+                tbChangeCommunicationMode.Image = Nilsa.Properties.Resources._mode_contacter;
+				toolStripButtonChangeModeWhenFree.Checked = lstPersoneChange.Count > 0;// && SocialNetwork == 3;
+                fwbVKontakte?.Close();
             }
 		}
 
@@ -15599,7 +15705,7 @@ namespace Nilsa
 				tbChangeCommunicationMode.Image = Nilsa.Properties.Resources._mode_contacter;
 				tbChangeCommunicationModeGroups.Enabled = false;
 				tbChangeSocialNetwork.Image = global::Nilsa.Properties.Resources.social_tinder;
-				MessageBox.Show("Теперь используем Тиндер");
+				//MessageBox.Show("Теперь используем Тиндер");
 			}
 			else
 			{
@@ -18651,7 +18757,7 @@ namespace Nilsa
 		{
 			buttonEditAlgorithms_Click(null, null);
 		}
-
+		
 		private void labelInEqMsgHarTitleMarker_Click(object sender, EventArgs e)
 		{
 
@@ -18712,7 +18818,7 @@ namespace Nilsa
 			progressBarChangePersone.Invalidate();
 			Application.DoEvents();
 
-			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 && SocialNetwork == 0)
+			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0)// && SocialNetwork == 0)
 				timerChangePersone.Enabled = true;
 		}
 

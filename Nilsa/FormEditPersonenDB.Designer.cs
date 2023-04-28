@@ -56,7 +56,6 @@
             this.panel2 = new System.Windows.Forms.Panel();
             this.button9 = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
-            this.pbProgress = new Nilsa.AdvancedProgressBar();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
             this.button6 = new System.Windows.Forms.ToolStripButton();
@@ -118,6 +117,7 @@
             this.bwProgress = new System.ComponentModel.BackgroundWorker();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.pbProgress = new Nilsa.AdvancedProgressBar();
             this.groupBox1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.panel3.SuspendLayout();
@@ -205,6 +205,7 @@
             this.imageList_lvList.Images.SetKeyName(0, "social_vkontakte.png");
             this.imageList_lvList.Images.SetKeyName(1, "social_nilsa.png");
             this.imageList_lvList.Images.SetKeyName(2, "social_facebook.png");
+            this.imageList_lvList.Images.SetKeyName(3, "social_tinder.png");
             // 
             // panel2
             // 
@@ -239,16 +240,6 @@
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(250, 28);
             this.panel3.TabIndex = 33;
-            // 
-            // pbProgress
-            // 
-            this.pbProgress.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pbProgress.Location = new System.Drawing.Point(0, 0);
-            this.pbProgress.Name = "pbProgress";
-            this.pbProgress.Size = new System.Drawing.Size(250, 28);
-            this.pbProgress.Step = 1;
-            this.pbProgress.TabIndex = 18;
-            this.pbProgress.Visible = false;
             // 
             // textBox1
             // 
@@ -765,12 +756,14 @@
             // 
             this.tbShowMode.AutoSize = false;
             this.tbShowMode.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tbShowMode.Enabled = false;
             this.tbShowMode.Image = global::Nilsa.Properties.Resources.nilsa_pers;
             this.tbShowMode.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbShowMode.Margin = new System.Windows.Forms.Padding(0);
             this.tbShowMode.Name = "tbShowMode";
             this.tbShowMode.Size = new System.Drawing.Size(50, 50);
             this.tbShowMode.Text = "Все социальные сети";
+            this.tbShowMode.Visible = false;
             this.tbShowMode.Click += new System.EventHandler(this.tbShowMode_Click);
             // 
             // button8
@@ -791,12 +784,14 @@
             this.button11.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.button11.AutoSize = false;
             this.button11.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.button11.Enabled = false;
             this.button11.Image = global::Nilsa.Properties.Resources._select_personen1;
             this.button11.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.button11.Margin = new System.Windows.Forms.Padding(0);
             this.button11.Name = "button11";
             this.button11.Size = new System.Drawing.Size(50, 50);
             this.button11.Text = "Выбрать Персонажи";
+            this.button11.Visible = false;
             this.button11.Click += new System.EventHandler(this.button11_Click);
             // 
             // bwProgress
@@ -806,6 +801,16 @@
             this.bwProgress.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bwProgress_DoWork);
             this.bwProgress.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.bwProgress_ProgressChanged);
             this.bwProgress.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.bwProgress_RunWorkerCompleted);
+            // 
+            // pbProgress
+            // 
+            this.pbProgress.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pbProgress.Location = new System.Drawing.Point(0, 0);
+            this.pbProgress.Name = "pbProgress";
+            this.pbProgress.Size = new System.Drawing.Size(250, 28);
+            this.pbProgress.Step = 1;
+            this.pbProgress.TabIndex = 18;
+            this.pbProgress.Visible = false;
             // 
             // FormEditPersonenDB
             // 

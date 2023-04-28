@@ -15,13 +15,13 @@ using VkNet;
 using System.Threading;
 using System.Diagnostics;
 using Nilsa.Data;
+using System.Security.Cryptography;
 
 namespace Nilsa
 {
     public partial class FormEditPersonenDB : Form
     {
         FormMain mFormMain;
-
         public String[,] sContHar;
         public int iContHarCount = 16;
         public int iContHarAttrCount = 4;
@@ -42,7 +42,7 @@ namespace Nilsa
 
         public Boolean bNeedPersoneChange, bNeedPersoneReread;
         public String suSelLogin, suSelPwd, suSelID;
-        public int suSelSocialNetwork;
+        public int suSelSocialNetwork = 3;
 
         private string sUnknownAge;
 
@@ -117,6 +117,10 @@ namespace Nilsa
                     case 2:
                         tbShowMode.Image = Nilsa.Properties.Resources.social_facebook;
                         tbShowMode.Text = "Facebook";
+                        break;
+                    case 3:
+                        tbShowMode.Image = Nilsa.Properties.Resources.social_tinder;
+                        tbShowMode.Text = "Tinder";
                         break;
                 }
             }
@@ -1037,13 +1041,13 @@ namespace Nilsa
 
         private void button6_Click(object sender, EventArgs e)
         {
-            FormEnterLogin fel = new FormEnterLogin();
+            FormEnterLogin formEnterLogin = new FormEnterLogin();
 
-            if (fel.ShowDialog() == DialogResult.OK)
+            if (formEnterLogin.ShowDialog() == DialogResult.OK)
             {
-                String sULogin = fel.tbLogin.Text;
-                String sUPwd = fel.tbPassword.Text;
-                int iSocialNetwork = fel.cbSocialNetwork.SelectedIndex;
+                String sULogin = formEnterLogin.tbLogin.Text;
+                String sUPwd = formEnterLogin.tbPassword.Text;
+                int iSocialNetwork = formEnterLogin.cbSocialNetwork.SelectedIndex;
 
                 if (iSocialNetwork == 1)
                 {
@@ -1352,6 +1356,36 @@ namespace Nilsa
                     if (FormMain.SocialNetwork == 0 && iPersUserID >= 0)
                         AutorizeVK(mFormMain.userLogin, mFormMain.userPassword);
                 }
+                else if (iSocialNetwork == 3)
+                {
+                    //доработать, сделано первично
+                    String srec = Tinder_getUserRecord(sULogin, sUPwd);
+
+                    if (srec != null)
+                    {
+                        String sUID = NILSA_GetFieldFromStringRec(srec, 0);
+                        String sUName = NILSA_GetFieldFromStringRec(srec, 1);
+                        if (PersonenList_GetUserIdx(iSocialNetwork, sUID) >= 0)
+                        {
+                            MessageBox.Show("Персонаж с указанными данными уже есть в базе. Если он не отображается, смените настройки фильтра базы персонажей по характеристикам...", NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_11", this.Name, "Добавление Персонажа"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            sUID = lstTinder_UserDB.Count().ToString();
+                            PersonenList_AddUserToVisualList(PersonenList_AddUser(iSocialNetwork, sUID, sUName, sULogin, sUPwd));
+
+                            lvList.SelectedIndices.Clear();
+                            if (lvList.Items.Count > 0)
+                            {
+                                lvList.SelectedIndices.Add(lvList.Items.Count - 1);
+                                lvList.EnsureVisible(lvList.Items.Count - 1);
+                            }
+                            lvList_ItemChecked(null, null);
+                        }
+                    }
+                    else
+                        MessageBox.Show("Ошибка запроса Персонажа с указанными данными...", NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_11", this.Name, "Добавление Персонажа"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
 
             //string value = "";
@@ -1553,6 +1587,7 @@ namespace Nilsa
         }
 
         List<String> lstNILSA_UserDB;
+        List<String> lstTinder_UserDB;
         private void NILSA_LoadUserDB()
         {
             lstNILSA_UserDB = new List<String>();
@@ -1569,10 +1604,27 @@ namespace Nilsa
             }
         }
 
+        private void Tinder_LoadUserDB()
+        {
+            lstTinder_UserDB = new List<String>();
+            if (File.Exists(Path.Combine(Application.StartupPath, "tinder_userdb.txt")))
+            {
+                var srcFile = File.ReadAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"));
+                lstTinder_UserDB = new List<String>(srcFile);
+            }
+        }
+
         private void NILSA_SaveUserDB()
         {
             if (lstNILSA_UserDB.Count > 0)
                 File.WriteAllLines(Path.Combine(Application.StartupPath, "nilsa_userdb.txt"), lstNILSA_UserDB, Encoding.UTF8);
+
+        }
+
+        private void Tinder_SaveUserDB()
+        {
+            if (lstTinder_UserDB.Count > 0)
+                File.WriteAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"), lstTinder_UserDB, Encoding.UTF8);
 
         }
 
@@ -1596,6 +1648,20 @@ namespace Nilsa
                     return srec;
             }
             return null;
+        }
+        public String Tinder_getUserRecord(String uLogin, String uPassword)
+        {
+            Tinder_LoadUserDB();
+            var srec = "";
+            foreach (var c in lstTinder_UserDB)
+            {
+                if (c.EndsWith("|" + uLogin + "|" + uPassword))
+                {
+                    srec = c;
+                    break;
+                }
+            }
+            return srec;
         }
 
         private String NILSA_GetFieldFromStringRec(String srec, int iFieldIdx)

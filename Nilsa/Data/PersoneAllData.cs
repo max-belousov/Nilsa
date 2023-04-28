@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nilsa.Data
 {
-    internal class PersoneAllData
+    internal class PersoneAllData //класс для сериализации в JSON и обработки всех характеристик персонажа
     {
         public PersoneAllData() { }
 

@@ -63,16 +63,18 @@ namespace Nilsa.TinderAssistent
 		private void SetPathConfig()
 		{
 			path = new FilesNilsaToInterfacePath();
-			var configPath = Path.Combine(Path.Combine(mFormMain.AppplicationStarupPath(), "Data"), "FilesNilsaToInterfacePath.json");
+            var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
+            //var configPath = @"Data\FilesNilsaToInterfacePath";
+
             try
-			{
-				if (File.Exists(configPath)) 
+            {
+				if (File.Exists(configPath))
 				{
 					var config = File.ReadAllText(configPath);
 					path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
 				}
 			}
-			catch (Exception) { }
+			catch (Exception e) { MessageBox.Show(e.Message); }
 		}
 		public string Setup(String sLogin, String sPassword, uint _iCommand, string _iOperatingMode, PersoneAllData persone, int socialNetwork,string cookies = null,long _contacterID = -1, string _FirstList = "", string _SecondList = "", string _personeName = "")
 		{
@@ -295,6 +297,7 @@ namespace Nilsa.TinderAssistent
             var settings = new JsonSerializerSettings
             {
                 DefaultValueHandling = DefaultValueHandling.Ignore,
+
             };
             var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
             try
