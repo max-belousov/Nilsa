@@ -11748,6 +11748,8 @@ namespace Nilsa
                             StopService();
                             ChangeSocialNetwork(3);
                             CommandCheckAuthorisation();
+                            if (_onChangePersoneStartServiceBool)
+                                StartService();
                         }
                         else if (cmd_line.StartsWith("update_pers_photo"))
                         {
@@ -13715,10 +13717,10 @@ namespace Nilsa
 					{
 						userLogin = sULogin;
                         userPassword = sUPwd;
-                        //userID = sUID;
-                        CommandCheckAuthorisation();
-                        //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
-                        //SelectNextReceivedMessage(false);
+                        userID = sUID;
+                        //CommandCheckAuthorisation();
+                        lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                        SelectNextReceivedMessage(false);
                         bAutorizeAccept = _autorizeSuccess;
                         //bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
                     }
@@ -13805,9 +13807,9 @@ namespace Nilsa
 
 			if (!bAutorizeAccept)
 			{
-                //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
-                //SelectNextReceivedMessage(false);
-                CommandCheckAuthorisation();
+                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                SelectNextReceivedMessage(false);
+                //CommandCheckAuthorisation();
                 bAutorizeAccept = _autorizeSuccess;
                 //AutorizeVK(userLogin, userPassword);
             }
@@ -13831,10 +13833,10 @@ namespace Nilsa
                 userLogin = sULogin;
                 userPassword = sUPwd;
                 userID = sUID;
-				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
-				SelectNextReceivedMessage(false);
-				//needAutorize = false;
-				//Setup(sULogin, sUPwd, sUID);
+				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+				//SelectNextReceivedMessage(false);
+				needAutorize = false;
+				Setup(sULogin, sUPwd, sUID);
 				if (_startservice)
 					StartService();
 			}
@@ -14774,9 +14776,10 @@ namespace Nilsa
 				LoadPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
-				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                needAutorize = false;
+                Setup(formEditPersonenDB.suSelLogin, formEditPersonenDB.suSelPwd, formEditPersonenDB.suSelID);
+                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
 				SelectNextReceivedMessage(false);
-				Setup(formEditPersonenDB.suSelLogin, formEditPersonenDB.suSelPwd, formEditPersonenDB.suSelID);
             }
 			else if (formEditPersonenDB.bNeedPersoneReread)
 			{
@@ -14787,11 +14790,12 @@ namespace Nilsa
 				LoadPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
+				needAutorize = false;
+				Setup(userLogin, userPassword, userID);
 				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
 				//SelectNextReceivedMessage(false);
-				Setup(userLogin, userPassword, userID);
-            }
-			else
+			}
+            else
 			{
 				PersonenList_Load();
 				userSelectUserIdx = PersonenList_GetUserIdx(iPersUserID.ToString()) + 1;
