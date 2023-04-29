@@ -16,7 +16,7 @@ namespace Nilsa
         {
             InitializeComponent();
             buttonOk.Enabled = false;
-            cbSocialNetwork.SelectedIndex = 0;
+            cbSocialNetwork.SelectedIndex = 3;
         }
 
         private void tbLogin_TextChanged(object sender, EventArgs e)

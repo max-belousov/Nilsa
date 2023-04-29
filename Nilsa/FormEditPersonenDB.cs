@@ -765,7 +765,6 @@ namespace Nilsa
                 lstPersonenList.Add(dbPerson);
 
             PersonenList_Store(iSocialNetworkID);
-
             return dbPerson;
         }
 
@@ -1381,10 +1380,12 @@ namespace Nilsa
                                 lvList.EnsureVisible(lvList.Items.Count - 1);
                             }
                             lvList_ItemChecked(null, null);
+                            lstTinder_UserDB.Add(lstPersonenList[lstPersonenList.Count() - 1].ToRecordString());
                         }
                     }
                     else
                         MessageBox.Show("Ошибка запроса Персонажа с указанными данными...", NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_11", this.Name, "Добавление Персонажа"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Tinder_SaveUserDB();
                 }
             }
 
