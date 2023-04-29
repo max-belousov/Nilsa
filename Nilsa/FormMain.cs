@@ -90,9 +90,11 @@ namespace Nilsa
 		public int iPersHarAttrCount = 4;
 		List<String> lstPersHarValues;
 		public long iPersUserID;
+		private long _loggedPersonId = -1;
+		private bool _autorizeSuccess = false;
 
-		//Label[] lblContHarNames;
-		PersoneLabel[] lblContHarValues;
+        //Label[] lblContHarNames;
+        PersoneLabel[] lblContHarValues;
 		public String[,] sContHar;
 		public int iContHarCount = 16;
 		public int iContHarAttrCount = 4;
@@ -7121,6 +7123,7 @@ namespace Nilsa
 							if (_tinder.tinderResponse.Status == 200)
 							{
 								iPersUserID = 200; //успешно - далее переназначаем уже из нашей базы
+								_autorizeSuccess = true;
 								MessageBox.Show("Успешная авторизация в соцсети");
                             }
 
@@ -7135,6 +7138,7 @@ namespace Nilsa
                                     {
                                         persId = null;
                                         iPersUserID = Convert.ToInt64(persId);
+										_loggedPersonId = iPersUserID;
                                     }
                                     //iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
                                     userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
@@ -11559,7 +11563,12 @@ namespace Nilsa
                 }
 				//решено для тиндера передавать кукис в пароле
                 _tinder.Setup(userLogin, userPassword, TinderCommands.CheckAuthorization, NilsaOperatingMode.SeleniumMode, personeAllData, SocialNetwork, personeAllData.Password);
-                //callBackCode = _tinder.tinderResponse.Status;
+				//callBackCode = _tinder.tinderResponse.Status;
+				if (_tinder.tinderResponse.Status == 200)
+				{
+                    _autorizeSuccess = true;
+					_loggedPersonId = iPersUserID;
+                }
                 HideBrowserCommand();
             }
         }
@@ -13699,14 +13708,22 @@ namespace Nilsa
 					}
 
 					bAutorizeAccept = false;
-					if (curuid != -1 /* && curuid == fwbVKontakte.loggedPersoneID*/)
+					if (curuid != -1 && curuid == _loggedPersonId)
 						bAutorizeAccept = true;
 
 					if (!bAutorizeAccept)
-						//bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
-						MessageBox.Show("Need authorization in social network");
+					{
+						userLogin = sULogin;
+                        userPassword = sUPwd;
+                        //userID = sUID;
+                        CommandCheckAuthorisation();
+                        //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                        //SelectNextReceivedMessage(false);
+                        bAutorizeAccept = _autorizeSuccess;
+                        //bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
+                    }
 
-					/*
+                    /*
 					if (SocialNetwork == 0 && FormWebBrowserEnabled && !bAutorizeAccept)
 					{
 						fwbVKontakte.Setup(sULogin, sUPwd, WebBrowserCommand.CheckPersonePage);
@@ -13716,7 +13733,7 @@ namespace Nilsa
 					}
 					*/
 
-					List<String> lstContHarCurrent = new List<String>();
+                    List<String> lstContHarCurrent = new List<String>();
 					if (File.Exists(Path.Combine(FormMain.sDataPath, "pers_" + getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt")))
 					{
 						try
@@ -13727,7 +13744,7 @@ namespace Nilsa
 							{
 								if (i == 14)
 								{
-									if (SocialNetwork == 0)
+									if (SocialNetwork == 3)
 									{
 										if (bAutorizeAccept)
 											lstContHarCurrent[i] = "15|" + "Active";
@@ -13766,10 +13783,10 @@ namespace Nilsa
 												lstContHarCurrent[i] = "15|" + "Failed";
 										}
 									}
-									else if (SocialNetwork == 1)
-										lstContHarCurrent[i] = "15|" + "Active";
+									//else if (SocialNetwork == 1)
+									//	lstContHarCurrent[i] = "15|" + "Active";
 
-									break;
+									//break;
 								}
 							}
 							FileWriteAllLines(Path.Combine(FormMain.sDataPath, "pers_" + FormMain.getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt"), lstContHarCurrent, Encoding.UTF8);
@@ -13787,9 +13804,16 @@ namespace Nilsa
 			}
 
 			if (!bAutorizeAccept)
-				AutorizeVK(userLogin, userPassword);
+			{
+                //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                //SelectNextReceivedMessage(false);
+                CommandCheckAuthorisation();
+                bAutorizeAccept = _autorizeSuccess;
+                //AutorizeVK(userLogin, userPassword);
+            }
 
-			setBtnB4(sUID);
+
+            setBtnB4(sUID);
 			if (sULogin.Length == 0 || sUPwd.Length == 0)
 			{
 				timerAnswerWaitingOff();
@@ -13804,12 +13828,13 @@ namespace Nilsa
 				StopService();
 				SaveReceivedMessagesPull();
 				SaveOutgoingMessagesPull();
-                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
-                SelectNextReceivedMessage(false);
+                userLogin = sULogin;
+                userPassword = sUPwd;
+                userID = sUID;
+				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+				SelectNextReceivedMessage(false);
+				//needAutorize = false;
 				//Setup(sULogin, sUPwd, sUID);
-				userLogin = sULogin;
-				userPassword = sUPwd;
-				userID = sUID;
 				if (_startservice)
 					StartService();
 			}
