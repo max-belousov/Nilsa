@@ -31,6 +31,8 @@ using System.Linq.Expressions;
 using static Nilsa.FormWebBrowser;
 using VkNet.Model;
 using Nilsa.TinderAssistent;
+using Nilsa.ConfigFiles;
+using Nilsa.NilsaAndInterface;
 
 namespace Nilsa
 {
@@ -68,7 +70,7 @@ namespace Nilsa
 		private string sessionStartTime;
 		public string cookiesTinder;
 		private bool _onChangePersoneStartServiceBool;
-
+		private InterfaceListener _interfaceListener = new InterfaceListener();
 
         const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
@@ -380,12 +382,12 @@ namespace Nilsa
 			Application.EnableVisualStyles();
 			sessionStartTime = DateTime.Now.ToString();
 			bInitStart = true;
-			//this.Location = new Point(0, 0);
-			//this.Size = Screen.PrimaryScreen.WorkingArea.Size;
-			//this.WindowState = FormWindowState.Maximized;
-			//this.Visible = false;
+            //this.Location = new Point(0, 0);
+            //this.Size = Screen.PrimaryScreen.WorkingArea.Size;
+            //this.WindowState = FormWindowState.Maximized;
+            //this.Visible = false;
 
-			LoadColorSettings();
+            LoadColorSettings();
 
 			lstContAllIDs = new List<string>();
 			lstContCurSesIDs = new List<string>();
@@ -1732,7 +1734,64 @@ namespace Nilsa
 			return "";
 		}
 
-		private int getLicenseType()
+
+        private FilesNilsaToInterfacePath SetPathConfig()
+        {
+            var path = new FilesNilsaToInterfacePath();
+            var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
+            //var configPath = @"Data\FilesNilsaToInterfacePath";
+
+            try
+            {
+                if (File.Exists(configPath))
+                {
+                    var config = File.ReadAllText(configPath);
+                    path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+                }
+            }
+            catch (Exception e) { MessageBox.Show(e.Message); }
+			return path;
+        }
+
+        private void NilsaWriteToRequestFile(TinderRequest tinderRequest)
+        {
+            var settings = new JsonSerializerSettings
+            {
+                DefaultValueHandling = DefaultValueHandling.Ignore,
+
+            };
+			var path = SetPathConfig();
+            var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
+            try
+            {
+                string requestPath = Path.Combine(path.PathNilsa, path.FileData);
+
+                // Write the request to file
+
+                File.WriteAllText(requestPath, request, Encoding.UTF8);
+                File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
+
+            }
+            catch (Exception) { }
+        }
+
+        private void NilsaWriteToRequestFile(string tinderRequest)
+        {
+            var path = SetPathConfig();
+            try
+            {
+                string requestPath = Path.Combine(path.PathNilsa, path.FileData);
+
+                // Write the request to file
+
+                File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
+                File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
+
+            }
+            catch (Exception) { }
+        }
+
+        private int getLicenseType()
 		{
 			if (sLicenseUser.StartsWith("NILS_"))
 				return LICENSE_TYPE_NILS;
@@ -4813,9 +4872,8 @@ namespace Nilsa
 
 			//? Зачистка подобного входящего и возможного исходящего сообщения
 			labelPersMsgCount.Text = lstReceivedMessages.Count.ToString();
-			if (lstReceivedMessages.Count > 0)
+            if (lstReceivedMessages.Count > 0)
 			{
-
 				String value = lstReceivedMessages[0];
 				iInMsgID = Convert.ToInt64(value.Substring(0, value.IndexOf("|")));
 				value = value.Substring(value.IndexOf("|") + 1);
@@ -11572,7 +11630,13 @@ namespace Nilsa
                 HideBrowserCommand();
             }
         }
+
         private void tbSendOutMessage_Click(object sender, EventArgs e)
+		{
+			tbSendOutMessageAction();
+        }
+
+        private void tbSendOutMessageAction()
 		{
 			if (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0)
 			{
@@ -11650,11 +11714,11 @@ namespace Nilsa
 						(cmd_line.StartsWith("command3_operator")) || (cmd_line.StartsWith("repost_ava")) || (cmd_line.StartsWith("send_operator")) || 
 						(cmd_line.StartsWith("info_operator")) || (cmd_line.StartsWith("resend_operator")) || (cmd_line.StartsWith("leave_community")) || 
 						(cmd_line.StartsWith("repost_wall")) || (cmd_line.StartsWith("repost_group")) || (cmd_line.StartsWith("like_wall")) || 
-						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) || (cmd_line.StartsWith("friends_delete")) || 
+						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) /*|| (cmd_line.StartsWith("friends_delete")) || 
 						(cmd_line.StartsWith("update_pers_photo")) || (cmd_line.StartsWith("update_pers_name")) || (cmd_line.StartsWith("update_cont_name")) || 
 						(cmd_line.StartsWith("update_cont_photo")) || (cmd_line.StartsWith("update_pers_friendscount")) || (cmd_line.StartsWith("update_cont_friendscount")) || 
 						(cmd_line.StartsWith("loadpersonetinder")) || (cmd_line.StartsWith("phoneauthorization")) || (cmd_line.StartsWith("authorizetinder")) ||
-                        (cmd_line.StartsWith("emailauthorization")) || (cmd_line.StartsWith("checkauthorization")))
+                        (cmd_line.StartsWith("emailauthorization")) || (cmd_line.StartsWith("checkauthorization"))*/)
                     {
 						if (cmd_line.StartsWith("remove_delayed_messages")) // Done!
 						{
@@ -13065,7 +13129,7 @@ namespace Nilsa
 
 				}// not delayed
 
-				if (lstOutgoingMessagesParts.Count > 0)
+                if (lstOutgoingMessagesParts.Count > 0)
 				{
 					timerPhysicalSendStart();
 
@@ -13092,10 +13156,26 @@ namespace Nilsa
 				else
 				{
 					timerPhysicalSendStart();
-					SelectNextReceivedMessage();
-				}
+                    //отправляем текст сообщения с подстановкой характеристик персонажа и контактера
+                    _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+                    lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
+                                                 //todo изменить id на универсального контактера
+                    lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + _interfaceListener.NilsaReadFromResponseFile());
+                    SelectNextReceivedMessage(false);
+                    //SelectNextReceivedMessage();
+                }
 
-				timerAnswerWaitingOn();
+                //отправляем текст сообщения с подстановкой характеристик персонажа и контактера
+                //_interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+                //lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
+                //todo изменить id на универсального контактера
+                //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + _interfaceListener.NilsaReadFromResponseFile());
+                //SelectNextReceivedMessage(false);
+
+                //NilsaWriteToRequestFile($"{{\n {SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\n}}");
+
+
+                timerAnswerWaitingOn();
 			}
 		}
 
@@ -13349,7 +13429,7 @@ namespace Nilsa
 				else
 				{
 					if (tbSendOutMessage.Enabled)
-						tbSendOutMessage_Click(null, null);
+						tbSendOutMessageAction();
 					else
 						tbSkipMessage_Click(null, null);
 				}
@@ -13715,14 +13795,16 @@ namespace Nilsa
 
 					if (!bAutorizeAccept)
 					{
-						userLogin = sULogin;
-                        userPassword = sUPwd;
-                        userID = sUID;
-                        //CommandCheckAuthorisation();
-                        lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
-                        SelectNextReceivedMessage(false);
-                        bAutorizeAccept = _autorizeSuccess;
-                        //bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
+						//userLogin = sULogin;
+						//                  userPassword = sUPwd;
+						//                  userID = sUID;
+						//CommandCheckAuthorisation();
+						//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+						//SelectNextReceivedMessage(false);
+						//bAutorizeAccept = _autorizeSuccess;
+						//bAutorizeAccept = AutorizeVK(sULogin, sUPwd);
+						bAutorizeAccept = true;
+						_loggedPersonId = curuid;
                     }
 
                     /*
@@ -13735,82 +13817,82 @@ namespace Nilsa
 					}
 					*/
 
-                    List<String> lstContHarCurrent = new List<String>();
-					if (File.Exists(Path.Combine(FormMain.sDataPath, "pers_" + getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt")))
-					{
-						try
-						{
-							var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "pers_" + getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt"));
-							lstContHarCurrent = new List<String>(srcFile);
-							for (int i = 0; i < iContHarCount; i++)
-							{
-								if (i == 14)
-								{
-									if (SocialNetwork == 3)
-									{
-										if (bAutorizeAccept)
-											lstContHarCurrent[i] = "15|" + "Active";
-										else
-										{
-											string currentStatus = lstContHarCurrent[i].Substring(lstContHarCurrent[i].IndexOf("|") + 1).ToLower();
-											if (currentStatus.Equals("active"))
-												lstContHarCurrent[i] = "15|" + "Failed 1";
-											else if (currentStatus.Equals("blocked"))
-												lstContHarCurrent[i] = "15|" + "Blocked";
-											else if (currentStatus.Equals("failed"))
-												lstContHarCurrent[i] = "15|" + "Failed";
-											else if (currentStatus.StartsWith("failed "))
-											{
-												string currentStatusNumber = currentStatus.Substring(currentStatus.IndexOf(" ") + 1);
-												int rc = 1;
-												try
-												{
-													rc = Convert.ToInt32(currentStatusNumber);
-													rc++;
-												}
-												catch
-												{
-													rc = 11;
-												}
+     //               List<String> lstContHarCurrent = new List<String>();
+					//if (File.Exists(Path.Combine(FormMain.sDataPath, "pers_" + getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt")))
+					//{
+					//	try
+					//	{
+					//		var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "pers_" + getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt"));
+					//		lstContHarCurrent = new List<String>(srcFile);
+					//		for (int i = 0; i < iContHarCount; i++)
+					//		{
+					//			if (i == 14)
+					//			{
+					//				if (SocialNetwork == 3)
+					//				{
+					//					if (bAutorizeAccept)
+					//						lstContHarCurrent[i] = "15|" + "Active";
+					//					else
+					//					{
+					//						string currentStatus = lstContHarCurrent[i].Substring(lstContHarCurrent[i].IndexOf("|") + 1).ToLower();
+					//						if (currentStatus.Equals("active"))
+					//							lstContHarCurrent[i] = "15|" + "Failed 1";
+					//						else if (currentStatus.Equals("blocked"))
+					//							lstContHarCurrent[i] = "15|" + "Blocked";
+					//						else if (currentStatus.Equals("failed"))
+					//							lstContHarCurrent[i] = "15|" + "Failed";
+					//						else if (currentStatus.StartsWith("failed "))
+					//						{
+					//							string currentStatusNumber = currentStatus.Substring(currentStatus.IndexOf(" ") + 1);
+					//							int rc = 1;
+					//							try
+					//							{
+					//								rc = Convert.ToInt32(currentStatusNumber);
+					//								rc++;
+					//							}
+					//							catch
+					//							{
+					//								rc = 11;
+					//							}
 
-												if (rc >= 11)
-												{
-													copyContactsToMasterPersone(sUID);
-													lstContHarCurrent[i] = "15|" + "Failed";
-												}
-												else
-													lstContHarCurrent[i] = "15|" + "Failed " + rc.ToString();
-											}
-											else
-												lstContHarCurrent[i] = "15|" + "Failed";
-										}
-									}
-									//else if (SocialNetwork == 1)
-									//	lstContHarCurrent[i] = "15|" + "Active";
+					//							if (rc >= 11)
+					//							{
+					//								copyContactsToMasterPersone(sUID);
+					//								lstContHarCurrent[i] = "15|" + "Failed";
+					//							}
+					//							else
+					//								lstContHarCurrent[i] = "15|" + "Failed " + rc.ToString();
+					//						}
+					//						else
+					//							lstContHarCurrent[i] = "15|" + "Failed";
+					//					}
+					//				}
+					//				//else if (SocialNetwork == 1)
+					//				//	lstContHarCurrent[i] = "15|" + "Active";
 
-									//break;
-								}
-							}
-							FileWriteAllLines(Path.Combine(FormMain.sDataPath, "pers_" + FormMain.getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt"), lstContHarCurrent, Encoding.UTF8);
-						}
-						catch (Exception e)
-						{
-							ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-						}
+					//				//break;
+					//			}
+					//		}
+					//		FileWriteAllLines(Path.Combine(FormMain.sDataPath, "pers_" + FormMain.getSocialNetworkPrefix(SocialNetwork) + sUID + ".txt"), lstContHarCurrent, Encoding.UTF8);
+					//	}
+					//	catch (Exception e)
+					//	{
+					//		ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+					//	}
 
-					}
+					//}
 
 					if (bAutorizeAccept)
 						break;
 				}
 			}
-
+			
 			if (!bAutorizeAccept)
 			{
-                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
-                SelectNextReceivedMessage(false);
+                //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                //SelectNextReceivedMessage(false);
                 //CommandCheckAuthorisation();
-                bAutorizeAccept = _autorizeSuccess;
+                //bAutorizeAccept = _autorizeSuccess;
                 //AutorizeVK(userLogin, userPassword);
             }
 
@@ -13833,7 +13915,9 @@ namespace Nilsa
                 userLogin = sULogin;
                 userPassword = sUPwd;
                 userID = sUID;
-				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePersTesting");
+				SelectNextReceivedMessage(false);
+				tbSendOutMessageAction();
 				//SelectNextReceivedMessage(false);
 				needAutorize = false;
 				Setup(sULogin, sUPwd, sUID);
@@ -14051,7 +14135,7 @@ namespace Nilsa
 					Set_labelInEqMsgHarTitleValue_Text("Delayed message");
 					Set_labelInMsgHarTitleValue_Text("Delayed message");
 					SetEQOutMessageParametersValues(_message);
-					tbSendOutMessage_Click(null, null);
+					tbSendOutMessageAction();
 					//StartService();
 
 					//if (!lstEQOutMessagesList.Contains(_message))
@@ -14778,7 +14862,7 @@ namespace Nilsa
 				LoadAlgorithmSettings();
                 needAutorize = false;
                 Setup(formEditPersonenDB.suSelLogin, formEditPersonenDB.suSelPwd, formEditPersonenDB.suSelID);
-                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14865");
 				SelectNextReceivedMessage(false);
             }
 			else if (formEditPersonenDB.bNeedPersoneReread)
@@ -14807,7 +14891,7 @@ namespace Nilsa
 					LoadAlgorithmSettings();
 					StartAnswerTimer();
 					onAfterPersonenListChanged();
-                    lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers");
+                    lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14894");
 					_onChangePersoneStartServiceBool = true;
                     SelectNextReceivedMessage(false);
                 }
