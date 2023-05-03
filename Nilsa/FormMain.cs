@@ -75,6 +75,7 @@ namespace Nilsa
         const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
 		private bool needResetName = true;
+		private bool _firstStart = true;
 
         public const int MaxMarkerCount = 16;
 
@@ -2261,8 +2262,10 @@ namespace Nilsa
 			{
                 PersonenList_Load();
 				notAutorize(sUsrSelLogin, sUsrSelPwd, sUsrSelID);
+				_firstStart = false;
             }
-			needAutorize = false;
+
+            needAutorize = false;
 
 
 			PersonenList_Load();
@@ -2374,13 +2377,20 @@ namespace Nilsa
 			bServiceStart = true;
 			tbNewInMessageEnter.Enabled = true;
 
-			//if (SocialNetwork == 0)
-			//{
-			//    DateTime dt = DateTime.Now;
-			//    lstReceivedMessages.Insert(0, "0|" + iPersUserID.ToString() + "|" + dt.ToShortDateString() + "|" + dt.ToShortTimeString() + "|" + "PERSONE_CHANGED");
-			//}
+            //if (SocialNetwork == 0)
+            //{
+            //    DateTime dt = DateTime.Now;
+            //    lstReceivedMessages.Insert(0, "0|" + iPersUserID.ToString() + "|" + dt.ToShortDateString() + "|" + dt.ToShortTimeString() + "|" + "PERSONE_CHANGED");
+            //}
 
-			if (SocialNetwork == 0 && reinitDialogsWhenFree)
+            if (!_firstStart)
+            {
+                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePersTesting");
+                //SelectNextReceivedMessage(false);
+                //tbSendOutMessageAction();
+            }
+
+            if (SocialNetwork == 0 && reinitDialogsWhenFree)
 			{
 				if (iContactsGroupsMode == 0) // Contacts
 				{
@@ -4824,9 +4834,10 @@ namespace Nilsa
                 contName = contNameFamily = contNameName = "";
                 labelCont1Family.Text = "";
                 labelCont1Name.Text = "";
-                labelCont1FIO.Text = "";
+                labelCont1FIO.Text = "The System";
                 sGroupAdditinalUsers = "";
                 toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+                buttonEditContHarValues.BackgroundImage = Image.FromFile(Path.Combine(sNILSAImagesPath, "0.png"));
             }
             needResetName = true;
 
@@ -5398,8 +5409,8 @@ namespace Nilsa
 			labelPers1FIO.Text = userNameName + " " + userNameFamily;
 			toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
 			var localphotoPersURL = "";
-            if (userNameName == "" || userNameFamily == "")
-			{
+            if (userNameName == "" || userNameFamily == "" || photoPersURL == "")
+            {
 				if (dbUserName == "")
 				{
                     if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt")))
@@ -5407,15 +5418,6 @@ namespace Nilsa
                         try
                         {
                             dbUserName = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"));
-                            var data = dbUserName.Split('|');
-                            userID = data[0];
-                            userNameName = data[1];
-                            userNameFamily = data[2];
-                            photoPersURL = data[3];
-                            labelPers1Name.Text = userNameName;
-                            labelPers1Family.Text = userNameFamily;
-                            labelPers1FIO.Text = userNameName + " " + userNameFamily;
-                            toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
                         }
                         catch (Exception e)
                         {
@@ -5423,6 +5425,15 @@ namespace Nilsa
                         }
                     }
                 }
+                var data = dbUserName.Split('|');
+                userID = data[0];
+                userNameName = data[1];
+                userNameFamily = data[2];
+                photoPersURL = data[3];
+                labelPers1Name.Text = userNameName;
+                labelPers1Family.Text = userNameFamily;
+                labelPers1FIO.Text = userNameName + " " + userNameFamily;
+                toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
 
             }
 
@@ -13915,9 +13926,9 @@ namespace Nilsa
                 userLogin = sULogin;
                 userPassword = sUPwd;
                 userID = sUID;
-				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePersTesting");
-				SelectNextReceivedMessage(false);
-				tbSendOutMessageAction();
+				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePersTesting");
+				//SelectNextReceivedMessage(false);
+				//tbSendOutMessageAction();
 				//SelectNextReceivedMessage(false);
 				needAutorize = false;
 				Setup(sULogin, sUPwd, sUID);
@@ -14862,8 +14873,8 @@ namespace Nilsa
 				LoadAlgorithmSettings();
                 needAutorize = false;
                 Setup(formEditPersonenDB.suSelLogin, formEditPersonenDB.suSelPwd, formEditPersonenDB.suSelID);
-                lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14865");
-				SelectNextReceivedMessage(false);
+                //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14865");
+				//SelectNextReceivedMessage(false);
             }
 			else if (formEditPersonenDB.bNeedPersoneReread)
 			{
@@ -14891,9 +14902,9 @@ namespace Nilsa
 					LoadAlgorithmSettings();
 					StartAnswerTimer();
 					onAfterPersonenListChanged();
-                    lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14894");
-					_onChangePersoneStartServiceBool = true;
-                    SelectNextReceivedMessage(false);
+                    //lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14894");
+					//_onChangePersoneStartServiceBool = true;
+                    //SelectNextReceivedMessage(false);
                 }
 				else
 				{
@@ -18908,7 +18919,8 @@ namespace Nilsa
 			if (timerChangePersoneCycle <= 0)
 			{
 				timerChangePersoneOff();
-			}
+                onChangePersoneByTimer(true, true);
+            }
 
 		}
 
