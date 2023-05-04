@@ -58,6 +58,7 @@ namespace Nilsa.NilsaAndInterface
 
         public void NilsaWriteToRequestFile(string tinderRequest)
         {
+            if (File.Exists(Path.Combine(_path.PathNilsa, _path.FileFlag))) File.Delete(Path.Combine(_path.PathNilsa, _path.FileFlag));
             try
             {
                 string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);

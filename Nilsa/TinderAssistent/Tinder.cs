@@ -105,27 +105,27 @@ namespace Nilsa.TinderAssistent
 			{
 				case TinderCommands.LoadPersone:
 					_tinderRequest = new TinderRequest(_iOperatingMode, "LoadPersone", _persPhone, _tinderId, persone, socialNetwork, cookies);
-					NilsaWriteToRequestFile(_tinderRequest);
-					NilsaReadFromResponseFile();
+					//NilsaWriteToRequestFile(_tinderRequest);
+					//NilsaReadFromResponseFile();
 					break;
 
                 case TinderCommands.PhoneAuthorization:
                     _tinderRequest = new TinderRequest(_iOperatingMode, "PhoneAuthorization", _persPhone, _tinderId, persone, socialNetwork, cookies);
 					_tinderRequest.AuthorisationCode = authorisationCode;
-                    NilsaWriteToRequestFile(_tinderRequest);
-                    NilsaReadFromResponseFile();
+                    //NilsaWriteToRequestFile(_tinderRequest);
+                    //NilsaReadFromResponseFile();
                     break;
 
                 case TinderCommands.EmailAuthorization:
                     _tinderRequest = new TinderRequest(_iOperatingMode, "EmailAuthorization", _persPhone, _tinderId, persone, socialNetwork, cookies);
                     _tinderRequest.AuthorisationCode = authorisationCode;
-                    NilsaWriteToRequestFile(_tinderRequest);
-                    NilsaReadFromResponseFile();
+                    //NilsaWriteToRequestFile(_tinderRequest);
+                    //NilsaReadFromResponseFile();
                     break;
                 case TinderCommands.CheckAuthorization:
                     _tinderRequest = new TinderRequest(_iOperatingMode, "CheckAuthorization", _persPhone, _tinderId, persone, socialNetwork, cookies);
-                    NilsaWriteToRequestFile(_tinderRequest);
-                    NilsaReadFromResponseFile();
+                    //NilsaWriteToRequestFile(_tinderRequest);
+                    //NilsaReadFromResponseFile();
                     break;
 
                 case WebBrowserCommand.GetPhotoURL:                     // Done!
@@ -133,8 +133,8 @@ namespace Nilsa.TinderAssistent
 						outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetPhotoURL', 'User ID': '{mContacterID}'" + "}";
 						//NilsaWriteToRequestFile(outputJSON);
 						Task.Delay(1000).Wait();
-						NilsaReadFromResponseFile();
-						LogingRequestFile(outputJSON);
+						//NilsaReadFromResponseFile();
+						//LogingRequestFile(outputJSON);
 						break;
 
 					case WebBrowserCommand.GetPersoneAttributes:                     // Done!
@@ -142,8 +142,8 @@ namespace Nilsa.TinderAssistent
 						outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetPersoneAttributes', 'User ID': '{mContacterID}'" + "}";
 						//NilsaWriteToRequestFile(outputJSON);
 						Task.Delay(1000).Wait();
-						NilsaReadFromResponseFile();
-						LogingRequestFile(outputJSON);
+						//NilsaReadFromResponseFile();
+						//LogingRequestFile(outputJSON);
 						break;
 
 					//Если суть посчитать друзей, то реализовано через атрибуты
@@ -161,8 +161,8 @@ namespace Nilsa.TinderAssistent
 						outputJSON = "{" + $@"'Mode': '{_iOperatingMode}', 'Command': 'GetContactAttributes', 'User ID': '{mContacterID}'" + "}";
 						//NilsaWriteToRequestFile(outputJSON);
 						Task.Delay(1000).Wait();
-						NilsaReadFromResponseFile();
-						LogingRequestFile(outputJSON);
+						//NilsaReadFromResponseFile();
+						//LogingRequestFile(outputJSON);
 						break;
 
 					case WebBrowserCommand.GoToContactPage:

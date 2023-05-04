@@ -2178,7 +2178,7 @@ namespace Nilsa
 			TextSearchIgnoredWords = "из|под|с|по|в|";
 			TextSearchTextParsingChars = ".|...|!|?|<br>";
 
-			iPersUserID = 0;
+			iPersUserID = 1;
 			userLogin = "";
 			userName = "";
 			//userNameFamily = "";
@@ -7426,8 +7426,8 @@ namespace Nilsa
 							if (!persId.Equals("")) iPersUserID = Convert.ToInt64(persId);
 							else
 							{
-								persId = null;
-								iPersUserID = Convert.ToInt64(persId);
+								//persId = null;
+								iPersUserID = 1;// Convert.ToInt64(persId);
                             }
 							//iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
                             userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
@@ -18916,12 +18916,11 @@ namespace Nilsa
 			progressBarChangePersone.Value = pbvalue;
 			progressBarChangePersone.Invalidate();
 			Application.DoEvents();
-			if (timerChangePersoneCycle <= 0)
+			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle <=0 && timerReadCycle <=0 && timerWriteCycle <= 0)
 			{
 				timerChangePersoneOff();
                 onChangePersoneByTimer(true, true);
             }
-
 		}
 
 		private void timerChangePersoneOff()
