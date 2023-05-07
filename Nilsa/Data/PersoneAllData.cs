@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Nilsa.Data
 {
-    internal class PersoneAllData //класс для сериализации в JSON и обработки всех характеристик персонажа
+    public class PersoneAllData : INotifyPropertyChanged //класс для сериализации в JSON и обработки всех характеристик персонажа
     {
         public PersoneAllData() { }
 
@@ -14,6 +16,7 @@ namespace Nilsa.Data
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }
+        public string PhotoUrl { get; set; }
         public string Operators { get; set; }
         public string Login { get; set; }
         public string Sex { get; set; }
@@ -31,5 +34,11 @@ namespace Nilsa.Data
         public string Password { get; set; }
         public string BaseAlgorithm { get; set; }
         public string Status { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void OnPropertyChanged([CallerMemberName] string prop = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+        }
     }
 }

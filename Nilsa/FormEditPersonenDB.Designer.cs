@@ -65,6 +65,7 @@
             this.button3 = new System.Windows.Forms.ToolStripButton();
             this.button2 = new System.Windows.Forms.ToolStripButton();
             this.button14 = new System.Windows.Forms.ToolStripButton();
+            this.updatePersName = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.button10 = new System.Windows.Forms.ToolStripButton();
             this.button12 = new System.Windows.Forms.ToolStripButton();
@@ -96,6 +97,7 @@
             this.buttonPasteParameters = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
             this.buttonOpenPersoneWebPage = new System.Windows.Forms.ToolStripButton();
+            this.firstAuthorizationButton = new System.Windows.Forms.ToolStripButton();
             this.button19 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonCheckPersonenActivityAndCopyContacters = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
@@ -273,6 +275,7 @@
             this.button3,
             this.button2,
             this.button14,
+            this.updatePersName,
             this.toolStripSeparator2,
             this.button10,
             this.button12,
@@ -290,6 +293,7 @@
             this.buttonPasteParameters,
             this.toolStripSeparator11,
             this.buttonOpenPersoneWebPage,
+            this.firstAuthorizationButton,
             this.button19,
             this.toolStripButtonCheckPersonenActivityAndCopyContacters,
             this.toolStripSeparator6,
@@ -368,6 +372,17 @@
             this.button14.Size = new System.Drawing.Size(50, 50);
             this.button14.Text = "Обновить характеристики отмеченных";
             this.button14.Click += new System.EventHandler(this.button14_Click);
+            // 
+            // updatePersName
+            // 
+            this.updatePersName.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.updatePersName.Image = global::Nilsa.Properties.Resources.переименовать;
+            this.updatePersName.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.updatePersName.Name = "updatePersName";
+            this.updatePersName.Size = new System.Drawing.Size(54, 54);
+            this.updatePersName.Text = "toolStripButton1";
+            this.updatePersName.ToolTipText = "Редактировать имя персонажа";
+            this.updatePersName.Click += new System.EventHandler(this.updatePersName_Click);
             // 
             // toolStripSeparator2
             // 
@@ -632,6 +647,16 @@
             this.buttonOpenPersoneWebPage.Size = new System.Drawing.Size(50, 50);
             this.buttonOpenPersoneWebPage.Text = "Проверить страницы Персонажей в браузере";
             this.buttonOpenPersoneWebPage.Click += new System.EventHandler(this.buttonOpenPersoneWebPage_Click);
+            // 
+            // firstAuthorizationButton
+            // 
+            this.firstAuthorizationButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.firstAuthorizationButton.Image = global::Nilsa.Properties.Resources._select_personen;
+            this.firstAuthorizationButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.firstAuthorizationButton.Name = "firstAuthorizationButton";
+            this.firstAuthorizationButton.Size = new System.Drawing.Size(54, 54);
+            this.firstAuthorizationButton.Text = "Первая авторизация персонажа";
+            this.firstAuthorizationButton.Click += new System.EventHandler(this.firstAuthorizationButton_Click);
             // 
             // button19
             // 
@@ -927,5 +952,7 @@
         private System.Windows.Forms.ToolStripButton buttonCopyParameters;
         private System.Windows.Forms.ToolStripButton buttonPasteParameters;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
+        private System.Windows.Forms.ToolStripButton updatePersName;
+        private System.Windows.Forms.ToolStripButton firstAuthorizationButton;
     }
 }

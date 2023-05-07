@@ -42,15 +42,17 @@ namespace Nilsa.NilsaAndInterface
                 DefaultValueHandling = DefaultValueHandling.Ignore,
 
             };
+            string flagPath = Path.Combine(_path.PathNilsa, _path.FileFlag);
             var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
             try
             {
+                while (File.Exists(flagPath)) WaitNSeconds(3);
                 string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
 
                 // Write the request to file
 
                 File.WriteAllText(requestPath, request, Encoding.UTF8);
-                File.Create(Path.Combine(_path.PathNilsa, _path.FileFlag));
+                File.Create(flagPath);
 
             }
             catch (Exception) { }
@@ -58,15 +60,16 @@ namespace Nilsa.NilsaAndInterface
 
         public void NilsaWriteToRequestFile(string tinderRequest)
         {
-            if (File.Exists(Path.Combine(_path.PathNilsa, _path.FileFlag))) File.Delete(Path.Combine(_path.PathNilsa, _path.FileFlag));
+            string flagPath = Path.Combine(_path.PathNilsa, _path.FileFlag);
             try
             {
+                while (File.Exists(flagPath)) WaitNSeconds(3);
                 string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
 
                 // Write the request to file
 
                 File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
-                File.Create(Path.Combine(_path.PathNilsa, _path.FileFlag));
+                File.Create(flagPath);
 
             }
             catch (Exception) { }
@@ -89,6 +92,14 @@ namespace Nilsa.NilsaAndInterface
             }
             catch (Exception) { }
             return incomeInterfaceMessage;
+        }
+
+        public void ResetCommunicationFoulders()
+        {
+            if (File.Exists(Path.Combine(_path.PathNilsa, _path.FileFlag))) File.Delete(Path.Combine(_path.PathNilsa, _path.FileFlag));
+            if (File.Exists(Path.Combine(_path.PathWebDriver, _path.FileFlag))) File.Delete(Path.Combine(_path.PathWebDriver, _path.FileFlag));
+            if (File.Exists(Path.Combine(_path.PathNilsa, _path.FileData))) File.Delete(Path.Combine(_path.PathNilsa, _path.FileData));
+            if (File.Exists(Path.Combine(_path.PathWebDriver, _path.FileData))) File.Delete(Path.Combine(_path.PathWebDriver, _path.FileData));
         }
 
         private void WaitNSeconds(int segundos)

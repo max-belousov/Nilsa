@@ -984,6 +984,18 @@ namespace Nilsa
 
             File.WriteAllLines(Path.Combine(FormMain.sDataPath, "_contacts_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
         }
+        //для новых соцсетей
+        public void ContactsList_AddUser(String sUD, String sUName, string cid)
+        {
+            int iuserIdx = ContactsList_GetUserIdx(sUD);
+            String userRec = sUD + "|" + sUName + "|" + cid;
+            if (iuserIdx >= 0)
+                lstContactsList[iuserIdx] = userRec;
+            else
+                lstContactsList.Add(userRec);
+
+            File.WriteAllLines(Path.Combine(FormMain.sDataPath, "_contacts_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+        }
 
         private String[] initFilterForAllContactsToPersonenInRotation(bool bNotShowDialog = true)
         {
@@ -1824,7 +1836,7 @@ namespace Nilsa
             return "-1";
         }
 
-        private void button6_Click(object sender, EventArgs e)
+        private void addContButton_Click1(object sender, EventArgs e)
         {
             string value = "";
             if (FormMain.InputBox(this, NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_9", this.Name, "Добавление Контактера"), NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_10", this.Name, "Введите ID Контактера:"), ref value) == DialogResult.OK)
@@ -1987,126 +1999,6 @@ namespace Nilsa
 
                                 selectRow(grid1.RowsCount - 1);
                                 grid_ItemChecked();
-                                /*
-                                do
-                                {
-                                    try
-                                    {
-                                        VkNet.Model.User usrAdr = FormMain.api.Users.Get(Convert.ToInt64(sUID), ProfileFields.FirstName | ProfileFields.LastName | ProfileFields.City | ProfileFields.Sex | ProfileFields.BirthDate | ProfileFields.Country | ProfileFields.Relation | ProfileFields.Online | ProfileFields.Counters | ProfileFields.LastSeen);
-                                        String sUName = usrAdr.FirstName + " " + usrAdr.LastName;
-
-                                        List<String> lstContHarValues = new List<String>();
-
-                                        if (File.Exists(Path.Combine(FormMain.sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + sUID + ".txt")))
-                                        {
-                                            var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + sUID + ".txt"));
-                                            lstContHarValues = new List<String>(srcFile);
-                                            for (int i = 0; i < iContHarCount; i++)
-                                            {
-                                                String sCV = lstContHar[i].Substring(lstContHar[i].IndexOf("|") + 1);
-                                                if (sCV.Length > 0)
-                                                    lstContHarValues[i] = lstContHar[i];
-                                            }
-                                        }
-                                        else
-                                        {
-                                            for (int i = 0; i < iContHarCount; i++)
-                                                lstContHarValues.Add(lstContHar[i]);
-                                        }
-
-                                        for (int i = 0; i < iContHarCount; i++)
-                                        {
-                                            if (lstContHarValues[i].IndexOf("#sex#") > 0)
-                                            {
-                                                String svkv = usrAdr.Sex != null ? (usrAdr.Sex == Sex.Male ? "Мужской" : (usrAdr.Sex == Sex.Female ? "Женский" : "Не указан")) : "Не указан";
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#sex#", svkv);
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#city#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#city#", usrAdr.City != null ? usrAdr.City.Title : "");
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#country#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#country#", usrAdr.Country != null ? usrAdr.Country.Title : "");
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#relation#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#relation#", usrAdr.Relation != null ? (usrAdr.Relation == RelationType.Amorous ? "Влюблен(-а)" : (usrAdr.Relation == RelationType.Engaged ? "Помолвлен(-а)" : (usrAdr.Relation == RelationType.HasFriend ? "Есть друг (подруга)" : (usrAdr.Relation == RelationType.InActiveSearch ? "В активном поиске" : (usrAdr.Relation == RelationType.ItsComplex ? "Все сложно" : (usrAdr.Relation == RelationType.Married ? "Женат (замужем)" : (usrAdr.Relation == RelationType.NotMarried ? "Не женат (не замужем)" : "Не указано"))))))) : "Не указано");
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#online#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#online#", usrAdr.Online != null ? (usrAdr.Online.Value ? "ON line" : "OFF line") : "Unknown");
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#birthdate#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#birthdate#", usrAdr.BirthDate != null ? usrAdr.BirthDate : "");
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#counters_friends#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#counters_friends#", usrAdr.Counters != null ? usrAdr.Counters.Friends.Value.ToString() : "");
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#age#") > 0)
-                                            {
-                                                String birthdate = usrAdr.BirthDate != null ? usrAdr.BirthDate : "";
-                                                String sAge = sUnknownAge;
-                                                if (birthdate.Length > 0)
-                                                {
-                                                    String sDD = birthdate.Substring(0, birthdate.IndexOf("."));
-                                                    birthdate = birthdate.Substring(birthdate.IndexOf(".") + 1);
-                                                    if (birthdate.IndexOf(".") > 0)
-                                                    {
-                                                        String sMM = birthdate.Substring(0, birthdate.IndexOf("."));
-                                                        birthdate = birthdate.Substring(birthdate.IndexOf(".") + 1);
-                                                        DateTime bday = new DateTime(Convert.ToInt32(birthdate), Convert.ToInt32(sMM), Convert.ToInt32(sDD));
-                                                        DateTime today = DateTime.Today;
-                                                        int age = today.Year - bday.Year;
-                                                        if (bday > today.AddYears(-age)) age--;
-                                                        sAge = Convert.ToString(age);
-                                                    }
-                                                }
-
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#age#", sAge);
-                                            }
-                                            else if (lstContHarValues[i].IndexOf("#clear#") > 0)
-                                            {
-                                                lstContHarValues[i] = lstContHarValues[i].Replace("#clear#", "");
-                                            }
-
-                                        }
-
-                                        File.WriteAllLines(Path.Combine(FormMain.sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + sUID + ".txt"), lstContHarValues, Encoding.UTF8);
-                                        ContactsList_AddUser(sUID, sUName);
-                                        ContactsList_AddUserToVisualList(sUID, sUName);
-
-                                        selectRow(grid1.RowsCount - 1);
-                                        grid_ItemChecked();
-                                        break;
-                                    }
-                                    catch (VkNet.Exception.AccessTokenInvalidException atiexp)
-                                    {
-                                        if (!mFormMain.ReAutorize(mFormMain.userLogin, mFormMain.userPassword))
-                                            break;
-                                    }
-                                    catch (System.Net.WebException)
-                                    {
-                                        if (!mFormMain.ReAutorize(mFormMain.userLogin, mFormMain.userPassword))
-                                            break;
-                                    }
-                                    catch (VkNet.Exception.VkApiException)
-                                    {
-                                        if (!mFormMain.ReAutorize(mFormMain.userLogin, mFormMain.userPassword))
-                                            break;
-                                    }
-                                    catch (Exception exp)
-                                    {
-                                        ExceptionToLogList("FormEditContactsDB.button6_Click", sUID, exp);
-                                        MessageBox.Show(NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_12", this.Name, "Ошибка запроса Контактера с указанным ID..."), NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_9", this.Name, "Добавление Контактера"), MessageBoxButtons.OK, MessageBoxIcon.Error);
-                                        break;
-                                    }
-                                    finally { }
-                                }
-                                while (true);
-                                */
                             }
                             else
                             {
@@ -2115,6 +2007,42 @@ namespace Nilsa
                         }
                     }
                 }
+            }
+        }
+
+        private void addContButton_Click(object sender, EventArgs e)
+        {
+            if (FormMain.SocialNetwork != 3) return;
+            FormAddCont formAddCont = new FormAddCont();
+            if (formAddCont.ShowDialog() == DialogResult.Cancel) return;
+            var cid = formAddCont.Persone.Login;
+            var firstName = formAddCont.Persone.FirstName;
+            var lastName = formAddCont.Persone.LastName;
+            var socialNetwork = formAddCont.Persone.Owner;
+            var isUniq = true;
+            foreach (var cont in lstContactsList)
+            {
+                if (cont.Contains(cid))
+                {
+                    isUniq = false;
+                    MessageBox.Show(NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_11", this.Name, "Контактер с указанным ID уже есть в базе. Если он не отображается, смените настройки фильтра базы контактеров по характеристикам..."), NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_9", this.Name, "Добавление Контактера"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    break;
+                }
+            }
+            if (isUniq && (cid.Length != 0 || firstName.Length != 0 || lastName.Length != 0))
+            {
+                var currentContId = lstContactsList.Count()+1;
+                var currentListContHar = new List<string>();
+                for (int i = 0; i < iContHarCount; i++)
+                    currentListContHar.Add($"{i+1}|");
+                currentListContHar[5] += cid.ToString();
+                currentListContHar[7] += socialNetwork;
+                File.WriteAllLines(Path.Combine(FormMain.sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + currentContId + ".txt"), currentListContHar, Encoding.UTF8);
+                ContactsList_AddUser(currentContId.ToString(), firstName + " " + lastName, cid);
+                ContactsList_AddUserToVisualList(currentContId.ToString(), firstName + " " + lastName);
+
+                selectRow(grid1.RowsCount - 1);
+                grid_ItemChecked();
             }
         }
 
@@ -2425,7 +2353,7 @@ namespace Nilsa
             this.button3.Enabled = false;
             this.button4.Enabled = false;
             this.button5.Enabled = false;
-            this.button6.Enabled = false;
+            this.addContButton.Enabled = false;
             buttonBaseFilter.Enabled = false;
             this.button7.Enabled = false;
             this.button8.Enabled = false;
@@ -2469,7 +2397,7 @@ namespace Nilsa
             this.button3.Enabled = gridSelectedIndex > 0;
             this.button4.Enabled = true;
             this.button5.Enabled = gridSelectedIndex > 0 || gridCheckedCount > 0 || tbAllPersonenInRotation.Checked;
-            this.button6.Enabled = true;
+            this.addContButton.Enabled = true;
             buttonBaseFilter.Enabled = true;
             this.button7.Enabled = FormMain.SocialNetwork == 0;
             buttonImportPersonenAsContacter.Enabled = FormMain.SocialNetwork == 0;

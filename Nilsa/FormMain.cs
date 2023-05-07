@@ -6135,6 +6135,55 @@ namespace Nilsa
 						//buttonEditOutEqMsgHar.Enabled = true;
 					}
 				}
+				else if (SocialNetwork == 3)
+				{
+                    if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt")))
+                    {
+                        try
+                        {
+                            photoContURL = "";
+                            var dbContName = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"));
+                            string sUID = "";
+                            int i = 0;
+                            for (; i < dbContName.Count(); i++)
+                            {
+                                sUID = dbContName[i].Substring(0, dbContName[i].IndexOf("|"));
+                                if (sUID == iContUserID.ToString()) break;
+                            }
+                            var data = dbContName[i].Split('|');
+                            iContUserID = Convert.ToInt64(data[0]);
+                            contName = data[1];
+                            photoContURL = data[2];
+                            var names = contName.Split(' ');
+                            contNameName = names[0];
+                            contNameFamily = names[1];
+                            labelCont1Family.Text = contNameFamily;
+                            labelCont1Name.Text = contNameName;
+                            labelCont1FIO.Text = contName;
+                            toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+                            if (photoContURL == "")
+                            {
+                                SetUserPictureFromID(iContUserID, buttonEditContHarValues, false);
+
+                            }
+                            else
+                            {
+                                var request = WebRequest.Create(photoContURL);
+                                using (var response = request.GetResponse())
+                                using (var stream = response.GetResponseStream())
+                                {
+                                    var bitmapPicture = Bitmap.FromStream(stream);
+                                    buttonEditContHarValues.BackgroundImage = bitmapPicture;
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+                        }
+                    }
+                    SaveContactParamersValues();
+                }
 			}
 			/*
 			else
@@ -6357,7 +6406,7 @@ namespace Nilsa
 
 			if (iContUserID >= 0)
 			{
-                File.WriteAllText(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), iContUserID.ToString() + "|" + contName + "|" + photoContURL, Encoding.UTF8);
+                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
                 if (lstContHarValues.Count > 0)
 				{
                     FileWriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + Convert.ToString(iContUserID) + ".txt"), lstContHarValues, Encoding.UTF8);
@@ -14817,7 +14866,7 @@ namespace Nilsa
 			formEditPersonenDB.iContHarAttrCount = iPersHarAttrCount;
 			formEditPersonenDB.Setup(iPersUserID.ToString() + " (" + userLogin + ", " + userPassword + ")", iPersUserID);
 
-			if (lstPersoneChange.Count > 0)
+            if (lstPersoneChange.Count > 0)
 			{
 				foreach (String str in lstPersoneChange)
 					for (int i = 0; i < formEditPersonenDB.lvList.Items.Count; i++)
@@ -14848,10 +14897,15 @@ namespace Nilsa
 			//LoadContactParametersDescription();
 			//LoadAlgorithmSettingsContacter();
 
-			LoadPersoneParametersValues();
-			//SetPersoneParametersValues();
-			LoadPersoneParametersDescription();
-			LoadAlgorithmSettings();
+			//LoadPersoneParametersValues();
+			//из-за сложности в множественных перезаписях файла, обнуляем данные и заново читаем их из файла
+			userNameName = "";
+			userNameFamily = "";
+			photoURL = "";
+			dbUserName = "";
+			SetPersoneParametersValues();
+			//LoadPersoneParametersDescription();
+			//LoadAlgorithmSettings();
 			UpdatePersoneParametersValues_Algorithm();
 			UpdateProgramCountersInfoB2B5B6();
 
@@ -14868,7 +14922,7 @@ namespace Nilsa
 					OnSocialNetworkChanged();
 				}
 				onAfterPersonenListChanged();
-				LoadPersoneParametersValues();
+				//LoadPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
                 needAutorize = false;
@@ -14882,7 +14936,8 @@ namespace Nilsa
 				SaveReceivedMessagesPull();
 				SaveOutgoingMessagesPull();
 				onAfterPersonenListChanged();
-				LoadPersoneParametersValues();
+				//LoadPersoneParametersValues();
+				//SetPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
 				needAutorize = false;
@@ -14896,7 +14951,7 @@ namespace Nilsa
 				userSelectUserIdx = PersonenList_GetUserIdx(iPersUserID.ToString()) + 1;
 				if (userSelectUserIdx > 0)
 				{
-					LoadPersoneParametersValues();
+					//LoadPersoneParametersValues();
 					//SetPersoneParametersValues();
 					LoadPersoneParametersDescription();
 					LoadAlgorithmSettings();

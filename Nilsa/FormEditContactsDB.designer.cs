@@ -43,7 +43,7 @@
             this.toolStrip2 = new System.Windows.Forms.ToolStrip();
             this.tbAllPersonenInRotation = new System.Windows.Forms.ToolStripButton();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.button6 = new System.Windows.Forms.ToolStripButton();
+            this.addContButton = new System.Windows.Forms.ToolStripButton();
             this.button5 = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.button17 = new System.Windows.Forms.ToolStripButton();
@@ -255,7 +255,7 @@
             // 
             this.toolStrip1.ImageScalingSize = new System.Drawing.Size(50, 50);
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.button6,
+            this.addContButton,
             this.button5,
             this.toolStripSeparator1,
             this.button17,
@@ -294,17 +294,17 @@
             this.toolStrip1.TabIndex = 38;
             this.toolStrip1.Text = "toolStrip1";
             // 
-            // button6
+            // addContButton
             // 
-            this.button6.AutoSize = false;
-            this.button6.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.button6.Image = global::Nilsa.Properties.Resources._add;
-            this.button6.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.button6.Margin = new System.Windows.Forms.Padding(0);
-            this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(50, 50);
-            this.button6.Text = "Добавить";
-            this.button6.Click += new System.EventHandler(this.button6_Click);
+            this.addContButton.AutoSize = false;
+            this.addContButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.addContButton.Image = global::Nilsa.Properties.Resources._add;
+            this.addContButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.addContButton.Margin = new System.Windows.Forms.Padding(0);
+            this.addContButton.Name = "addContButton";
+            this.addContButton.Size = new System.Drawing.Size(50, 50);
+            this.addContButton.Text = "Добавить";
+            this.addContButton.Click += new System.EventHandler(this.addContButton_Click);
             // 
             // button5
             // 
@@ -600,7 +600,7 @@
             // 
             this.button19.Image = global::Nilsa.Properties.Resources._import_by_search;
             this.button19.Name = "button19";
-            this.button19.Size = new System.Drawing.Size(344, 56);
+            this.button19.Size = new System.Drawing.Size(310, 22);
             this.button19.Text = "Импорт через Поиск";
             this.button19.Click += new System.EventHandler(this.button19_Click);
             // 
@@ -608,7 +608,7 @@
             // 
             this.button7.Image = global::Nilsa.Properties.Resources._import_persone_friends;
             this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(344, 56);
+            this.button7.Size = new System.Drawing.Size(310, 22);
             this.button7.Text = "Импорт друзей Персонажа";
             this.button7.Click += new System.EventHandler(this.button7_Click);
             // 
@@ -616,7 +616,7 @@
             // 
             this.button11.Image = global::Nilsa.Properties.Resources._import_contacter_friends;
             this.button11.Name = "button11";
-            this.button11.Size = new System.Drawing.Size(344, 56);
+            this.button11.Size = new System.Drawing.Size(310, 22);
             this.button11.Text = "Импорт друзей Контактера";
             this.button11.Click += new System.EventHandler(this.button11_Click);
             // 
@@ -624,7 +624,7 @@
             // 
             this.button8.Image = global::Nilsa.Properties.Resources._import_from_group;
             this.button8.Name = "button8";
-            this.button8.Size = new System.Drawing.Size(344, 56);
+            this.button8.Size = new System.Drawing.Size(310, 22);
             this.button8.Text = "Импорт из группы";
             this.button8.Click += new System.EventHandler(this.button8_Click);
             // 
@@ -632,7 +632,7 @@
             // 
             this.button15.Image = global::Nilsa.Properties.Resources._import_file;
             this.button15.Name = "button15";
-            this.button15.Size = new System.Drawing.Size(344, 56);
+            this.button15.Size = new System.Drawing.Size(310, 22);
             this.button15.Text = "Импорт из файла";
             this.button15.Click += new System.EventHandler(this.button15_Click);
             // 
@@ -640,27 +640,27 @@
             // 
             this.button26.Image = global::Nilsa.Properties.Resources._import_csv;
             this.button26.Name = "button26";
-            this.button26.Size = new System.Drawing.Size(344, 56);
+            this.button26.Size = new System.Drawing.Size(310, 22);
             this.button26.Text = "Импорт из CSV";
             this.button26.Click += new System.EventHandler(this.button26_Click);
             // 
             // buttonImportPersonenAsContacter
             // 
             this.buttonImportPersonenAsContacter.Name = "buttonImportPersonenAsContacter";
-            this.buttonImportPersonenAsContacter.Size = new System.Drawing.Size(344, 56);
+            this.buttonImportPersonenAsContacter.Size = new System.Drawing.Size(310, 22);
             this.buttonImportPersonenAsContacter.Text = "Импорт Персонажей как Контактеров";
             this.buttonImportPersonenAsContacter.Click += new System.EventHandler(this.buttonImportPersonenAsContacter_Click);
             // 
             // toolStripSeparator8
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(341, 6);
+            this.toolStripSeparator8.Size = new System.Drawing.Size(307, 6);
             // 
             // button25
             // 
             this.button25.Image = global::Nilsa.Properties.Resources._export_file;
             this.button25.Name = "button25";
-            this.button25.Size = new System.Drawing.Size(344, 56);
+            this.button25.Size = new System.Drawing.Size(310, 22);
             this.button25.Text = "Экспорт отм. в файл";
             this.button25.Click += new System.EventHandler(this.button25_Click);
             // 
@@ -668,7 +668,7 @@
             // 
             this.button18.Image = global::Nilsa.Properties.Resources._export_csv;
             this.button18.Name = "button18";
-            this.button18.Size = new System.Drawing.Size(344, 56);
+            this.button18.Size = new System.Drawing.Size(310, 22);
             this.button18.Text = "Экспорт отм. в CSV";
             this.button18.Click += new System.EventHandler(this.button18_Click);
             // 
@@ -676,40 +676,40 @@
             // 
             this.button24.Image = global::Nilsa.Properties.Resources._export_dialogs;
             this.button24.Name = "button24";
-            this.button24.Size = new System.Drawing.Size(344, 56);
+            this.button24.Size = new System.Drawing.Size(310, 22);
             this.button24.Text = "Экспорт диалогов отм.";
             this.button24.Click += new System.EventHandler(this.button24_Click);
             // 
             // exportDialogsFromPersonen
             // 
             this.exportDialogsFromPersonen.Name = "exportDialogsFromPersonen";
-            this.exportDialogsFromPersonen.Size = new System.Drawing.Size(344, 56);
+            this.exportDialogsFromPersonen.Size = new System.Drawing.Size(310, 22);
             this.exportDialogsFromPersonen.Text = "Экспорт диалогов Персонажей в ротации";
             this.exportDialogsFromPersonen.Click += new System.EventHandler(this.exportDialogsFromPersonen_Click);
             // 
             // reportDialogsFromPersonen
             // 
             this.reportDialogsFromPersonen.Name = "reportDialogsFromPersonen";
-            this.reportDialogsFromPersonen.Size = new System.Drawing.Size(344, 56);
+            this.reportDialogsFromPersonen.Size = new System.Drawing.Size(310, 22);
             this.reportDialogsFromPersonen.Text = "Отчёт по диалогам Персонажей в ротации";
             this.reportDialogsFromPersonen.Click += new System.EventHandler(this.reportDialogsFromPersonen_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(341, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(307, 6);
             // 
             // buttonExportContacterServer
             // 
             this.buttonExportContacterServer.Name = "buttonExportContacterServer";
-            this.buttonExportContacterServer.Size = new System.Drawing.Size(344, 56);
+            this.buttonExportContacterServer.Size = new System.Drawing.Size(310, 22);
             this.buttonExportContacterServer.Text = "Передать Контактеров на Сервер";
             this.buttonExportContacterServer.Click += new System.EventHandler(this.buttonExportContacterServer_Click);
             // 
             // buttonImportContacterServer
             // 
             this.buttonImportContacterServer.Name = "buttonImportContacterServer";
-            this.buttonImportContacterServer.Size = new System.Drawing.Size(344, 56);
+            this.buttonImportContacterServer.Size = new System.Drawing.Size(310, 22);
             this.buttonImportContacterServer.Text = "Получить Контактеров с Сервера";
             this.buttonImportContacterServer.Click += new System.EventHandler(this.buttonImportContacterServer_Click);
             // 
@@ -852,7 +852,7 @@
         private System.Windows.Forms.PictureBox pictureBoxPersone;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.ToolStrip toolStrip1;
-        private System.Windows.Forms.ToolStripButton button6;
+        private System.Windows.Forms.ToolStripButton addContButton;
         private System.Windows.Forms.ToolStripButton button5;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripButton button2;
