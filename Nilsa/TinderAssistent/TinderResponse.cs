@@ -6,11 +6,15 @@ using System.Threading.Tasks;
 
 namespace Nilsa.TinderAssistent
 {
-    internal class TinderResponse
+    public class TinderResponse
     {
         public TinderResponse() { }
         public int Status{ get; set; }
         public string Message { get; set; }
         public string Data { get; set; }
+        public string Text { get; set; }
+        public string Id { get; set; }
+        public IncomeMessage[] New_messages { get; set; }
+        public UnreadMessage[] Unread_messages { get; set;  }
     }
 }

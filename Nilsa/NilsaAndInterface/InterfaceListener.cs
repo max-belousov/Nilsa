@@ -52,8 +52,7 @@ namespace Nilsa.NilsaAndInterface
                 // Write the request to file
 
                 File.WriteAllText(requestPath, request, Encoding.UTF8);
-                File.Create(flagPath);
-
+                File.WriteAllText(flagPath, "OK");
             }
             catch (Exception) { }
         }
@@ -68,9 +67,8 @@ namespace Nilsa.NilsaAndInterface
 
                 // Write the request to file
 
-                File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
-                File.Create(flagPath);
-
+                File.WriteAllText(requestPath, tinderRequest);
+                File.WriteAllText(flagPath, "OK");
             }
             catch (Exception) { }
         }
@@ -88,9 +86,9 @@ namespace Nilsa.NilsaAndInterface
                 // Read the request from file
 
                 incomeInterfaceMessage = File.ReadAllText(responsePath);
-                File.Delete(flagPath);
             }
             catch (Exception) { }
+            File.Delete(flagPath);
             return incomeInterfaceMessage;
         }
 

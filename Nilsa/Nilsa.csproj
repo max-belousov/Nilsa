@@ -452,12 +452,14 @@
     </Compile>
     <Compile Include="NilsaAndInterface\InterfaceListener.cs" />
     <Compile Include="NilsaOperatingMode.cs" />
+    <Compile Include="TinderAssistent\IncomeMessage.cs" />
     <Compile Include="TinderAssistent\PersoneTinderAttributes.cs" />
     <Compile Include="PersoneVkAttributes.cs" />
     <Compile Include="ResponseFromInterface.cs" />
     <Compile Include="TinderAssistent\Tinder.cs" />
     <Compile Include="TinderAssistent\TinderRequest.cs" />
     <Compile Include="TinderAssistent\TinderResponse.cs" />
+    <Compile Include="TinderAssistent\UnreadMessage.cs" />
     <Compile Include="UI\AGCProgressBar.cs">
       <SubType>Component</SubType>
     </Compile>
