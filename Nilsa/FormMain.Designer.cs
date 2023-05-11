@@ -2587,11 +2587,13 @@
             // authorizeButton
             // 
             this.authorizeButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.authorizeButton.Enabled = false;
             this.authorizeButton.Image = ((System.Drawing.Image)(resources.GetObject("authorizeButton.Image")));
             this.authorizeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.authorizeButton.Name = "authorizeButton";
             this.authorizeButton.Size = new System.Drawing.Size(54, 47);
             this.authorizeButton.Text = "toolStripButton4";
+            this.authorizeButton.Visible = false;
             this.authorizeButton.Click += new System.EventHandler(this.authorizeButton_Click);
             // 
             // timerChangePersone

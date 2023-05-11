@@ -11773,6 +11773,26 @@ namespace Nilsa
 			}
 		}
 
+		private void SetNextPersonInRotation()
+		{
+			for (int i = 0; i < lstPersoneChange.Count; i++)
+			{
+				if (lstPersoneChange[i] == userID && i < (lstPersoneChange.Count - 1))
+				{
+					userID = lstPersoneChange[i + 1];
+					break;
+				}
+                else if (lstPersoneChange[i] == userID && i == (lstPersoneChange.Count - 1))
+                {
+                    userID = lstPersoneChange[0];
+                    break;
+                }
+            }
+            var localLogin = PersonenList_GetUserField(userID, 2);
+            var localPassword = PersonenList_GetUserField(userID, 3);
+            Setup(localLogin, localPassword, userID);
+		}
+
 		private void tbSendOutMessage_Click(object sender, EventArgs e)
 		{
 			tbSendOutMessageAction();
@@ -11856,8 +11876,8 @@ namespace Nilsa
 						(cmd_line.StartsWith("command3_operator")) || (cmd_line.StartsWith("repost_ava")) || (cmd_line.StartsWith("send_operator")) || 
 						(cmd_line.StartsWith("info_operator")) || (cmd_line.StartsWith("resend_operator")) || (cmd_line.StartsWith("leave_community")) || 
 						(cmd_line.StartsWith("repost_wall")) || (cmd_line.StartsWith("repost_group")) || (cmd_line.StartsWith("like_wall")) || 
-						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) /*|| (cmd_line.StartsWith("friends_delete")) || 
-						(cmd_line.StartsWith("update_pers_photo")) || (cmd_line.StartsWith("update_pers_name")) || (cmd_line.StartsWith("update_cont_name")) || 
+						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) || (cmd_line.StartsWith("friends_delete")) || (cmd_line.StartsWith("NEXT_PERSON"))
+                        /*(cmd_line.StartsWith("update_pers_photo")) || (cmd_line.StartsWith("update_pers_name")) || (cmd_line.StartsWith("update_cont_name")) || 
 						(cmd_line.StartsWith("update_cont_photo")) || (cmd_line.StartsWith("update_pers_friendscount")) || (cmd_line.StartsWith("update_cont_friendscount")) || 
 						(cmd_line.StartsWith("loadpersonetinder")) || (cmd_line.StartsWith("phoneauthorization")) || (cmd_line.StartsWith("authorizetinder")) ||
 						(cmd_line.StartsWith("emailauthorization")) || (cmd_line.StartsWith("checkauthorization"))*/)
@@ -11875,7 +11895,14 @@ namespace Nilsa
 							if (bStatusService)
 								StartService();
 						}
-						else if (cmd_line.StartsWith("authorize_vk")) 
+                        else if (cmd_line.StartsWith("NEXT_PERSON"))
+                        {
+                            bool bStatusService = !tbStartService.Enabled;
+                            StopService();
+                            ChangeSocialNetwork(3);
+							SetNextPersonInRotation();
+                        }
+                        else if (cmd_line.StartsWith("authorize_vk")) 
 						{
 							bool bStatusService = !tbStartService.Enabled;
 							StopService();
@@ -14107,10 +14134,6 @@ namespace Nilsa
 				userLogin = sULogin;
 				userPassword = sUPwd;
 				userID = sUID;
-				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePersTesting");
-				//SelectNextReceivedMessage(false);
-				//tbSendOutMessageAction();
-				//SelectNextReceivedMessage(false);
 				needAutorize = false;
 				Setup(sULogin, sUPwd, sUID);
 				if (_startservice)
@@ -20402,12 +20425,12 @@ namespace Nilsa
 			//needAutorize = true;
 			//Setup(userLogin, userPassword, "");
 			//needAutorize = false;
-			var msg = "";
-			foreach (var m in lstReceivedMessages)
-			{
-				msg += m + "\n";
-			}
-			MessageBox.Show(msg);
+			//var msg = "";
+			//foreach (var m in lstReceivedMessages)
+			//{
+			//	msg += m + "\n";
+			//}
+			//MessageBox.Show(msg);
 		}
 
 		private void tbMessagesDBEqOutDeleteMessage_Click(object sender, EventArgs e)
