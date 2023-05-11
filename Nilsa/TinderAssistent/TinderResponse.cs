@@ -14,6 +14,8 @@ namespace Nilsa.TinderAssistent
         public string Data { get; set; }
         public string Text { get; set; }
         public string Id { get; set; }
+        public string Url { get; set; }
+        public string Path { get; set; }
         public IncomeMessage[] New_messages { get; set; }
         public UnreadMessage[] Unread_messages { get; set;  }
     }

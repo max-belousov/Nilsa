@@ -594,7 +594,8 @@ namespace Nilsa
 
                 String value = lstContactsList[i];
                 String sUID = value.Substring(0, value.IndexOf("|")); // usrID
-                value = value.Substring(value.IndexOf("|") + 1); // skip usrID
+                value = value.Substring(value.IndexOf("|") + 1);
+                value = value.Substring(0, value.IndexOf("|"));// skip usrID
                 String sUName = value;
 
                 Boolean bEquals = bRQVEmpty;
@@ -985,10 +986,10 @@ namespace Nilsa
             File.WriteAllLines(Path.Combine(FormMain.sDataPath, "_contacts_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
         }
         //для новых соцсетей
-        public void ContactsList_AddUser(String sUD, String sUName, string cid)
+        public void ContactsList_AddUser(String sUD, String sUName, string photourl, string cid)
         {
             int iuserIdx = ContactsList_GetUserIdx(sUD);
-            String userRec = sUD + "|" + sUName + "|" + cid;
+            String userRec = sUD + "|" + sUName + "|" + photourl;// + "|" + cid;
             if (iuserIdx >= 0)
                 lstContactsList[iuserIdx] = userRec;
             else
@@ -1261,7 +1262,8 @@ namespace Nilsa
                                     String value = strContactRecord;
 
                                     String sUID = value.Substring(0, value.IndexOf("|")); // usrID
-                                    value = value.Substring(value.IndexOf("|") + 1); // skip usrID
+                                    value = value.Substring(value.IndexOf("|") + 1);
+                                    value = value.Substring(0, value.IndexOf("|"));// skip usrID
                                     String sUName = value;
 
                                     this.pbProgress.Text = "Персонаж " + iPersoneIdx.ToString() + "/" + mFormMain.lstPersoneChangeOriginal.Count.ToString() + " (" + sName_Persone + ") - " + iContactIdx.ToString() + "/" + lstListCont.Count.ToString() + (iContactVisualIdx > 0 ? " - " + iContactVisualIdx.ToString() : "");
@@ -2019,6 +2021,7 @@ namespace Nilsa
             var firstName = formAddCont.Persone.FirstName;
             var lastName = formAddCont.Persone.LastName;
             var socialNetwork = formAddCont.Persone.Owner;
+            var photo = "";
             var isUniq = true;
             foreach (var cont in lstContactsList)
             {
@@ -2038,7 +2041,7 @@ namespace Nilsa
                 currentListContHar[5] += cid.ToString();
                 currentListContHar[7] += socialNetwork;
                 File.WriteAllLines(Path.Combine(FormMain.sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + currentContId + ".txt"), currentListContHar, Encoding.UTF8);
-                ContactsList_AddUser(currentContId.ToString(), firstName + " " + lastName, cid);
+                ContactsList_AddUser(currentContId.ToString(), firstName + " " + lastName, photo, cid);
                 ContactsList_AddUserToVisualList(currentContId.ToString(), firstName + " " + lastName);
 
                 selectRow(grid1.RowsCount - 1);

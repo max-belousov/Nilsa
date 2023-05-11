@@ -13236,7 +13236,7 @@ namespace Nilsa
 						addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), responseInterface.Text);
 						//lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.Text);
 					}
-					
+
 					else if (responseInterface.Status == 200 && responseInterface.New_messages != null) // проверка есть ли новые сообщения у персонажа
 					{
 						for (int i = responseInterface.New_messages.Count() - 1; i >= 0; i--)
@@ -13254,12 +13254,19 @@ namespace Nilsa
 						{
 							if (responseInterface.Unread_messages[i].type_status == "text")
 							{
-                                addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), responseInterface.Unread_messages[i].text);
-                                lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.Unread_messages[i].text);
-                            }
+								addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), responseInterface.Unread_messages[i].text);
+								lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.Unread_messages[i].text);
+							}
 						}
 					}
-					else lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
+					else if (responseInterface.Status == 200 && responseInterface.Path != null)
+					{
+						photoContURL = responseInterface.Path;
+						SetContactNamePhotoId();
+                        lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
+                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                    }
+                    else lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
 					SelectNextReceivedMessage(false);
 					//SelectNextReceivedMessage();
 				}
@@ -14353,7 +14360,7 @@ namespace Nilsa
 					}
 					else
 					{
-                        lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+                        lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
 						//ReadNewReceivedMessages();
                         SelectNextReceivedMessage(false);
                     }
@@ -14800,58 +14807,87 @@ namespace Nilsa
 
 		private void SetContactNamePhotoId()
 		{
-			labelPers1Name.Text = userNameName;
-			labelPers1Family.Text = userNameFamily;
-			labelPers1FIO.Text = userNameName + " " + userNameFamily;
+			labelCont1Name.Text = contNameName;
+			labelCont1Family.Text = contNameFamily;
+			contName = contNameName + " " + contNameFamily;
+			labelCont1FIO.Text = contName;
 			toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-			var localphotoPersURL = "";
-			if (userNameName == "" || userNameFamily == "")
+            try
+            {
+                if (photoContURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+                {
+                    //подставляем фотку
+                    var request = WebRequest.Create(photoContURL);
+                    using (var response = request.GetResponse())
+                    using (var stream = response.GetResponseStream())
+                    {
+                        var bitmapPicture = Bitmap.FromStream(stream);
+                        buttonEditPersHarValues.BackgroundImage = bitmapPicture;
+                    }
+                }
+                else if (photoContURL != "")
+                {
+                    buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
+                }
+
+            }
+            catch (Exception e)
+            {
+                ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+            }
+
+
+            if (labelCont1Name.Text == "")
 			{
-				if (dbUserName == "")
+				if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt")))
 				{
-					if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt")))
+					try
 					{
-						try
-						{
-							dbUserName = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"));
-							var data = dbUserName.Split('|');
-							userID = data[0];
-							userNameName = data[1];
-							userNameFamily = data[2];
-							photoPersURL = data[3];
-							labelPers1Name.Text = userNameName;
-							labelPers1Family.Text = userNameFamily;
-							labelPers1FIO.Text = userNameName + " " + userNameFamily;
-							toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-						}
-						catch (Exception e)
-						{
-							ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-						}
+						dbUserName = File.ReadAllText(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"));
+						var data = dbUserName.Split('|');
+						iContUserID = Convert.ToInt32(data[0]);
+                        contNameName = data[1];
+                        contNameFamily = data[2];
+						photoContURL = data[3];
+						labelPers1Name.Text = contNameName;
+						labelPers1Family.Text = contNameFamily;
+						labelPers1FIO.Text = contNameName + " " + contNameFamily;
+						toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
+					}
+					catch (Exception e)
+					{
+						ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
 					}
 				}
 
-			}
+				if (photoContURL != "")
+				{
+                    try
+                    {
+                        if (photoContURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+                        {
+                            //подставляем фотку
+                            var request = WebRequest.Create(photoContURL);
+                            using (var response = request.GetResponse())
+                            using (var stream = response.GetResponseStream())
+                            {
+                                var bitmapPicture = Bitmap.FromStream(stream);
+                                buttonEditPersHarValues.BackgroundImage = bitmapPicture;
+                            }
+                        }
+                        else 
+                        {
+                            buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
+                        }
 
-			if (photoPersURL != "")
-			{
-				try
-				{
-					//подставляем фотку
-					var request = WebRequest.Create(photoPersURL);
-					using (var response = request.GetResponse())
-					using (var stream = response.GetResponseStream())
-					{
-						var bitmapPicture = Bitmap.FromStream(stream);
-						buttonEditPersHarValues.BackgroundImage = bitmapPicture;
-					}
-				}
-				catch (Exception e)
-				{
-					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-				}
+                    }
+                    catch (Exception e)
+                    {
+                        ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+                    }
+                }
+				LoadPersoneParametersDescription();
 			}
-			LoadPersoneParametersDescription();
 		}
 
 		private void onAfterPersonenListChanged()
