@@ -33,6 +33,7 @@ using VkNet.Model;
 using Nilsa.TinderAssistent;
 using Nilsa.ConfigFiles;
 using Nilsa.NilsaAndInterface;
+using SourceGrid;
 
 namespace Nilsa
 {
@@ -71,7 +72,8 @@ namespace Nilsa
 		public string cookiesTinder;
 		private bool _onChangePersoneStartServiceBool;
 		private InterfaceListener _interfaceListener = new InterfaceListener();
-		public TinderResponse responseInterface = new TinderResponse();
+		public List<TinderResponse> responseInterface = new List<TinderResponse>();
+        //public TinderResponse responseInterface = new TinderResponse();
 
 
 		const bool externalCommandProcess = false; //!!!
@@ -3176,6 +3178,36 @@ namespace Nilsa
 				}
 			}
 			return "";
+		}
+		/// <summary>
+		/// Метод позволяет получить ID контактера по известной характеристике и ее номеру
+		/// </summary>
+		/// <param name="parametrId"></param>
+		/// <param name="parametrValue"></param>
+		/// <returns></returns>
+		private long GetContactIdByParametrValue(int parametrId, string parametrValue)
+		{
+			long contId = -1;
+			foreach (var cont in lstContactsList)
+			{
+                List<String> listCurrentCharacteristics = new List<String>();
+                var stringContId = cont.Substring(0, cont.IndexOf("|"));
+                if (File.Exists(Path.Combine(sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + stringContId + ".txt")))
+				{
+                    try
+                    {
+                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + stringContId + ".txt"));
+                        listCurrentCharacteristics = new List<String>(srcFile);
+                    }
+					catch (Exception) { }
+					if ( listCurrentCharacteristics[parametrId - 1].Equals($"{parametrId}|{parametrValue}") )
+					{
+						contId = Convert.ToInt64(stringContId);
+						break;
+					}
+                }
+            }
+			return contId;
 		}
 
 		private String ContactsList_GetUserField(String sUD, int iFieldIdx) // 0 - usrID, 1 - usrName
@@ -13260,7 +13292,7 @@ namespace Nilsa
 					timerPhysicalSendStart();
 					//отправляем текст сообщения с подстановкой характеристик персонажа и контактера
 					_interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
-					lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
+					//lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
 
 					//очищаем поля с сообщением, чтобы было понятно, что оно отправлено
 					var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
@@ -13270,56 +13302,62 @@ namespace Nilsa
 
 					//todo изменить id на универсального контактера
 					var response = _interfaceListener.NilsaReadFromResponseFile();
-					responseInterface = JsonConvert.DeserializeObject<TinderResponse>(response);
-					if (responseInterface.Status == 200 && responseInterface.Message.Contains("Message sent successfully")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
+					foreach (var resp in responseInterface)
 					{
-						addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), responseInterface.Text);
-						//lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.Text);
-					}
+                        if (resp.Status == 200 && resp.Message.Contains("Message sent successfully")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+                        {
+                            addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.Text);
+                            //lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.Text);
+                        }
 
-					else if (responseInterface.Status == 200 && responseInterface.New_messages != null) // проверка есть ли новые сообщения у персонажа
-					{
-						for (int i = responseInterface.New_messages.Count() - 1; i >= 0; i--)
-						{
-							if (responseInterface.New_messages[i].type_status == "text")
-							{
-								//addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(),responseInterface.New_messages[i].msg_status);
-								//lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.New_messages[i].msg_status);
-							}
-						}
-					}
-					else if (responseInterface.Status == 200 && responseInterface.Unread_messages != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
-					{
-						for (int i = responseInterface.Unread_messages.Count() - 1; i >= 0; i--)
-						{
-							if (responseInterface.Unread_messages[i].type_status == "text")
-							{
-								addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), responseInterface.Unread_messages[i].text);
-								lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + responseInterface.Unread_messages[i].text);
-							}
-						}
-					}
-					else if (responseInterface.Status == 200 && responseInterface.Path != null)
-					{
-						switch (responseInterface.Message)
-						{
-							case "PERSON GET PHOTO SUCCESS":
-								photoPersURL = responseInterface.Path;
-                                SetPhoto(true, photoPersURL);
-                                SavePersoneParamersValues();
-                                break;
-							case "CONTACTER GET PHOTO SUCCESS":
-                                photoContURL = responseInterface.Path;
-                                SetPhoto(false, photoContURL);
-                                lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
-                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
-                                break;
-						}
+                        else if (resp.Status == 200 && resp.New_messages != null) // проверка есть ли новые сообщения у персонажа
+                        {
+                            foreach (var newmessage in resp.New_messages)
+                            {
+                                var i = 0;
+                                while (i < newmessage.unread_count)
+                                {
+                                    i++;
+                                    var localContId = GetContactIdByParametrValue(6, newmessage.cid);
+                                    lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|YOU HAVE NEW MESSAGES");
+                                }
+                            }
+                        }
+                        else if (resp.Status == 200 && resp.Unread_messages != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
+                        {
+                            for (int i = resp.Unread_messages.Count() - 1; i >= 0; i--)
+                            {
+                                if (resp.Unread_messages[i].type_status == "text")
+                                {
+                                    addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.Unread_messages[i].text);
+                                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.Unread_messages[i].text);
+                                }
+                            }
+                        }
+                        else if (resp.Status == 200 && resp.Path != null)
+                        {
+                            switch (resp.Message)
+                            {
+                                case "PERSON GET PHOTO SUCCESS":
+                                    photoPersURL = resp.Path;
+                                    SetPhoto(true, photoPersURL);
+                                    SavePersoneParamersValues();
+                                    break;
+                                case "CONTACTER GET PHOTO SUCCESS":
+                                    photoContURL = resp.Path;
+                                    SetPhoto(false, photoContURL);
+                                    lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
+                                    File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                                    break;
+                            }
+                        }
+                        else lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
+                        //SelectNextReceivedMessage();
                     }
-                    else lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
-					SelectNextReceivedMessage(false);
-					//SelectNextReceivedMessage();
-				}
+
+                    SelectNextReceivedMessage();
+                }
 
 				timerAnswerWaitingOn();
 			}

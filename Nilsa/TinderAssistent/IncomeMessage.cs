@@ -10,7 +10,7 @@ namespace Nilsa.TinderAssistent
     {
         public IncomeMessage() { }
         public string cid { get; set; }
-        public string unread_count { get; set; }
+        public int unread_count { get; set; }
         public string msg_status { get; set; }
         public string type_status { get; set; }
         public string date_time { get; set; }
