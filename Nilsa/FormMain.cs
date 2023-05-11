@@ -2389,7 +2389,15 @@ namespace Nilsa
 
 			if (!_firstStart)
 			{
-				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePersTesting");
+				for (int i = 0; i < lstReceivedMessages.Count; i++)
+				{
+					if (lstReceivedMessages[i].Contains("0|330643598|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE") || lstReceivedMessages[i].Contains("ActivatePersTesting")))
+					{
+                        lstReceivedMessages.RemoveAt(i);
+						i--;
+                    }
+				}
+				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|ACTIVATE_PERSONE");
 				//SelectNextReceivedMessage(false);
 				//tbSendOutMessageAction();
 			}
@@ -5495,7 +5503,7 @@ namespace Nilsa
                     }
                     else 
                     {
-                        buttonEditContHarValues.BackgroundImage = Image.FromFile(photoPersURL);
+                        buttonEditPersHarValues.BackgroundImage = Image.FromFile(photoPersURL);
                     }
                 }
 				catch (Exception e)
@@ -20391,9 +20399,15 @@ namespace Nilsa
 		{
 			//Autorize(userLogin, userPassword, userID);
 			//AutorizeVK(userLogin, userPassword);
-			needAutorize = true;
-			Setup(userLogin, userPassword, "");
-			needAutorize = false;
+			//needAutorize = true;
+			//Setup(userLogin, userPassword, "");
+			//needAutorize = false;
+			var msg = "";
+			foreach (var m in lstReceivedMessages)
+			{
+				msg += m + "\n";
+			}
+			MessageBox.Show(msg);
 		}
 
 		private void tbMessagesDBEqOutDeleteMessage_Click(object sender, EventArgs e)
