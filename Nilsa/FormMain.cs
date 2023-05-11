@@ -5415,8 +5415,8 @@ namespace Nilsa
 			labelPers1Family.Text = userNameFamily;
 			labelPers1FIO.Text = userNameName + " " + userNameFamily;
 			toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-			var localphotoPersURL = "";
-			if (userNameName == "" || userNameFamily == "" || photoPersURL == "")
+
+            if (userNameName == "" || userNameFamily == "" || photoPersURL == "")
 			{
 				if (dbUserName == "")
 				{
@@ -5448,16 +5448,24 @@ namespace Nilsa
 			{
 				try
 				{
-					//подставляем фотку
-					//photoPersURL = localphotoPersURL;
-					var request = WebRequest.Create(photoPersURL);
-					using (var response = request.GetResponse())
-					using (var stream = response.GetResponseStream())
-					{
-						var bitmapPicture = Bitmap.FromStream(stream);
-						buttonEditPersHarValues.BackgroundImage = bitmapPicture;
-					}
-				}
+                    //подставляем фотку
+                    //photoPersURL = localphotoPersURL;
+                    if (photoPersURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+                    {
+                        //подставляем фотку
+                        var request = WebRequest.Create(photoPersURL);
+                        using (var response = request.GetResponse())
+                        using (var stream = response.GetResponseStream())
+                        {
+                            var bitmapPicture = Bitmap.FromStream(stream);
+                            buttonEditPersHarValues.BackgroundImage = bitmapPicture;
+                        }
+                    }
+                    else 
+                    {
+                        buttonEditContHarValues.BackgroundImage = Image.FromFile(photoPersURL);
+                    }
+                }
 				catch (Exception e)
 				{
 					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
@@ -6360,6 +6368,38 @@ namespace Nilsa
 			}
 				
 		}
+		/// <summary>
+		/// Метод загружает и размещает фото
+		/// true - персонаж, false - contacter
+		/// </summary>
+		/// <param name="photoOwner"></param>
+		private void SetPhoto(bool photoOwner, string photoPath)
+		{
+			var button = buttonEditContHarValues;
+            if (true) button = buttonEditPersHarValues;
+            try
+            {
+                if (photoPath.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+                {
+                    //подставляем фотку
+                    var request = WebRequest.Create(photoPath);
+                    using (var response = request.GetResponse())
+                    using (var stream = response.GetResponseStream())
+                    {
+                        var bitmapPicture = Bitmap.FromStream(stream);
+                        button.BackgroundImage = bitmapPicture;
+                    }
+                }
+                else if (photoPath != "")
+                {
+                    button.BackgroundImage = Image.FromFile(photoPersURL);
+                }
+            }
+            catch (Exception e)
+            {
+                ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+            }
+        }
 
 		private void LoadContactParamersValues()
 		{
@@ -13261,10 +13301,20 @@ namespace Nilsa
 					}
 					else if (responseInterface.Status == 200 && responseInterface.Path != null)
 					{
-						photoContURL = responseInterface.Path;
-						SetContactNamePhotoId();
-                        lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
-                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+						switch (responseInterface.Message)
+						{
+							case "PERSON GET PHOTO SUCCESS":
+								photoPersURL = responseInterface.Path;
+                                SetPhoto(true, photoPersURL);
+                                SavePersoneParamersValues();
+                                break;
+							case "CONTACTER GET PHOTO SUCCESS":
+                                photoContURL = responseInterface.Path;
+                                SetPhoto(false, photoContURL);
+                                lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
+                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                                break;
+						}
                     }
                     else lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
 					SelectNextReceivedMessage(false);
@@ -14805,38 +14855,14 @@ namespace Nilsa
 			UpdateContactParametersValues_Algorithm();
 		}
 
-		private void SetContactNamePhotoId()
+		private void SetContactParametrsValues()
 		{
 			labelCont1Name.Text = contNameName;
 			labelCont1Family.Text = contNameFamily;
 			contName = contNameName + " " + contNameFamily;
 			labelCont1FIO.Text = contName;
 			toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-            try
-            {
-                if (photoContURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
-                {
-                    //подставляем фотку
-                    var request = WebRequest.Create(photoContURL);
-                    using (var response = request.GetResponse())
-                    using (var stream = response.GetResponseStream())
-                    {
-                        var bitmapPicture = Bitmap.FromStream(stream);
-                        buttonEditPersHarValues.BackgroundImage = bitmapPicture;
-                    }
-                }
-                else if (photoContURL != "")
-                {
-                    buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
-                }
-
-            }
-            catch (Exception e)
-            {
-                ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-            }
-
-
+            
             if (labelCont1Name.Text == "")
 			{
 				if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt")))
@@ -14968,6 +14994,7 @@ namespace Nilsa
 			userNameFamily = "";
 			photoURL = "";
 			dbUserName = "";
+			LoadPersoneParametersValues();
 			SetPersoneParametersValues();
 			//LoadPersoneParametersDescription();
 			//LoadAlgorithmSettings();
