@@ -83,7 +83,7 @@ namespace Nilsa.TinderAssistent
 			personeName = _personeName;
 			autoclosedelaydefault = 45;
 			tinderResponse = new TinderResponse();
-            tinderResponse.Status = 0;
+            tinderResponse.STATUS = 0;
             autoclosedelay = autoclosedelaydefault;
 			mCommand = _iCommand;
 			operatingMode = _iOperatingMode;
@@ -329,7 +329,7 @@ namespace Nilsa.TinderAssistent
 			}
             catch (Exception) { }
             tinderResponse = JsonConvert.DeserializeObject<TinderResponse>(stringJSON);
-			MessageBox.Show($"Status: {tinderResponse.Status}\nMessage: {tinderResponse.Message}");
+			MessageBox.Show($"Status: {tinderResponse.STATUS}\nMessage: {tinderResponse.MESSAGE}");
             //File.Exists
             //раскоментить после реализации записи интерфейса в файл
             //do

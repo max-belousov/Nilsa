@@ -9,14 +9,19 @@ namespace Nilsa.TinderAssistent
     public class TinderResponse
     {
         public TinderResponse() { }
-        public int Status{ get; set; }
-        public string Message { get; set; }
-        public string Data { get; set; }
-        public string Text { get; set; }
-        public string Id { get; set; }
-        public string Url { get; set; }
-        public string Path { get; set; }
-        public IncomeMessage[] New_messages { get; set; }
-        public UnreadMessage[] Unread_messages { get; set;  }
+        public int STATUS{ get; set; }
+        public string MESSAGE{ get; set; }
+        public string TEXT { get; set; }
+        public IncomeMessage[] DATA { get; set; }
+        public string ID { get; set; }
+        public string URL { get; set; }
+        public string PATH { get; set; }
+        public string FIRST_NAME_PERSONE { get; set; }
+        public string LAST_NAME_PERSONE { get; set; }
+        public string FIRST_NAME_CONTACTER { get; set; }
+        public string LAST_NAME_CONTACTER { get; set; }
+        public string CONTACTER { get; set; }
+        public IncomeMessage[] NEW_MESSAGES { get; set; }
+        public UnreadMessage[] UNREAD_MESSAGES { get; set;  }
     }
 }

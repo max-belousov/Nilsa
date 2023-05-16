@@ -5096,27 +5096,27 @@ namespace Nilsa
                 var requestString = $"{networkPrefix}FirstAuthorization\nLogin: {currentUserLogin}\nId: {currentUserID}";
                 interfaceListener.NilsaWriteToRequestFile(requestString);
                 var response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
-                if (response.Status != 200) MessageBox.Show(response.Message, "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (response.STATUS != 200) MessageBox.Show(response.MESSAGE, "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                if (response.Status == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа", 
+                if (response.STATUS == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа", 
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     //todo доделать запись кукис в пароль или самоописание или туда и туда пока
                     var saveCookiesRequest = $"SaveCookies\nId: {currentUserID}";
                     interfaceListener.NilsaWriteToRequestFile(saveCookiesRequest);
                     response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
-                    if (response.Status == 200) MessageBox.Show("Успешная авторизация", "Завершение авторизации", MessageBoxButtons.OK);
-                    else MessageBox.Show(response.Message, "Завершение авторизации", MessageBoxButtons.OK);
+                    if (response.STATUS == 200) MessageBox.Show("Успешная авторизация", "Завершение авторизации", MessageBoxButtons.OK);
+                    else MessageBox.Show(response.MESSAGE, "Завершение авторизации", MessageBoxButtons.OK);
                 }
 
-                if (response.Status == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа",
+                if (response.STATUS == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
                 {
                     var saveCookiesRequest = $"DeleteCookies\nId: {currentUserID}";
                     interfaceListener.NilsaWriteToRequestFile(saveCookiesRequest);
                     response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
-                    if (response.Status == 200) MessageBox.Show("Данные удалены", "Удаление данных", MessageBoxButtons.OK);
-                    else MessageBox.Show(response.Message, "Удаление данных", MessageBoxButtons.OK);
+                    if (response.STATUS == 200) MessageBox.Show("Данные удалены", "Удаление данных", MessageBoxButtons.OK);
+                    else MessageBox.Show(response.MESSAGE, "Удаление данных", MessageBoxButtons.OK);
                 }
             }
             else if (lvList.CheckedIndices.Count > 0)

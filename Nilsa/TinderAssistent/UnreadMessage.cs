@@ -9,8 +9,8 @@ namespace Nilsa.TinderAssistent
     public class UnreadMessage
     {
         public UnreadMessage() { }
-        public string text { get; set; }
-        public string type_status { get; set; }
-        public string date_time { get; set; }
+        public string TEXT { get; set; }
+        public string TYPE_STATUS { get; set; }
+        public string DATE_TIME { get; set; }
     }
 }
