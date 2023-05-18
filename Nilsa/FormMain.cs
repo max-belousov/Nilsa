@@ -9,6 +9,7 @@ using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Linq;
 using System.Media;
 using System.Net;
@@ -74,8 +75,7 @@ namespace Nilsa
 		private bool _onChangePersoneStartServiceBool;
 		private InterfaceListener _interfaceListener = new InterfaceListener();
 		public List<TinderResponse> responseInterface = new List<TinderResponse>();
-        //public TinderResponse responseInterface = new TinderResponse();
-
+		public TheSystemContacter theSystemContacter;
 
 		const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
@@ -383,6 +383,65 @@ namespace Nilsa
 		public string CurrentLanguage = "ru";
 		private string ftpUser = "bYtFd4fBuOxmiEISoLcbgXfLMT+hId2rqmRa8De1vwoKytOE2NIEwynyxJ531k4yWV9Hdc7af+k=";//"tH3CksO/2EkbdvBS+MzI05KJgIDu1X1OTFNSVx8YIWMamunOT0J2UkhnubrcglkPteQMqhq9k7A=";//"tH3CksO/2EkbdvBS+MzI0wSQvre8iaVlaPoc1Obn+XJzgwA/ql2sew==";
 		private bool bInitStart = false;
+
+		/// <summary>
+		/// Метод позволяет использовать файлы ресурсов как картинки из соответствующей папки
+		/// </summary>
+		/// <param name="resourceFileName"></param>
+		/// <exception cref="Exception"></exception>
+        public string CopyFromResourcesToImages(string resourceFileName)
+        {
+            string resourcePath = "Nilsa.Resources." + resourceFileName;
+            string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+            string outputFile = Path.Combine(outputPath, resourceFileName);
+
+			if (File.Exists(outputFile)) return outputFile;
+			// Создание папки, если она не существует
+            Directory.CreateDirectory(outputPath);
+
+            // Получение ресурса по имени
+            using (Stream resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourcePath))
+            {
+                if (resourceStream == null)
+                {
+                    throw new Exception("Resource not found: " + resourceFileName);
+                }
+
+                // Сохранение ресурса на диск
+                using (FileStream fileStream = new FileStream(outputFile, FileMode.Create))
+                {
+                    resourceStream.CopyTo(fileStream);
+                }
+            }
+			return outputFile;
+        }
+
+		/// <summary>
+		/// Метод устанавливает системного контактера и проверяет на наличие его в БД
+		/// </summary>
+		public void SetTheSystemContacter()
+		{
+			var fileName = $"_contacts_{getSocialNetworkPrefix()}{iPersUserID}.txt";
+			var photoPath = CopyFromResourcesToImages("0.png");
+			var dataTheSystem = $"0|The System|{photoPath}";
+
+            var localContList = new List<String>();
+			if (File.Exists(Path.Combine(sDataPath, fileName)))
+			{
+				try
+				{
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"));
+					localContList = new List<String>(srcFile);
+				}
+				catch (Exception e) { MessageBox.Show(e.Message); }
+			}
+
+            if (localContList.Count <= 0) localContList.Add(dataTheSystem);
+            else localContList.Insert(0, dataTheSystem);
+
+            theSystemContacter = new TheSystemContacter("The", "System", 0, photoPath);
+			File.WriteAllLines(Path.Combine(sDataPath, fileName), localContList);
+        }
 
 		public FormMain()
 		{
@@ -2278,7 +2337,8 @@ namespace Nilsa
 			PersonenList_SavePersoneLogin();
 
 			Wall_LoadPostToMonitoring();
-			ContactsList_Load();
+			SetTheSystemContacter();
+            ContactsList_Load();
 			/*
 			 * Disable API
 			if (SocialNetwork == 0 && externalActivatedProcess)
@@ -2421,13 +2481,13 @@ namespace Nilsa
 				//catch (Exception) { }
 				for (int i = 0; i < lstReceivedMessages.Count; i++)
 				{
-					if (lstReceivedMessages[i].Contains("0|330643598|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE") || lstReceivedMessages[i].Contains("ActivatePersTesting")))
+					if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE") || lstReceivedMessages[i].Contains("ActivatePersTesting")))
 					{
 						lstReceivedMessages.RemoveAt(i);
 						i--;
 					}
 				}
-				lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|ACTIVATE_PERSONE");
+				lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
 				SelectNextReceivedMessage(false);
 				//tbSendOutMessageAction();
 			}
@@ -4883,10 +4943,10 @@ namespace Nilsa
 				contName = contNameFamily = contNameName = "";
 				labelCont1Family.Text = "";
 				labelCont1Name.Text = "";
-				labelCont1FIO.Text = "The System";
+				labelCont1FIO.Text = $"{theSystemContacter.FirstName} {theSystemContacter.LastName}";
 				sGroupAdditinalUsers = "";
 				toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
-				buttonEditContHarValues.BackgroundImage = Image.FromFile(Path.Combine(sNILSAImagesPath, "0.png"));
+				buttonEditContHarValues.BackgroundImage = Image.FromFile(theSystemContacter.PhotoPath);
 			}
 			needResetName = true;
 
@@ -13488,7 +13548,7 @@ namespace Nilsa
 						}
 						else 
 						{
-                            lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
+                            lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
                             SelectNextReceivedMessage(false);
                             //lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
                         } 
@@ -13793,10 +13853,13 @@ namespace Nilsa
 			if (timerAnswerWaitingCycle <= 0)
 			{
 				timerAnswerWaitingOff();
-				timerReadMessagesOn();
+				//timerReadMessagesOn();
 				if (lstPersoneChange.Count > 0)
-					bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
-				else
+				{
+                    bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
+                    //написать получение сообщения END_WAITING_TIMER от The System
+                }
+                else
 					timerAnswerWaitingOn();
 			}
 
@@ -14566,34 +14629,40 @@ namespace Nilsa
 			if (timerReadCycle <= 0)
 			{
 				timerReadMessagesOff();
-				bool bNotChanged = true;
-                if (lstReceivedMessages.Count > 0)
-				{
-					ReadNewReceivedMessages();
-					if (iInMsgID == -1)
-						SelectNextReceivedMessage(false);
-				}
-				else
-				{
-                    //tbSkipMessage_Click(null, null);
-                    if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
-					{
-						bNotChanged = false;
-                        lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_READ_MESSAGE_FINISHED");
-						SelectNextReceivedMessage(false);
-                        //onChangePersoneByTimer(true, true);
-                    }
-					else
-					{
-                        lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
-						//ReadNewReceivedMessages();
-                        SelectNextReceivedMessage(false);
-                    }
-				}
+                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+                SelectNextReceivedMessage(false);
+
+				//задача 53 в рамках нее убран функционал
+
+    //            bool bNotChanged = true;
+    //            if (lstReceivedMessages.Count > 0)
+				//{
+				//	//ReadNewReceivedMessages();
+				//	//if (iInMsgID == -1)
+				//	//	SelectNextReceivedMessage(false);
+
+				//}
+				//else
+				//{
+    //                //tbSkipMessage_Click(null, null);
+    //                if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
+				//	{
+				//		bNotChanged = false;
+    //                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_READ_MESSAGE_FINISHED");
+				//		SelectNextReceivedMessage(false);
+    //                    //onChangePersoneByTimer(true, true);
+    //                }
+				//	else
+				//	{
+    //                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+				//		//ReadNewReceivedMessages();
+    //                    SelectNextReceivedMessage(false);
+    //                }
+				//}
 
 
-				if (bNotChanged && iContUserID != -1)
-					ReadAllUserMessages(iContUserID);
+				//if (bNotChanged && iContUserID != -1)
+				//	ReadAllUserMessages(iContUserID);
 
 			}
 
@@ -19249,9 +19318,10 @@ namespace Nilsa
 			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle <=0 && timerReadCycle <=0 && timerWriteCycle <= 0 && !tbStartService.Enabled)
 			{
 				timerChangePersoneOff();
-                timerWriteMessagesOn();
-                lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_CHANGE_PERSON_FINISHED");
+				StopService();
+                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "CHANGE_THE_PERSON");
 				SelectNextReceivedMessage(false);
+				StartService();
                 //onChangePersoneByTimer(true, true);
             }
 		}

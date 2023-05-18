@@ -13,7 +13,7 @@ namespace Nilsa.TinderAssistent
         public string MESSAGE{ get; set; }
         public string TEXT { get; set; }
         public IncomeMessage[] DATA { get; set; }
-        public string ID { get; set; }
+        public long ID { get; set; }
         public string URL { get; set; }
         public string PATH { get; set; }
         public string FIRST_NAME_PERSONE { get; set; }
