@@ -1684,6 +1684,12 @@ namespace Nilsa
                         int iSelIdx = gridSelectedIndex;
                         String sUID = getItemID(iSelIdx);
 
+                        if (sUID.Equals("0"))
+                        {
+                            MessageBox.Show("Контактер The System не может быть удален", "Удаление The System", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+
                         if (FormMain.SocialNetwork == 1 && sUID.Equals("1") && iPersUserID == 0)
                         {
                             MessageBox.Show(NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_6", this.Name, "Контактер OPERATOR не может быть удален."), NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_4", this.Name, "Удаление Контактера"), MessageBoxButtons.OK, MessageBoxIcon.Information);

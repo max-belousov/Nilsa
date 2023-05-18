@@ -437,7 +437,7 @@ namespace Nilsa
 			}
 
             if (localContList.Count <= 0) localContList.Add(dataTheSystem);
-            else localContList.Insert(0, dataTheSystem);
+            else if (!localContList[0].Contains("0|The System")) localContList.Insert(0, dataTheSystem);
 
             theSystemContacter = new TheSystemContacter("The", "System", 0, photoPath);
 			File.WriteAllLines(Path.Combine(sDataPath, fileName), localContList);
@@ -4638,7 +4638,7 @@ namespace Nilsa
 			bool bNeedSend = false;
 			LoadContactParamersValues();
 			SetContactParametersValues();
-			ReadAllUserMessages(iContUserID);
+			ReadAllUserMessages(iPersUserID, iContUserID);
 			String soperators = lblPersHarValues[13].Text.Trim() + ",";
 			string[] sOperIDs = soperators.Split(',');
 			//bool bStatusService = !tbStartService.Enabled;
@@ -5225,7 +5225,7 @@ namespace Nilsa
 				tbDeleteMessage.Enabled = true;
 
 				// 2019-04-13
-				ReadAllUserMessages(iContUserID);
+				ReadAllUserMessages(iPersUserID,iContUserID);
 				if (value.StartsWith("INIT_DIALOG|"))
 				{
 					//ReadAndMarkAsReadedNewReceivedMessages(iContUserID);
@@ -5371,7 +5371,7 @@ namespace Nilsa
 			UpdatePersoneParametersValues_Algorithm();
 		}
 
-		int iUndoMarkerChangesAlgorithm;
+        int iUndoMarkerChangesAlgorithm;
 		List<String> lstUndoMarkerChangesContHarValues = null;
 		long iUndoMarkerChangesContHarValuesContID = -1;
 
@@ -5512,7 +5512,7 @@ namespace Nilsa
 
 			// 2019-04-13
 			//if (rereadHistory)
-			ReadAllUserMessages(iContUserID);
+			ReadAllUserMessages(iPersUserID,iContUserID);
 
 		}
 
@@ -8898,14 +8898,14 @@ namespace Nilsa
 			return messages;
 		}
 
-		private void ReadAllUserMessages(long lUserID)
+		private void ReadAllUserMessages(long localUserID, long localContID)
 		{
 			lstUserMessages = new List<String>();
 
 			Cursor = Cursors.WaitCursor;
 			// получаем id пользователей из группы, макс. кол-во записей = 1000
 			int totalCount; // общее кол-во участников
-			if (iContUserID >= 0)
+			if (localContID >= 0)
 			{
 				if (SocialNetwork == 0)
 				{
@@ -9058,11 +9058,11 @@ namespace Nilsa
 				{
 					List<String> lstHistory = new List<String>();
 					listBoxUserMessages.Items.Clear();
-					if (File.Exists(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + Convert.ToString(iContUserID) + ".txt")))
+					if (File.Exists(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt")))
 					{
 						try
 						{
-							var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + Convert.ToString(iContUserID) + ".txt"));
+							var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt"));
 							lstHistory = new List<String>(srcFile);
 						}
 						catch (Exception e)
@@ -12334,7 +12334,7 @@ namespace Nilsa
 
 							if (iPersUserID >= 0 && SocialNetwork == 0)
 							{
-								ReadAllUserMessages(iContUserID);
+								ReadAllUserMessages(iPersUserID,iContUserID);
 								string msg = "SEND_OPERATOR\n";
 								msg += iContUserID.ToString() + "\n";
 								msg += labelCont1FIO.Text + "\n\n";
@@ -12514,7 +12514,7 @@ namespace Nilsa
 
 							if (iPersUserID >= 0 && SocialNetwork == 0)
 							{
-								ReadAllUserMessages(iContUserID);
+								ReadAllUserMessages(iPersUserID,iContUserID);
 								string msg = "INFO_OPERATOR\n";
 								msg += labelCont1FIO.Text + "\n";
 								msg += lblContHarValues[2].Text + "\n\n";
@@ -13424,10 +13424,12 @@ namespace Nilsa
 					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
 					foreach (var resp in responseInterface)
 					{
-						if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+						var localPersId = resp.ID;
+                        var localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+                        if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
 						{
-							addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-							ReadAllUserMessages(iPersUserID);
+							addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+							ReadAllUserMessages(localPersId, localContId);
 						}
 						else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
 						{
@@ -13436,9 +13438,8 @@ namespace Nilsa
 								if (newmessage.UNREAD_COUNT == null) return;
                                 while (newmessage.UNREAD_COUNT > 0)
 								{
-									var localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER);
                                     //lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|YOU HAVE NEW MESSAGES");
-                                    addToHistory(iPersUserID, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
+                                    addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
                                     lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
 									newmessage.UNREAD_COUNT--;
 									SelectNextReceivedMessage(false);
@@ -13451,8 +13452,8 @@ namespace Nilsa
 							{
 								if (resp.UNREAD_MESSAGES[i].TYPE_STATUS == "text")
 								{
-									addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.UNREAD_MESSAGES[i].TEXT);
-									lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.UNREAD_MESSAGES[i].TEXT);
+									addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.UNREAD_MESSAGES[i].TEXT);
+									lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.UNREAD_MESSAGES[i].TEXT);
 									SelectNextReceivedMessage(false);
 									//lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
 								}
@@ -13472,8 +13473,8 @@ namespace Nilsa
 									SetPhoto(false, photoContURL);
 									try
 									{
-                                        lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
-                                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString())] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
                                     }
 									catch (Exception e)
 									{
@@ -13508,12 +13509,12 @@ namespace Nilsa
                                     break;
 							}
 
-                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt"), iPersUserID + "|" +
+                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
 								userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
 							dbUserName = "";
 							userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
 							SetPersoneParametersValues();
-                            PersonenList_AddUser(iPersUserID.ToString(), userName, userLogin, userPassword);
+                            PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
                         }
 						else if (resp.STATUS == 200 && (resp.FIRST_NAME_CONTACTER != null || resp.LAST_NAME_CONTACTER != null)) //получение имени или фамилии контактера
 						{
@@ -13540,7 +13541,7 @@ namespace Nilsa
                                     break;
                             }
 
-                            lstContactsList[ContactsList_GetUserIdx(iContUserID.ToString())] = iContUserID.ToString() + "|" + contName + "|" + photoContURL;
+                            lstContactsList[ContactsList_GetUserIdx(localContId.ToString())] = localContId.ToString() + "|" + contName + "|" + photoContURL;
 							SaveContactParamersValues();
 							contNameName = "";
 							contNameFamily = "";
@@ -18256,7 +18257,7 @@ namespace Nilsa
 
 							// 2019-04-13
 							if ((channel == 0 || channel == 4) && contid == iContUserID && iContUserID != -1)
-								ReadAllUserMessages(iContUserID);
+								ReadAllUserMessages(iPersUserID,iContUserID);
 						}
 						else if (SocialNetwork == 1)
 						{
