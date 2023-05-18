@@ -6155,8 +6155,16 @@ namespace Nilsa
 								contName = data[1];
 								photoContURL = data[2];
 								var names = contName.Split(' ');
-								contNameName = names[0];
-								contNameFamily = names[1];
+                                if (names.Length == 2)
+                                {
+                                    contNameName = names[0];
+                                    contNameFamily = names[1];
+                                }
+                                else if (names.Length == 1)
+                                {
+                                    contNameName = names[0];
+                                    contNameFamily = "";
+                                }
 								labelCont1Family.Text = contNameFamily;
 								labelCont1Name.Text = contNameName;
 								labelCont1FIO.Text = contName;
@@ -6279,8 +6287,16 @@ namespace Nilsa
 							contName = data[1];
 							photoContURL = data[2];
 							var names = contName.Split(' ');
-							contNameName = names[0];
-							contNameFamily = names[1];
+							if (names.Length == 2)
+							{
+                                contNameName = names[0];
+                                contNameFamily = names[1];
+                            }
+							else if (names.Length == 1)
+							{
+                                contNameName = names[0];
+                                contNameFamily = "";
+                            }
 							labelCont1Family.Text = contNameFamily;
 							labelCont1Name.Text = contNameName;
 							labelCont1FIO.Text = contName;
@@ -15125,8 +15141,16 @@ namespace Nilsa
                                 contName = data[1];
                                 photoContURL = data[2];
                                 var names = contName.Split(' ');
-                                contNameName = names[0];
-                                contNameFamily = names[1];
+                                if (names.Length == 2)
+                                {
+                                    contNameName = names[0];
+                                    contNameFamily = names[1];
+                                }
+                                else if (names.Length == 1)
+                                {
+                                    contNameName = names[0];
+                                    contNameFamily = "";
+                                }
                                 labelCont1Name.Text = contNameName;
                                 labelCont1Family.Text = contNameFamily;
                                 labelCont1FIO.Text = contNameName + " " + contNameFamily;
