@@ -21,6 +21,7 @@ namespace Nilsa.TinderAssistent
         public string FIRST_NAME_CONTACTER { get; set; }
         public string LAST_NAME_CONTACTER { get; set; }
         public string CONTACTER { get; set; }
+        public string COMMAND { get; set; }
         public IncomeMessage[] NEW_MESSAGES { get; set; }
         public UnreadMessage[] UNREAD_MESSAGES { get; set;  }
     }

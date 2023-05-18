@@ -13451,7 +13451,8 @@ namespace Nilsa
 						{
 							foreach (var newmessage in resp.DATA)
 							{
-								if (newmessage.UNREAD_COUNT == null) return;
+                                localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER);
+                                if (newmessage.UNREAD_COUNT == null) return;
                                 while (newmessage.UNREAD_COUNT > 0)
 								{
                                     //lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|YOU HAVE NEW MESSAGES");
