@@ -3267,6 +3267,7 @@ namespace Nilsa
 			{
                 List<String> listCurrentCharacteristics = new List<String>();
                 var stringContId = cont.Substring(0, cont.IndexOf("|"));
+				if (stringContId.Equals("0")) continue;
                 if (File.Exists(Path.Combine(sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + stringContId + ".txt")))
 				{
                     try
@@ -3275,6 +3276,7 @@ namespace Nilsa
                         listCurrentCharacteristics = new List<String>(srcFile);
                     }
 					catch (Exception) { }
+					if (listCurrentCharacteristics.Count <= 0) continue;
 					if ( listCurrentCharacteristics[parametrId - 1].Equals($"{parametrId}|{parametrValue}") )
 					{
 						contId = Convert.ToInt64(stringContId);
@@ -3522,7 +3524,53 @@ namespace Nilsa
 			return sUName;
 		}
 
-		private void ContactsList_AddUser(String sUD, String sUName)
+        //public long FindFreeIndex(List<string> list)
+        //{
+        //    long index = 0;
+        //    foreach (string item in list)
+        //    {
+        //        int separatorIndex = item.IndexOf('|');
+        //        if (separatorIndex > 0)
+        //        {
+        //            long itemIndex;
+        //            if (long.TryParse(item.Substring(0, separatorIndex), out itemIndex))
+        //            {
+        //                if (itemIndex == index)
+        //                {
+        //                    index++;
+        //                }
+        //                else
+        //                {
+        //                    return index;
+        //                }
+        //            }
+        //        }
+        //    }
+        //    return index;
+        //}
+
+        public long FindFreeIndex(List<string> list)
+        {
+            HashSet<long> usedIndexes = new HashSet<long>();
+
+            foreach (string item in list)
+            {
+                long index = long.Parse(item.Substring(0, item.IndexOf("|")));
+
+                usedIndexes.Add(index);
+            }
+
+            long freeIndex = 0;
+
+            while (usedIndexes.Contains(freeIndex))
+            {
+                freeIndex++;
+            }
+
+            return freeIndex;
+        }
+
+        private void ContactsList_AddUser(String sUD, String sUName)
 		{
 			int iuserIdx = ContactsList_GetUserIdx(sUD);
 			String userRec = sUD + "|" + sUName + "|" + photoContURL;
@@ -13441,7 +13489,14 @@ namespace Nilsa
 					foreach (var resp in responseInterface)
 					{
 						var localPersId = resp.ID;
-                        var localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+						var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+
+                        if (resp.CONTACTER != null)
+						{
+                            localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+
+                        }
+
                         if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
 						{
 							addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
@@ -13452,10 +13507,38 @@ namespace Nilsa
 							foreach (var newmessage in resp.DATA)
 							{
                                 localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER);
+								//реализация добавления контактера в БД по настройке алгоритма
+								if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
+								{
+                                    localContId = FindFreeIndex(lstContactsList);
+									var userRec = $"{localContId}||";
+									lstContactsList.Add(userRec);
+                                    FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                                    ContactsList_Load();
+									//загрузка характеристик конкретного алгоритма
+                                    var lstContHarAlgValues = new List<String>();
+                                    if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
+                                    {
+                                        var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
+                                        lstContHarAlgValues = new List<String>(srcFile);
+                                    }
+
+									for (int i = 0; i < lstContHarAlgValues.Count; i++)
+									{
+										lstContHarAlgValues[i] = $"{i+1}|{lstContHarAlgValues[i]}";
+                                    }
+
+									lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
+                                    File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
+                                }
+								else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
+
+
                                 if (newmessage.UNREAD_COUNT == null) return;
                                 while (newmessage.UNREAD_COUNT > 0)
 								{
-                                    //lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|YOU HAVE NEW MESSAGES");
+									//lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|YOU HAVE NEW MESSAGES");
+									newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
                                     addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
                                     lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
 									newmessage.UNREAD_COUNT--;
@@ -13871,14 +13954,16 @@ namespace Nilsa
 			if (timerAnswerWaitingCycle <= 0)
 			{
 				timerAnswerWaitingOff();
-				//timerReadMessagesOn();
-				if (lstPersoneChange.Count > 0)
+                //timerReadMessagesOn();
+                //написать получение сообщения END_WAITING_TIMER от The System
+                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
+                SelectNextReceivedMessage(false);
+                if (lstPersoneChange.Count > 0)
 				{
                     bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
-                    //написать получение сообщения END_WAITING_TIMER от The System
                 }
-                else
-					timerAnswerWaitingOn();
+     //           else
+					//timerAnswerWaitingOn();
 			}
 
 		}
