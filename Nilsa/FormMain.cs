@@ -2463,7 +2463,20 @@ namespace Nilsa
 				}
 			}
 
-			needActivation = true;
+            if (!_firstStart)
+            {
+                for (int i = 0; i < lstReceivedMessages.Count; i++)
+                {
+                    if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE") || lstReceivedMessages[i].Contains("ActivatePersTesting")))
+                    {
+                        lstReceivedMessages.RemoveAt(i);
+                        i--;
+                    }
+                }
+                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
+            }
+
+            needActivation = true;
 			timerChangePersoneOn();
 			SelectNextReceivedMessage(false);
             bSetupDone = true;
@@ -2472,25 +2485,6 @@ namespace Nilsa
 				setBtnB4(iPersUserID.ToString());
 			StopService();
 			HideFormWait();
-            if (!_firstStart)
-            {
-				//try
-				//{
-				//    timerWriteMessagesOn();
-				//}
-				//catch (Exception) { }
-				for (int i = 0; i < lstReceivedMessages.Count; i++)
-				{
-					if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE") || lstReceivedMessages[i].Contains("ActivatePersTesting")))
-					{
-						lstReceivedMessages.RemoveAt(i);
-						i--;
-					}
-				}
-				lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
-				SelectNextReceivedMessage(false);
-				//tbSendOutMessageAction();
-			}
             //HideBrowserCommand();
             //if(tbStartServiceIsClickedNow) StartService();
 
@@ -7439,62 +7433,19 @@ namespace Nilsa
 					}
 					if (SocialNetwork == 3)
 					{
-						//временная мера, кукис лежат в пароле
-						cookiesTinder = personeAllData.Password;
-						if (_tinder == null)
-						{
-							_tinder = new Tinder(this);
-						}
+						iPersUserID = Convert.ToInt64(userID);
 						try
 						{
-							if (cookiesTinder == "" || cookiesTinder == null)
-							{
-								CommandLoadPersoneTinder(); //_tinder.tinderResponse.Status
-															//                        if (callBackCode.Equals("200")) CommandPhoneAuthorisation();
-															//if (callBackCode.Equals("200")) CommandEmailAuthorisation();
-
-								if (_tinder.tinderResponse.STATUS == 200) CommandPhoneAuthorisation();
-								if (_tinder.tinderResponse.STATUS == 200) CommandEmailAuthorisation();
-							}
-							else CommandCheckAuthorisation();
-
-							if (_tinder.tinderResponse.STATUS == 200)
-							{
-								iPersUserID = 200; //успешно - далее переназначаем уже из нашей базы
-								_autorizeSuccess = true;
-								MessageBox.Show("Успешная авторизация в соцсети");
-							}
-
 							if (iPersUserID > 0)
 							{
-								String PersoneData = TinderGetUserRecord(userLogin, userPassword);
-								if (PersoneData != null)
-								{
-									var persId = NILSA_GetFieldFromStringRec(PersoneData, 0);
-									if (!persId.Equals("")) iPersUserID = Convert.ToInt64(persId);
-									else
-									{
-										persId = null;
-										iPersUserID = Convert.ToInt64(persId);
-										_loggedPersonId = iPersUserID;
-									}
-									//iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
-									userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
-									if (userName.IndexOf(" ") > 0)
-									{
-										userNameName = userName.Substring(0, userName.IndexOf(" ")); ;
-										userNameFamily = userName.Substring(userName.IndexOf(" ") + 1);
-									}
-									else
-									{
-										userNameName = userName;
-										userNameFamily = "";
-									}
-									SetStandardCaption();
-									SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
-									return true;
-								}
-							}
+								userNameName = "";
+								userNameFamily = "";
+								userName = "";
+								dbUserName = "";
+								SetPersoneParametersValues();
+                                SetStandardCaption();
+                                return true;
+                            }
 						}
 						catch (Exception e)
 						{
@@ -11583,8 +11534,9 @@ namespace Nilsa
 			retval = retval.Replace("#firstname#", labelCont1Name.Text);
 			retval = retval.Replace("#lastname#", labelCont1Family.Text);
 			retval = retval.Replace("#name#", (labelCont1Name.Text + " " + labelCont1Family.Text).Trim());
+            retval = retval.Replace("#CONTACTER_MESSAGE#", labelInMsgHarTitleValue_Text);
 
-			retval = retval.Replace("#firstname_persone#", labelPers1Name.Text);
+            retval = retval.Replace("#firstname_persone#", labelPers1Name.Text);
 			retval = retval.Replace("#lastname_persone#", labelPers1Family.Text);
 			retval = retval.Replace("#name_persone#", (labelPers1Name.Text + " " + labelPers1Family.Text).Trim());
 
@@ -13649,6 +13601,7 @@ namespace Nilsa
 						}
 						else 
 						{
+                            response = response.Replace("\n", " ");
                             lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
                             SelectNextReceivedMessage(false);
                             //lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
