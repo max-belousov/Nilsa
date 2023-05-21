@@ -8712,8 +8712,16 @@ namespace Nilsa
 
 			return messages;
 		}
-
-		private void addToHistory(long _iPersUserID, long _iContUserID, bool inboundMessage, String _date, String _time, String _text)
+        /// <summary>
+        /// Добавляет сообщение в историю переписки, если inboundMessage = true - сообщение контактера, иначе персонажа
+        /// </summary>
+        /// <param name="_iPersUserID"></param>
+        /// <param name="_iContUserID"></param>
+        /// <param name="inboundMessage"></param>
+        /// <param name="_date"></param>
+        /// <param name="_time"></param>
+        /// <param name="_text"></param>
+        private void addToHistory(long _iPersUserID, long _iContUserID, bool inboundMessage, String _date, String _time, String _text)
 		{
 			File.AppendAllText(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt"), (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine);
 		}
@@ -13425,6 +13433,21 @@ namespace Nilsa
                     }
 
                     _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+					//добавляем в историю сообщения от The System и ответов персонажа
+					if (iContUserID == theSystemContacter.ContID)
+					{
+						var outMsg = SetMessageFields(labelOutEqMsgHarTitleValue_Text);
+						outMsg = outMsg.Replace("\r\n", " ");
+                        outMsg = outMsg.Replace("<br>", "");
+
+                        var inMsg = SetMessageFields(labelInMsgHarTitleValue_Text);
+                        inMsg = inMsg.Replace("\r\n", " ");
+                        inMsg = inMsg.Replace("<br>", "");
+
+                        addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), inMsg);
+						addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), outMsg);
+                        ReadAllUserMessages(iPersUserID, iContUserID);
+                    }
                     //lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
                     if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
 
