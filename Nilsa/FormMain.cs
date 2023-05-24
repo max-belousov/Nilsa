@@ -141,6 +141,7 @@ namespace Nilsa
 		Label[] lblEQOutHarValues;
 		Button[] lblMsgHarCompare;
         private int checkMessageIgnor; //проврека игнорирования
+		private bool needAnswer = false; //для обработки каждого сообщения отдельно
 
         public AlgorithmsDBRecord adbrCurrent;
 		public Dictionary<String, String>[] adbrCurrentDictPairs;
@@ -13510,16 +13511,29 @@ namespace Nilsa
 
 
                                 if (newmessage.UNREAD_COUNT == null) return;
+								var contReceivedMessagesList = new List<UnreadMessage>();
                                 while (newmessage.UNREAD_COUNT > 0)
 								{
-									//lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|YOU HAVE NEW MESSAGES");
 									newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
-                                    addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
-                                    lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
-									newmessage.UNREAD_COUNT--;
-									SelectNextReceivedMessage(false);
-                                }
-							}
+									contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
+                                    newmessage.UNREAD_COUNT--;
+                                    //ниже перенос в другой метод
+                                    //addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
+                                    //lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
+                                    //bServiceStart = true;
+                                    //SelectNextReceivedMessage(false);
+									//timerWriteMessagesOff();
+									//timerAnswerWaitingOn();
+									//timerWriteCycle = 0;
+         //                           timerWriteMessagesOn();
+									//while (timerWriteMessages.Enabled)
+									//{
+									//	WaitNSeconds(1);
+									//}
+									//tbSendOutMessageAction();
+								}
+                                SendMessage(localPersId, localContId, contReceivedMessagesList);
+                            }
 						}
 						else if (resp.STATUS == 200 && resp.UNREAD_MESSAGES != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
 						{
@@ -13637,6 +13651,55 @@ namespace Nilsa
 				timerAnswerWaitingOn();
 			}
 		}
+
+		private void SendMessage(long persId ,long contId, List<UnreadMessage> contMessages)
+		{
+			if (contMessages.Count <= 0) return;
+
+			bServiceStart = true;
+			for (var i = 0; i < contMessages.Count; i++)
+			{
+				lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
+                addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
+                SelectNextReceivedMessage(false);
+                needAnswer = true;
+				StopService();
+				StartService();
+				//timerWriteMessagesOn();
+				while (timerWriteMessages.Enabled)
+				{
+					WaitNSeconds(1);
+				}
+				_interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+                if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
+                //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
+                var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
+                var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
+                webBrowserInMessageText.DocumentText = emptyInMessage;
+                webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
+
+                var localResponse = _interfaceListener.NilsaReadFromResponseFile();
+                var localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
+                foreach (var resp in localResponseInterface)
+                {
+                    var localPersId = resp.ID;
+                    var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+
+                    if (resp.CONTACTER != null)
+                    {
+                        localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+
+                    }
+
+                    if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+                    {
+                        addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+                        ReadAllUserMessages(localPersId, localContId);
+                    }
+                }
+			}
+        }
+
 
 		private void api_Messages_Send(long lgid, String msg, String attachlist = "")
 		{
@@ -13859,7 +13922,15 @@ namespace Nilsa
 			progressBarWrite.Invalidate();
 			Application.DoEvents();
 
-			if (timerWriteCycle <= 0)
+            if (needAnswer && timerWriteCycle <= 0)
+            {
+                timerWriteMessagesOff();
+                needAnswer = false;
+                return;
+            }
+            else if (needAnswer) return;
+
+            if (timerWriteCycle <= 0)
 			{
 				timerWriteMessagesOff();
 
