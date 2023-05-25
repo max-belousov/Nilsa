@@ -100,9 +100,10 @@ namespace Nilsa
 		public long iPersUserID;
 		private long _loggedPersonId = -1;
 		private bool _autorizeSuccess = false;
+		private List<UnreadMessage> contReceivedMessagesList;
 
-		//Label[] lblContHarNames;
-		PersoneLabel[] lblContHarValues;
+        //Label[] lblContHarNames;
+        PersoneLabel[] lblContHarValues;
 		public String[,] sContHar;
 		public int iContHarCount = 16;
 		public int iContHarAttrCount = 4;
@@ -3012,8 +3013,19 @@ namespace Nilsa
 				File.Delete(Path.Combine(sDataPath, "resend_operator_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"));
 		}
 
+		private void MoveActualContMesToReceivedPull()
+		{
+			if (contReceivedMessagesList == null) return;
+			for (var i = 0; i < contReceivedMessagesList.Count; i++)
+			{
+				lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contReceivedMessagesList[i].TEXT);
+			}
+			contReceivedMessagesList.Clear();
+		}
+
 		private void SaveReceivedMessagesPull()
 		{
+			MoveActualContMesToReceivedPull();//дописать добавление из локального списка контактера в общий список
 			if ((lstReceivedMessages.Count > 0) && (/*userSelectUserIdx*/iPersUserID >= 0))
 				FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"), lstReceivedMessages, Encoding.UTF8);
 			else
@@ -13482,6 +13494,8 @@ namespace Nilsa
 						{
 							foreach (var newmessage in resp.DATA)
 							{
+                                if (newmessage.UNREAD_COUNT == 0 || newmessage.MESSAGES == null) continue;
+								timerAnswerWaitingOff();//testing
                                 localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER);
 								//реализация добавления контактера в БД по настройке алгоритма
 								if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
@@ -13509,17 +13523,17 @@ namespace Nilsa
                                 }
 								else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
 
-
-                                if (newmessage.UNREAD_COUNT == null) return;
-								var contReceivedMessagesList = new List<UnreadMessage>();
+								contReceivedMessagesList = new List<UnreadMessage>();
                                 while (newmessage.UNREAD_COUNT > 0)
 								{
+									if (newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT == null) continue;
 									newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
 									contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
                                     newmessage.UNREAD_COUNT--;
 								}
                                 SendMessage(localPersId, localContId, contReceivedMessagesList);
                             }
+							timerAnswerWaitingOn();//testing
 						}
 						else if (resp.STATUS == 200 && resp.UNREAD_MESSAGES != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
 						{
@@ -13648,6 +13662,8 @@ namespace Nilsa
 			{
 				lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
                 addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
+				contMessages.RemoveAt(i);
+				i--;
                 SelectNextReceivedMessage(false);
                 needAnswer = true;
 				StopService();
@@ -13658,6 +13674,11 @@ namespace Nilsa
 				}
 				while (!bServiceStart)
 				{
+                    WaitNSeconds(1);
+					needAnswer = true;
+                }
+                while (timerWriteMessages.Enabled)
+                {
                     WaitNSeconds(1);
                 }
                 _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
@@ -13957,7 +13978,7 @@ namespace Nilsa
 			}
 		}
 
-		//bool bSendBeforeChange = false;
+		//bool bSendBefore = false;
 		private void timerAnswerWaiting_Tick(object sender, EventArgs e)
 		{
 			//if (timerWriteMessages.Enabled && TimerPersoneChangeCycle <= 1)
