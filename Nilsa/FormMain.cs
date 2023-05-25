@@ -13638,10 +13638,11 @@ namespace Nilsa
 						}
 						else 
 						{
-                            response = response.Replace("\n", " ");
-                            lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + response);
+                            if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
+                            resp.MESSAGE = resp.MESSAGE.Replace("\r\n", " ");
+                            resp.MESSAGE = resp.MESSAGE.Replace("\n", " ");
+                            lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{resp.ToString()}");
                             SelectNextReceivedMessage(false);
-                            //lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
                         } 
                     }
 
