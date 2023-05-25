@@ -13517,20 +13517,6 @@ namespace Nilsa
 									newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
 									contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
                                     newmessage.UNREAD_COUNT--;
-                                    //ниже перенос в другой метод
-                                    //addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
-                                    //lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT);
-                                    //bServiceStart = true;
-                                    //SelectNextReceivedMessage(false);
-									//timerWriteMessagesOff();
-									//timerAnswerWaitingOn();
-									//timerWriteCycle = 0;
-         //                           timerWriteMessagesOn();
-									//while (timerWriteMessages.Enabled)
-									//{
-									//	WaitNSeconds(1);
-									//}
-									//tbSendOutMessageAction();
 								}
                                 SendMessage(localPersId, localContId, contReceivedMessagesList);
                             }
@@ -13657,7 +13643,7 @@ namespace Nilsa
 		{
 			if (contMessages.Count <= 0) return;
 
-			bServiceStart = true;
+			//bServiceStart = true;
 			for (var i = 0; i < contMessages.Count; i++)
 			{
 				lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
@@ -13666,12 +13652,15 @@ namespace Nilsa
                 needAnswer = true;
 				StopService();
 				StartService();
-				//timerWriteMessagesOn();
 				while (timerWriteMessages.Enabled)
 				{
 					WaitNSeconds(1);
 				}
-				_interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+				while (!bServiceStart)
+				{
+                    WaitNSeconds(1);
+                }
+                _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
                 if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
                 //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
                 var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
