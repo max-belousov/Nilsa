@@ -63,7 +63,7 @@ namespace Nilsa
 		public string photoContURL = "";
 		public bool needAutorize = false;
 		int userSelectUserIdx;
-		private bool needActivation = false;
+		private bool needActivation = true;
 		private bool tbStartServiceIsClickedNow = false;
         public Image contactPicture = null;
 		private long contactPictureID = -1;
@@ -2465,22 +2465,28 @@ namespace Nilsa
 				}
 			}
 
-            if (!_firstStart)
+
+			timerChangePersoneOn();
+			SelectNextReceivedMessage(false);
+
+            if (!_firstStart && needActivation)
             {
                 for (int i = 0; i < lstReceivedMessages.Count; i++)
                 {
-                    if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE") || lstReceivedMessages[i].Contains("ActivatePersTesting")))
+                    if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE")))
                     {
                         lstReceivedMessages.RemoveAt(i);
                         i--;
                     }
                 }
                 lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
+
+                StopService();
+                SelectNextReceivedMessage(false);
+                StartService();
+                needActivation = false;
             }
 
-            needActivation = true;
-			timerChangePersoneOn();
-			SelectNextReceivedMessage(false);
             bSetupDone = true;
 			onAfterPersonenListChanged();
 			if (SocialNetwork == 0)
@@ -12007,6 +12013,7 @@ namespace Nilsa
                             //StopService();
                             ChangeSocialNetwork(3);
 							lstReceivedMessages.RemoveAt(0);
+							needActivation = true;
 							onChangePersoneByTimer(true, true);
                             //SetNextPersonInRotation();
                         }
@@ -13665,9 +13672,9 @@ namespace Nilsa
                 addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
 				contMessages.RemoveAt(i);
 				i--;
+                StopService();
                 SelectNextReceivedMessage(false);
                 needAnswer = true;
-				StopService();
 				StartService();
 				while (timerWriteMessages.Enabled)
 				{
@@ -15440,6 +15447,7 @@ namespace Nilsa
 				//LoadPersoneParametersValues();
 				LoadPersoneParametersDescription();
 				LoadAlgorithmSettings();
+				needActivation = true;
 				needAutorize = false;
 				Setup(formEditPersonenDB.suSelLogin, formEditPersonenDB.suSelPwd, formEditPersonenDB.suSelID);
 				//lstReceivedMessages.Insert(0, "0|330643598|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "ActivatePers14865");
@@ -16480,7 +16488,7 @@ namespace Nilsa
 
 		private void FormMain_Shown(object sender, EventArgs e)
 		{
-			ChangeSocialNetwork(1);
+			ChangeSocialNetwork(3);
 			LoadProgramState();
 			if (autoStartNILSAMonitor && !isNILSAMonitorRunned())
 			{
