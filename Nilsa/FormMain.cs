@@ -13639,9 +13639,10 @@ namespace Nilsa
 						else 
 						{
                             if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
-                            resp.MESSAGE = resp.MESSAGE.Replace("\r\n", " ");
-                            resp.MESSAGE = resp.MESSAGE.Replace("\n", " ");
-                            lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{resp.ToString()}");
+							var message = resp.ToString();
+                            message = message.Replace("\r\n", " ");
+                            message = message.Replace("\n", " ");
+                            lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
                             SelectNextReceivedMessage(false);
                         } 
                     }
