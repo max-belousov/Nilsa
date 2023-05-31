@@ -76,6 +76,7 @@ namespace Nilsa
 		private InterfaceListener _interfaceListener = new InterfaceListener();
 		public List<TinderResponse> responseInterface = new List<TinderResponse>();
 		public TheSystemContacter theSystemContacter;
+		private bool needSelectNextMessage = true;
 
 		const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
@@ -3273,19 +3274,22 @@ namespace Nilsa
 		/// <param name="parametrId"></param>
 		/// <param name="parametrValue"></param>
 		/// <returns></returns>
-		private long GetContactIdByParametrValue(int parametrId, string parametrValue)
+		private long GetContactIdByParametrValue(int parametrId, string parametrValue, long persId)
 		{
 			long contId = -1;
-			foreach (var cont in lstContactsList)
+			if (!File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + persId.ToString() + ".txt"))) return contId;
+            var srcFileConts = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + persId.ToString() + ".txt"));
+            var localContacters = new List<String>(srcFileConts);
+            foreach (var cont in localContacters)
 			{
                 List<String> listCurrentCharacteristics = new List<String>();
                 var stringContId = cont.Substring(0, cont.IndexOf("|"));
 				if (stringContId.Equals("0")) continue;
-                if (File.Exists(Path.Combine(sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + stringContId + ".txt")))
+                if (File.Exists(Path.Combine(sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + persId.ToString() + "_" + stringContId + ".txt")))
 				{
                     try
                     {
-                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_" + stringContId + ".txt"));
+                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + persId.ToString() + "_" + stringContId + ".txt"));
                         listCurrentCharacteristics = new List<String>(srcFile);
                     }
 					catch (Exception) { }
@@ -12014,7 +12018,7 @@ namespace Nilsa
                             ChangeSocialNetwork(3);
 							lstReceivedMessages.RemoveAt(0);
 							needActivation = true;
-							if (userSelectUserIdx > 0)
+							if (lstPersoneChange.Count <= 0)
 							{
 								StopService();
 								Setup(userLogin, userPassword, userID);
@@ -13458,266 +13462,366 @@ namespace Nilsa
                         webBrowserInMessageText.DocumentText = emptyInMes;
                         webBrowserOutEqMessageText.DocumentText = emptyOuyMes;
 						if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-                        return; //не оптарвляем сообщение, если стоит игнор
+						needSelectNextMessage = true;
+                        //return; //не оптарвляем сообщение, если стоит игнор
                     }
-
-                    _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
-					//stop timers add red line
-					//stopTimers();
-					ShowBrowserCommand();
-					//добавляем в историю сообщения от The System и ответов персонажа
-					if (iContUserID == theSystemContacter.ContID)
+					else
 					{
-						var outMsg = SetMessageFields(labelOutEqMsgHarTitleValue_Text);
-						outMsg = outMsg.Replace("\r\n", " ");
-                        outMsg = outMsg.Replace("<br>", "");
+                        _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+                        //stop timers add red line
+                        //stopTimers();
+                        ShowBrowserCommand();
+                        //добавляем в историю сообщения от The System и ответов персонажа
+                        if (iContUserID == theSystemContacter.ContID)
+                        {
+                            var outMsg = SetMessageFields(labelOutEqMsgHarTitleValue_Text);
+                            outMsg = outMsg.Replace("\r\n", " ");
+                            outMsg = outMsg.Replace("<br>", "");
 
-                        var inMsg = SetMessageFields(labelInMsgHarTitleValue_Text);
-                        inMsg = inMsg.Replace("\r\n", " ");
-                        inMsg = inMsg.Replace("<br>", "");
+                            var inMsg = SetMessageFields(labelInMsgHarTitleValue_Text);
+                            inMsg = inMsg.Replace("\r\n", " ");
+                            inMsg = inMsg.Replace("<br>", "");
 
-                        addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), inMsg);
-						addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), outMsg);
-                        ReadAllUserMessages(iPersUserID, iContUserID);
+                            addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), inMsg);
+                            addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), outMsg);
+                            ReadAllUserMessages(iPersUserID, iContUserID);
+                        }
+                        //lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
+                        if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
+
+                        //if (lstReceivedMessages[lstReceivedMessages.Count - 1].Contains("ACTIVATE_PERSONE")) lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
+                        //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
+                        var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
+                        var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
+                        webBrowserInMessageText.DocumentText = emptyInMessage;
+                        webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
+
+                        //todo изменить id на универсального контактера
+                        var response = _interfaceListener.NilsaReadFromResponseFile();
+                        responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
+                        needSelectNextMessage = true;
+                        ResponseFindRightAction(responseInterface);
+                        HideBrowserCommand();
                     }
-                    //lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
-                    if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-
-                    //if (lstReceivedMessages[lstReceivedMessages.Count - 1].Contains("ACTIVATE_PERSONE")) lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
-                    //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
-                    var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
-					var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
-					webBrowserInMessageText.DocumentText = emptyInMessage;
-					webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
-
-					//todo изменить id на универсального контактера
-					var response = _interfaceListener.NilsaReadFromResponseFile();
-					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
-					foreach (var resp in responseInterface)
-					{
-						var localPersId = resp.ID;
-						var localContId = iContUserID; //если в ответе от интерфейса будет пусто
-
-                        if (resp.CONTACTER != null)
-						{
-                            localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
-
-                        }
-
-                        if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
-						{
-							addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-							if (iPersUserID == localPersId) ReadAllUserMessages(localPersId, localContId);
-                        }
-                        else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
-						{
-							foreach (var newmessage in resp.DATA)
-							{
-                                if (newmessage.UNREAD_COUNT == 0 || newmessage.MESSAGES == null) continue;
-								timerAnswerWaitingOff();//testing
-                                localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER);
-								//реализация добавления контактера в БД по настройке алгоритма
-								if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
-								{
-                                    localContId = FindFreeIndex(lstContactsList);
-									var userRec = $"{localContId}||";
-									lstContactsList.Add(userRec);
-                                    FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
-                                    ContactsList_Load();
-									//загрузка характеристик конкретного алгоритма
-                                    var lstContHarAlgValues = new List<String>();
-                                    if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
-                                    {
-                                        var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
-                                        lstContHarAlgValues = new List<String>(srcFile);
-                                    }
-
-									for (int i = 0; i < lstContHarAlgValues.Count; i++)
-									{
-										lstContHarAlgValues[i] = $"{i+1}|{lstContHarAlgValues[i]}";
-                                    }
-
-									lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
-                                    File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
-                                }
-								else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
-
-								contReceivedMessagesList = new List<UnreadMessage>();
-                                while (newmessage.UNREAD_COUNT > 0)
-								{
-									if (newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT == null) continue;
-									newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
-									contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
-                                    newmessage.UNREAD_COUNT--;
-								}
-                                SendMessage(localPersId, localContId, contReceivedMessagesList);
-                            }
-							//timerAnswerWaitingOn();//testing
-						}
-						else if (resp.STATUS == 200 && resp.UNREAD_MESSAGES != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
-						{
-							//for (int i = resp.UNREAD_MESSAGES.Count() - 1; i >= 0; i--)
-							//{
-							//	if (resp.UNREAD_MESSAGES[i].TYPE_STATUS == "text")
-							//	{
-							//		addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.UNREAD_MESSAGES[i].TEXT);
-							//		lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.UNREAD_MESSAGES[i].TEXT);
-							//		SelectNextReceivedMessage(false);
-							//		//lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
-							//	}
-							//}
-						}
-						else if (resp.STATUS == 200 && resp.PATH != null)
-						{
-							switch (resp.MESSAGE)
-							{
-								case "PERSON GET PHOTO SUCCESS":
-									photoPersURL = resp.PATH;
-									if (iPersUserID == localPersId)
-									{
-                                        SetPhoto(true, photoPersURL);
-                                        SavePersoneParamersValues();
-                                    }
-									else
-									{
-										if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
-										{
-                                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
-                                            var data = pers.Split('|');
-                                            var localName = data[1];
-                                            var localSurName = data[2];
-                                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + localSurName + "|" + photoPersURL, Encoding.UTF8);
-                                        }
-                                    }
-									break;
-								case "CONTACTER GET PHOTO SUCCESS":
-									photoContURL = resp.PATH;
-                                    if (iPersUserID == localPersId)
-									{
-                                        SetPhoto(false, photoContURL);
-                                        try
-                                        {
-                                            lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
-                                            File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
-                                        }
-                                        catch (Exception e)
-                                        {
-                                            MessageBox.Show($"Ошибка {e.Message}");
-                                        }
-                                    }
-									else
-									{
-										var localContacters = new List<string>();
-										if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
-										{
-											try
-											{
-												var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"));
-                                                localContacters = new List<String>(srcFile);
-												var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
-                                                var data = cont.Split('|');
-                                                var localcontName = data[1];
-                                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + localcontName + "|" + photoContURL;
-                                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
-                                            }
-                                            catch (Exception e) { }
-										}
-                                    }
-                                    break;
-							}
-						}
-						else if (resp.STATUS == 200 && (resp.FIRST_NAME_PERSONE != null || resp.LAST_NAME_PERSONE != null)) //получение имени или фамилии персонажа
-						{
-							var mode = -1;
-							if (resp.FIRST_NAME_PERSONE != null) mode = 0;
-							else if (resp.LAST_NAME_PERSONE != null) mode = 1;
-							else mode = 3;
-
-							switch (mode)
-							{
-								case 0:
-                                    if (resp.FIRST_NAME_PERSONE.Length <= 0) userNameName = "";
-                                    else userNameName = resp.FIRST_NAME_PERSONE;
-                                    break;
-								case 1:
-                                    if (resp.LAST_NAME_PERSONE.Length <= 0) userNameFamily = "";
-                                    else userNameFamily = resp.LAST_NAME_PERSONE;
-                                    break;
-								case 2:
-                                    if (resp.FIRST_NAME_PERSONE.Length <= 0) userNameName = "";
-                                    else userNameName = resp.FIRST_NAME_PERSONE;
-                                    if (resp.LAST_NAME_PERSONE.Length <= 0) userNameFamily = "";
-                                    else userNameFamily = resp.LAST_NAME_PERSONE;
-                                    break;
-							}
-
-                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
-								userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
-							dbUserName = "";
-							userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
-							SetPersoneParametersValues();
-                            PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
-                        }
-						else if (resp.STATUS == 200 && (resp.FIRST_NAME_CONTACTER != null || resp.LAST_NAME_CONTACTER != null)) //получение имени или фамилии контактера
-						{
-                            var mode = -1;
-                            if (resp.FIRST_NAME_CONTACTER != null) mode = 0;
-                            else if (resp.LAST_NAME_CONTACTER != null) mode = 1;
-                            else mode = 3;
-
-                            switch (mode)
-                            {
-                                case 0:
-                                    if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
-                                    else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
-                                    break;
-                                case 1:
-                                    if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
-                                    else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
-                                    break;
-                                case 2:
-                                    if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
-                                    else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
-                                    if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
-                                    else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
-                                    break;
-                            }
-
-                            lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
-							SaveContactParamersValues();
-							contNameName = "";
-							contNameFamily = "";
-							SetContactNamesAndPhoto();
-						}
-						else 
-						{
-                            if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
-							var message = resp.ToString();
-                            message = message.Replace("\r\n", " ");
-                            message = message.Replace("\n", " ");
-							if (iPersUserID == localPersId)
-							{
-                                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
-                                SelectNextReceivedMessage(false);
-                            }
-							else { SaveAnswerIfPersoneChanged(localPersId, message); }
-                        }
-                        //timerWriteMessages.Enabled = true;
-                    }
-					//startTimers delete red line
-					HideBrowserCommand();
-                    //startTimers();
-                    //timerWriteMessages.Enabled = true;
+                    
+					if (needSelectNextMessage) SelectNextReceivedMessage(false);
                 }
 
                 timerAnswerWaitingOn();
 			}
 		}
-
 		/// <summary>
-		/// позволяет добавить ответ от интерфейса нужному персонажу, даже если он поменялся
+		/// Обработка ответа от интерфейса. Подбор нужного действия
 		/// </summary>
-		private void SaveAnswerIfPersoneChanged(long persId, string message)
+		/// <param name="responseInterface"></param>
+		private void ResponseFindRightAction(List<TinderResponse> responseInterface)
+		{
+            foreach (var resp in responseInterface)
+            {
+                var localPersId = resp.ID;
+                var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+
+                if (resp.CONTACTER != null)
+                {
+                    localContId = GetContactIdByParametrValue(6, resp.CONTACTER,localPersId);
+
+                }
+
+                if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+                {
+                    addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+                    if (iPersUserID == localPersId) ReadAllUserMessages(localPersId, localContId);
+                }
+                else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
+                {
+                    foreach (var newmessage in resp.DATA)
+                    {
+                        if (newmessage.UNREAD_COUNT == 0 || newmessage.MESSAGES == null) continue;
+                        timerAnswerWaitingOff();//testing
+                        localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER, localPersId);
+                        //реализация добавления контактера в БД по настройке алгоритма
+                        if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
+                        {
+                            localContId = FindFreeIndex(lstContactsList);
+                            var userRec = $"{localContId}||";
+                            lstContactsList.Add(userRec);
+                            FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                            ContactsList_Load();
+                            //загрузка характеристик конкретного алгоритма
+                            var lstContHarAlgValues = new List<String>();
+                            if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
+                            {
+                                var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
+                                lstContHarAlgValues = new List<String>(srcFile);
+                            }
+
+                            for (int i = 0; i < lstContHarAlgValues.Count; i++)
+                            {
+                                lstContHarAlgValues[i] = $"{i + 1}|{lstContHarAlgValues[i]}";
+                            }
+
+                            lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
+                            File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
+                        }
+                        else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
+
+                        contReceivedMessagesList = new List<UnreadMessage>();
+                        while (newmessage.UNREAD_COUNT > 0)
+                        {
+                            if (newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT == null) continue;
+                            newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
+                            contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
+                            newmessage.UNREAD_COUNT--;
+                        }
+                        SendMessage(localPersId, localContId, contReceivedMessagesList);
+                    }
+                    //timerAnswerWaitingOn();//testing
+                }
+                else if (resp.STATUS == 200 && resp.UNREAD_MESSAGES != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
+                {
+                    //for (int i = resp.UNREAD_MESSAGES.Count() - 1; i >= 0; i--)
+                    //{
+                    //	if (resp.UNREAD_MESSAGES[i].TYPE_STATUS == "text")
+                    //	{
+                    //		addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.UNREAD_MESSAGES[i].TEXT);
+                    //		lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.UNREAD_MESSAGES[i].TEXT);
+                    //		SelectNextReceivedMessage(false);
+                    //		//lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
+                    //	}
+                    //}
+                }
+                else if (resp.STATUS == 200 && resp.PATH != null)
+                {
+                    if (String.IsNullOrWhiteSpace(resp.PATH)) continue;
+                    switch (resp.MESSAGE)
+                    {
+                        case "PERSON GET PHOTO SUCCESS":
+                            if (iPersUserID == localPersId)
+                            {
+                                photoPersURL = resp.PATH;
+                                SetPhoto(true, photoPersURL);
+                                SavePersoneParamersValues();
+                            }
+                            else
+                            {
+                                if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+                                {
+                                    var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+                                    var data = pers.Split('|');
+                                    var localName = data[1];
+                                    var localSurName = data[2];
+                                    File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + localSurName + "|" + photoPersURL, Encoding.UTF8);
+                                }
+                            }
+                            break;
+                        case "CONTACTER GET PHOTO SUCCESS":
+                            if (iPersUserID == localPersId)
+                            {
+                                photoContURL = resp.PATH;
+                                SetPhoto(false, photoContURL);
+                                try
+                                {
+                                    lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                                    File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                                }
+                                catch (Exception e)
+                                {
+                                    MessageBox.Show($"Ошибка {e.Message}");
+                                }
+                            }
+                            else
+                            {
+                                List<string> localContacters;
+                                if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                                {
+                                    try
+                                    {
+                                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                                        localContacters = new List<String>(srcFile);
+                                        var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+                                        var data = cont.Split('|');
+                                        localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + data[1] + "|" + resp.PATH;
+                                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                                    }
+                                    catch (Exception e) { }
+                                }
+                            }
+                            break;
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.FIRST_NAME_PERSONE != null) //получение имени или фамилии персонажа
+                {
+                    if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_PERSONE)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        userNameName = resp.FIRST_NAME_PERSONE;
+                        File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+                            userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+                        dbUserName = "";
+                        userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+                        SetPersoneParametersValues();
+                        PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+                    }
+                    else
+                    {
+                        if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+                        {
+                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+                            var data = pers.Split('|');
+                            //var localName = data[1];
+                            var localSurName = data[2];
+                            var photo = data[3];
+                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + resp.FIRST_NAME_PERSONE + "|" + localSurName + "|" + photo, Encoding.UTF8);
+                        }
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.LAST_NAME_PERSONE != null)
+                {
+                    if (String.IsNullOrWhiteSpace(resp.LAST_NAME_PERSONE)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        userNameFamily = resp.LAST_NAME_PERSONE;
+                        File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+                            userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+                        dbUserName = "";
+                        userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+                        SetPersoneParametersValues();
+                        PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+                    }
+                    else
+                    {
+                        if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+                        {
+                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+                            var data = pers.Split('|');
+                            var localName = data[1];
+                            //var localSurName = data[2];
+                            var photo = data[3];
+                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + resp.LAST_NAME_PERSONE + "|" + photo, Encoding.UTF8);
+                        }
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.FIRST_NAME_CONTACTER != null) //получение имени или фамилии контактера
+                {
+                    if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_CONTACTER)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        contName = $"{resp.FIRST_NAME_CONTACTER} {contNameFamily}";
+                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                        SaveContactParamersValues();
+                        contNameName = "";
+                        contNameFamily = "";
+                        SetContactNamesAndPhoto();
+                    }
+                    else
+                    {
+                        List<string> localContacters;
+                        if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                        {
+                            try
+                            {
+                                var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                                localContacters = new List<String>(srcFile);
+                                var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+                                var data = cont.Split('|');
+                                var names = data[1].Split(' ');
+                                names[0] = resp.FIRST_NAME_CONTACTER;
+                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                            }
+                            catch (Exception e) { }
+                        }
+                    }
+
+                    /*var mode = -1;
+                    if (resp.FIRST_NAME_CONTACTER != null) mode = 0;
+                    else if (resp.LAST_NAME_CONTACTER != null) mode = 1;
+                    else mode = 3;
+
+                    switch (mode)
+                    {
+                        case 0:
+                            if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+                            else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+                            break;
+                        case 1:
+                            if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+                            else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+                            break;
+                        case 2:
+                            if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+                            else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+                            if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+                            else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+                            break;
+                    }
+
+                    lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                    SaveContactParamersValues();
+                    contNameName = "";
+                    contNameFamily = "";
+                    SetContactNamesAndPhoto();*/
+                }
+                else if (resp.STATUS == 200 && resp.LAST_NAME_CONTACTER != null)
+                {
+                    if (String.IsNullOrWhiteSpace(resp.LAST_NAME_CONTACTER)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        contName = $"{contNameName} {resp.LAST_NAME_CONTACTER}";
+                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                        SaveContactParamersValues();
+                        contNameName = "";
+                        contNameFamily = "";
+                        SetContactNamesAndPhoto();
+                    }
+                    else
+                    {
+                        List<string> localContacters;
+                        if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                        {
+                            try
+                            {
+                                var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                                localContacters = new List<String>(srcFile);
+                                var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+                                var data = cont.Split('|');
+                                var names = data[1].Split(' ');
+                                names[1] = resp.LAST_NAME_CONTACTER;
+                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                            }
+                            catch (Exception e) { }
+                        }
+                    }
+                }
+
+                else
+                {
+                    if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
+                    var message = resp.ToString();
+                    message = message.Replace("\r\n", " ");
+                    message = message.Replace("\n", " ");
+                    if (iPersUserID == localPersId)
+                    {
+                        lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
+                        needSelectNextMessage = false;
+                        SelectNextReceivedMessage(false);
+                    }
+                    else { SaveAnswerIfPersoneChanged(localPersId, message); }
+                }
+                //timerWriteMessages.Enabled = true;
+            }
+        }
+
+
+        /// <summary>
+        /// позволяет добавить ответ от интерфейса нужному персонажу, даже если он поменялся
+        /// </summary>
+        private void SaveAnswerIfPersoneChanged(long persId, string message)
 		{
 			var localMsgList = new List<string>();
             if (File.Exists(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt")))
@@ -13758,22 +13862,6 @@ namespace Nilsa
 			var localResponseInterface = new List<TinderResponse>();
             HideBrowserCommand();
 
-			//if (adbrCurrent.SplitTextIntoSentences)
-			//{
-			//	String msgSentenceCurrent = SplitTextIntoSentences(contMessages[0].TEXT);
-			//	String msgSentenceEnd = contMessages[0].TEXT.Substring(msgSentenceCurrent.Length).Trim();
-			//	contMessages[0].TEXT = msgSentenceCurrent.Trim();
-			//	if (msgSentenceEnd.Length > 0)
-			//	{
-			//		String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[0].TEXT;
-			//		lstReceivedMessages[0] = sCurRec;
-			//		String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msgSentenceEnd;
-			//		lstReceivedMessages.Add(sEndRec);
-			//	}
-			//}
-
-
-
             if (adbrCurrent.MergeInMessages)
 			{
                 var mergedMessage = new UnreadMessage();
@@ -13793,14 +13881,16 @@ namespace Nilsa
 				{
 					SaveAnswerIfPersoneChanged(persId, contMessages[i].TEXT);
                     contMessages.RemoveAt(i);
+					i--;
                     continue;
                 }
                 if (adbrCurrent.SplitTextIntoSentences)
                 {
-                    while (contMessages[i].TEXT.Length > 0)
+					var j = 1;
+					while (contMessages[i].TEXT.Length > 0)
                     {
                         var msgSentenceCurrent = SplitTextIntoSentences(contMessages[i].TEXT);
-                        contMessages[i].TEXT = contMessages[0].TEXT.Substring(msgSentenceCurrent.Length).Trim();
+                        contMessages[i].TEXT = contMessages[i].TEXT.Substring(msgSentenceCurrent.Length).Trim();
                         msgSentenceCurrent = msgSentenceCurrent.Trim();
 
 						var msg = new UnreadMessage();
@@ -13808,7 +13898,8 @@ namespace Nilsa
 						msg.TYPE_STATUS = contMessages[i].TYPE_STATUS;
 						msg.DATE_TIME = contMessages[i].DATE_TIME;
 
-						contMessages.Insert(i + 1, msg);
+						contMessages.Insert(i + j, msg);
+						j++;
                         //var sCurRec = $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msgSentenceCurrent;
                         //lstReceivedMessages.Insert(0, sCurRec);
                     }
@@ -13821,6 +13912,7 @@ namespace Nilsa
                 i--;
                 StopService();
                 SelectNextReceivedMessage(false);
+                needSelectNextMessage = false;
                 needAnswer = true;
                 StartService();
                 while (timerWriteMessages.Enabled)
@@ -13845,7 +13937,8 @@ namespace Nilsa
 
                 localResponse = _interfaceListener.NilsaReadFromResponseFile();
                 localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
-                foreach (var resp in localResponseInterface)
+                ResponseFindRightAction(localResponseInterface);
+                /*foreach (var resp in localResponseInterface)
                 {
                     var localPersId = resp.ID;
                     var localContId = iContUserID; //если в ответе от интерфейса будет пусто
@@ -13861,7 +13954,7 @@ namespace Nilsa
                         addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
                         ReadAllUserMessages(localPersId, localContId);
                     }
-                }
+                }*/
                 HideBrowserCommand();
             }
 
@@ -15193,9 +15286,9 @@ namespace Nilsa
 			//    fwbVKontakte.Show();
 			//}
 
-
+			/*убрано 30.05.2023 задача 66
 			timerAnswerWaitingOn();
-			timerWriteMessagesOn();
+			timerWriteMessagesOn();*/
             //if (tbSendOutMessage.Enabled)
             //{
             //    TimerSendAnswerCycle = DefaultTimerSendAnswerCycle;
@@ -15206,10 +15299,10 @@ namespace Nilsa
             //else
             //    if (iInMsgID >= 0) timerSkipMessage.Enabled = true;
 
-            if (lstReceivedMessages.Count == 0)
-				timerReadMessagesOn();
+            if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+            else timerWriteMessagesOn();
 
-			timerPhysicalSendStart();
+            timerPhysicalSendStart();
 
 			tbNewOutMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			tbInitContactDialogContacter.Enabled = iPersUserID >= 0 && (iContUserID >= 0 || iContUserID < -1);

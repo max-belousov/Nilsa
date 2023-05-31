@@ -68,7 +68,19 @@ namespace Nilsa.NilsaAndInterface
                 // Write the request to file
 
                 File.WriteAllText(requestPath, tinderRequest);
-                File.WriteAllText(flagPath, "OK");
+
+                while (!File.Exists(flagPath))
+                {
+                    try
+                    {
+                        File.WriteAllText(flagPath, "OK");
+                    }
+                    catch (Exception e)
+                    {
+
+                        File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                    }
+                }
             }
             catch (Exception) { }
         }
@@ -88,7 +100,18 @@ namespace Nilsa.NilsaAndInterface
                 incomeInterfaceMessage = File.ReadAllText(responsePath);
             }
             catch (Exception) { }
-            File.Delete(flagPath);
+            while (File.Exists(flagPath))
+            {
+                try
+                {
+                    File.Delete(flagPath);
+                }
+                catch (Exception e)
+                {
+
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                }
+            }
             return incomeInterfaceMessage;
         }
 
