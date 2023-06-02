@@ -8944,6 +8944,45 @@ namespace Nilsa
 			return messages;
 		}
 
+		private void getMessageHistory(long localUserID, long localContID)
+		{
+			List<String> lstHistory = new List<String>();
+			listBoxUserMessages.Items.Clear();
+			if (File.Exists(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt")))
+			{
+				try
+				{
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt"));
+					lstHistory = new List<String>(srcFile);
+				}
+				catch (Exception e)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+				}
+			}
+
+			clearTrashList(lstHistory);
+			foreach (String str in lstHistory)
+			{
+				String value = str;
+				String inboundStr = value.Substring(0, value.IndexOf("|"));
+				value = value.Substring(value.IndexOf("|") + 1);
+				String dateStr = value.Substring(0, value.IndexOf(" "));
+				value = value.Substring(value.IndexOf("|") + 1);
+				String timeStr = value.Substring(0, value.IndexOf("."));
+				value = value.Substring(value.IndexOf("|") + 1);
+				String bodyStr = value;
+				bool inboundMessage = inboundStr.Equals("0");
+
+				value = "0|";
+				value = value + dateStr + "|";
+				value = value + timeStr + "|";
+				value += NilsaUtils.TextToString(bodyStr);
+
+				listBoxUserMessages.Items.Add((inboundMessage ? "<- " : "-> ") + dateStr + " " + timeStr + " - " + bodyStr);
+			}
+		}
+
 		private void ReadAllUserMessages(long localUserID, long localContID)
 		{
 			lstUserMessages = new List<String>();
@@ -9133,7 +9172,7 @@ namespace Nilsa
 						value = "0|";
 						value = value + dateStr + "|";
 						value = value + timeStr + "|";
-						value = value + NilsaUtils.TextToString(bodyStr);
+						value += NilsaUtils.TextToString(bodyStr);
 
 						listBoxUserMessages.Items.Add((inboundMessage ? "<- " : "-> ") + dateStr + " " + timeStr + " - " + bodyStr);
 						lstUserMessages.Add(value);
@@ -13530,7 +13569,7 @@ namespace Nilsa
                 if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
                 {
                     addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-                    if (iPersUserID == localPersId) ReadAllUserMessages(localPersId, localContId);
+                    if (iPersUserID == localPersId) getMessageHistory(localPersId, localContId);
                 }
                 else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
                 {
