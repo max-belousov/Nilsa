@@ -8755,6 +8755,7 @@ namespace Nilsa
 			timerReadMessagesOff();
 
 			// получаем id пользователей из группы, макс. кол-во записей = 1000
+			/*
 			int totalCount; // общее кол-во участников
 			int unreadCount;
 
@@ -8821,7 +8822,7 @@ namespace Nilsa
 							//if (!ReAutorize(userLogin, userPassword))
 							//    return;
 						}
-						/*
+						//
 						catch (VkNet.Exception.AccessTokenInvalidException atiexp)
 						{
 							ReAutorize(userLogin, userPassword);
@@ -8834,7 +8835,7 @@ namespace Nilsa
 						{
 							ReAutorize(userLogin, userPassword);
 						}
-						*/
+						//
 						catch (Exception e)
 						{
 							ExceptionToLogList("ReadNewReceivedMessages", userLogin + "/" + userPassword, e);
@@ -8888,6 +8889,8 @@ namespace Nilsa
 					}
 				}
 			}
+			*/
+
 			if (bServiceStart)
 			{
 				if (lstReceivedMessages.Count == 0)
@@ -11573,11 +11576,15 @@ namespace Nilsa
 
 			for (int i = 0; i < iPersHarCount; i++)
 			{
-				retval = retval.Replace("#persone_" + (i + 1).ToString() + "#", makeTextVariants(lblPersHarValues[i].Text));
+				var outCharacteristic = String.Empty;
+				if (!lblPersHarValues[i].Text.Contains("#")) outCharacteristic = lblPersHarValues[i].Text;
+                retval = retval.Replace("#persone_" + (i + 1).ToString() + "#", makeTextVariants(outCharacteristic));
 			}
 			for (int i = 0; i < iContHarCount; i++)
 			{
-				retval = retval.Replace("#contacter_" + (i + 1).ToString() + "#", makeTextVariants(lblContHarValues[i].Text));
+                var outCharacteristicCont = String.Empty;
+                if (!lblContHarValues[i].Text.Contains("#")) outCharacteristicCont = lblContHarValues[i].Text;
+                retval = retval.Replace("#contacter_" + (i + 1).ToString() + "#", makeTextVariants(outCharacteristicCont));
 			}
 			return retval;
 		}
@@ -12018,7 +12025,7 @@ namespace Nilsa
                             ChangeSocialNetwork(3);
 							lstReceivedMessages.RemoveAt(0);
 							needActivation = true;
-							if (lstPersoneChange.Count <= 0)
+							if (lstPersoneChange.Count <= 1)
 							{
 								StopService();
 								Setup(userLogin, userPassword, userID);
@@ -13486,17 +13493,17 @@ namespace Nilsa
                             addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), outMsg);
                             ReadAllUserMessages(iPersUserID, iContUserID);
                         }
-                        //lstReceivedMessages.Clear(); //озможно лишнее, нужно тестить
+						//убираем отправленное из списка ВОЗМОЖНО НУЖНО УБИРАТЬ ТОЛЬКО ЕСЛИ ОТВЕТ ОТ ИНТЕРФЕЙСА УСПЕШНЫЙ
                         if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
 
-                        //if (lstReceivedMessages[lstReceivedMessages.Count - 1].Contains("ACTIVATE_PERSONE")) lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
                         //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
                         var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
                         var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
                         webBrowserInMessageText.DocumentText = emptyInMessage;
                         webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
 
-                        //todo изменить id на универсального контактера
+                        timerAnswerWaitingOn();
+                        //Получение и распаковка ответа от интерфейса
                         var response = _interfaceListener.NilsaReadFromResponseFile();
                         responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
                         needSelectNextMessage = true;
@@ -13507,7 +13514,7 @@ namespace Nilsa
 					if (needSelectNextMessage) SelectNextReceivedMessage(false);
                 }
 
-                timerAnswerWaitingOn();
+                //timerAnswerWaitingOn();
 			}
 		}
 		/// <summary>
@@ -13910,8 +13917,14 @@ namespace Nilsa
                 addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
                 contMessages.RemoveAt(i);
                 i--;
+				var started = bServiceStart;
                 StopService();
                 SelectNextReceivedMessage(false);
+				while (!started)
+				{
+                    WaitNSeconds(1);
+					started = bServiceStart;
+                }
                 needSelectNextMessage = false;
                 needAnswer = true;
                 StartService();
@@ -14375,6 +14388,7 @@ namespace Nilsa
 			if (timerAnswerWaitingCycle <= 0)
 			{
 				timerAnswerWaitingOff();
+				if (lstPersoneChange.Count > 1) timerChangePersone.Enabled = true;
                 //timerReadMessagesOn();
                 //написать получение сообщения END_WAITING_TIMER от The System
                 lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
@@ -14392,7 +14406,7 @@ namespace Nilsa
 		private void timerAnswerWaitingOff()
 		{
 			timerAnswerWaiting.Enabled = false;
-			timerAnswerWaitingCycle = 0;
+            timerAnswerWaitingCycle = 0;
 			progressBarAnswerWaiting.Value = 0;
 			progressBarAnswerWaiting.Invalidate();
 			Application.DoEvents(); 
@@ -14451,7 +14465,8 @@ namespace Nilsa
 			{
 				timerDefaultAnswerWaitingCycle = timersValues[5];
 				timerAnswerWaitingCycle = timerDefaultAnswerWaitingCycle;
-				progressBarAnswerWaiting.Value = 0;
+                timerChangePersone.Enabled = false;
+                progressBarAnswerWaiting.Value = 0;
 				progressBarAnswerWaiting.Invalidate();
 				Application.DoEvents();
 
@@ -15241,17 +15256,6 @@ namespace Nilsa
 		
 		public void tbStartService_Click(object sender, EventArgs e)
 		{
-			//if (tbStartServiceIsClickedNow) 
-			//{
-			//    //LoadProgramState();
-			//    StartService();
-			//}
-			//else
-			//{
-			//    tbStartServiceIsClickedNow = true;
-			//    tbStartService.Enabled = false;
-			//    tbStopService.Enabled = true;
-			//}
 			StartService();
 			tbStartServiceIsClickedNow = true;
 
@@ -15270,34 +15274,13 @@ namespace Nilsa
 
 			timerCountersStart.Enabled = true;
 
-			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/) timerChangePersone.Enabled = true;
+			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0) timerChangePersone.Enabled = true;
 
 			bServiceStart = true;
-
-			//if (fwbVKontakte == null)
-			//{
-			//    fwbVKontakte = new FormWebBrowser(this, true);
-			//    fwbVKontakte.Init();
-			//}
-
-			//if (!fwbVKontakteFirstShow)
-			//{
-			//    fwbVKontakteFirstShow = true;
-			//    fwbVKontakte.Show();
-			//}
 
 			/*убрано 30.05.2023 задача 66
 			timerAnswerWaitingOn();
 			timerWriteMessagesOn();*/
-            //if (tbSendOutMessage.Enabled)
-            //{
-            //    TimerSendAnswerCycle = DefaultTimerSendAnswerCycle;
-            //    Set_pbSendMessage_Value();
-            //    timerWriteMessages.Enabled = true;
-            //    timerPhysicalSend.Enabled = false;
-            //}
-            //else
-            //    if (iInMsgID >= 0) timerSkipMessage.Enabled = true;
 
             if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
             else timerWriteMessagesOn();
@@ -15704,9 +15687,9 @@ namespace Nilsa
 		private void onAfterPersonenListChanged()
 		{
 			setRandomizeRotatePersonenButtonIcon();
-			toolStripMenuItemClearInMsgPullPersonen.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
-			toolStripButtonPersoneForward.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
-			toolStripButtonPersoneRewind.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
+			toolStripMenuItemClearInMsgPullPersonen.Enabled = lstPersoneChange.Count > 0;// && SocialNetwork == 0;
+			toolStripButtonPersoneForward.Enabled = lstPersoneChange.Count > 0;// && SocialNetwork == 0;
+			toolStripButtonPersoneRewind.Enabled = lstPersoneChange.Count > 0;// && SocialNetwork == 0;
 			toolStripButtonPersonePause.Enabled = false;// lstPersoneChange.Count > 0 && SocialNetwork == 0;
 			toolStripButtonPersonePlay.Enabled = false;// lstPersoneChange.Count > 0 && SocialNetwork == 0;
 
