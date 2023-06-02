@@ -169,8 +169,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>autogenerate_version_number.tt</DependentUpon>
     </Compile>
+    <Compile Include="ConfigFiles\FilesNilsaToInterfacePath.cs" />
     <Compile Include="Data\DBPerson.cs" />
     <Compile Include="Data\DBPersonListItem.cs" />
+    <Compile Include="Data\PersoneAllData.cs" />
     <Compile Include="FormCaptcha.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -254,6 +256,18 @@
     </Compile>
     <Compile Include="FormEditPersHarValues.designer.cs">
       <DependentUpon>FormEditPersHarValues.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FormAddCont.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormAddCont.Designer.cs">
+      <DependentUpon>FormAddCont.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FormEditPersName.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormEditPersName.Designer.cs">
+      <DependentUpon>FormEditPersName.cs</DependentUpon>
     </Compile>
     <Compile Include="FormEditPersonenDB.cs">
       <SubType>Form</SubType>
@@ -430,10 +444,28 @@
       <DependentUpon>FormWebBrowser.cs</DependentUpon>
     </Compile>
     <Compile Include="ImportContactsFromGroup.cs" />
+    <Compile Include="InputForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="InputForm.Designer.cs">
+      <DependentUpon>InputForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NilsaAndInterface\InterfaceListener.cs" />
+    <Compile Include="NilsaOperatingMode.cs" />
+    <Compile Include="TinderAssistent\IncomeMessage.cs" />
+    <Compile Include="TinderAssistent\PersoneTinderAttributes.cs" />
+    <Compile Include="PersoneVkAttributes.cs" />
+    <Compile Include="ResponseFromInterface.cs" />
+    <Compile Include="TinderAssistent\TheSystemContacter.cs" />
+    <Compile Include="TinderAssistent\Tinder.cs" />
+    <Compile Include="TinderAssistent\TinderRequest.cs" />
+    <Compile Include="TinderAssistent\TinderResponse.cs" />
+    <Compile Include="TinderAssistent\UnreadMessage.cs" />
     <Compile Include="UI\AGCProgressBar.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="User32.cs" />
+    <Compile Include="VkInterfaceCommands.cs" />
     <Compile Include="WorkGroups.cs" />
     <Compile Include="ImportGroups.cs" />
     <Compile Include="NilsaUtils.cs" />
@@ -485,6 +517,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormEditPersHarValues.resx">
       <DependentUpon>FormEditPersHarValues.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormAddCont.resx">
+      <DependentUpon>FormAddCont.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormEditPersName.resx">
+      <DependentUpon>FormEditPersName.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormEditPersonenDB.resx">
       <DependentUpon>FormEditPersonenDB.cs</DependentUpon>
@@ -573,6 +611,9 @@
     <EmbeddedResource Include="FormWebBrowser.resx">
       <DependentUpon>FormWebBrowser.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="InputForm.resx">
+      <DependentUpon>InputForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <SubType>Designer</SubType>
@@ -613,6 +654,7 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\social_tinder.png" />
     <None Include="Resources\base_filter.png" />
     <None Include="Resources\copy_parameters1.png" />
     <None Include="Resources\paste_parameters1.png" />

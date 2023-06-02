@@ -183,10 +183,12 @@ namespace Nilsa
         private void grid_SelectedIndexChanged()
         {
             bool bBS = gridSelectedIndex > 0;
+            var selectedMsg = MessagesDB_GetFromVisualList(gridSelectedIndex);
+            //MessageBox.Show(selectedMsg);
             button2.Enabled = bBS || gridCheckedCount > 0;
             button5.Enabled = bBS || gridCheckedCount > 0;
             button7.Enabled = bBS || gridCheckedCount > 0;
-            button3.Enabled = bBS && (mFormMain.iContUserID >= 0);
+            button3.Enabled = bBS && (mFormMain.iContUserID >= 0 || selectedMsg.Contains("authoriz") || selectedMsg.Contains("Authoriz") || selectedMsg.Contains("update")); 
         }
 
         private void grid_ItemChecked()

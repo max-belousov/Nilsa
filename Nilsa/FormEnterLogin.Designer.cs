@@ -103,18 +103,21 @@
             // 
             this.cbSocialNetwork.Dock = System.Windows.Forms.DockStyle.Top;
             this.cbSocialNetwork.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbSocialNetwork.Enabled = false;
             this.cbSocialNetwork.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.cbSocialNetwork.FormattingEnabled = true;
             this.cbSocialNetwork.HighlightColor = System.Drawing.Color.White;
             this.cbSocialNetwork.Items.AddRange(new object[] {
             "VKontakte",
             "NILSA",
-            "Facebook"});
+            "Facebook",
+            "Tinder"});
             this.cbSocialNetwork.Location = new System.Drawing.Point(10, 36);
             this.cbSocialNetwork.Name = "cbSocialNetwork";
             this.cbSocialNetwork.SelectorColor = System.Drawing.Color.PaleGoldenrod;
             this.cbSocialNetwork.Size = new System.Drawing.Size(264, 30);
             this.cbSocialNetwork.TabIndex = 0;
+            this.cbSocialNetwork.Visible = false;
             // 
             // label1
             // 

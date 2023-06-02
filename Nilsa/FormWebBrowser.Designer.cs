@@ -36,6 +36,8 @@
             this.urlTextBox = new System.Windows.Forms.ToolStripTextBox();
             this.tsbGo = new System.Windows.Forms.ToolStripButton();
             this.tsbGetMusicLink = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
             this.panel1 = new System.Windows.Forms.Panel();
             this.trackBar1 = new System.Windows.Forms.TrackBar();
             this.label1 = new System.Windows.Forms.Label();
@@ -82,7 +84,9 @@
             this.toolStripButtonRefresh,
             this.urlTextBox,
             this.tsbGo,
-            this.tsbGetMusicLink});
+            this.tsbGetMusicLink,
+            this.toolStripButton1,
+            this.toolStripButton2});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(1074, 82);
@@ -126,6 +130,16 @@
             this.tsbGetMusicLink.Size = new System.Drawing.Size(79, 79);
             this.tsbGetMusicLink.Text = "Получить ссылки на аудио-файлы";
             this.tsbGetMusicLink.Click += new System.EventHandler(this.tsbGetMusicLink_Click);
+            // 
+            // toolStripButton1
+            // 
+            this.toolStripButton1.Name = "toolStripButton1";
+            this.toolStripButton1.Size = new System.Drawing.Size(23, 79);
+            // 
+            // toolStripButton2
+            // 
+            this.toolStripButton2.Name = "toolStripButton2";
+            this.toolStripButton2.Size = new System.Drawing.Size(23, 79);
             // 
             // panel1
             // 
@@ -355,5 +369,7 @@
         private System.Windows.Forms.ToolStripStatusLabel titleStatusLabelTime;
         private System.Windows.Forms.ToolStripStatusLabel addressStatusLabelTime;
         private System.Windows.Forms.Timer timerCondition;
+        private System.Windows.Forms.ToolStripButton toolStripButton1;
+        private System.Windows.Forms.ToolStripButton toolStripButton2;
     }
 }

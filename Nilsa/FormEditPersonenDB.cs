@@ -15,13 +15,17 @@ using VkNet;
 using System.Threading;
 using System.Diagnostics;
 using Nilsa.Data;
+using System.Security.Cryptography;
+using VkNet.Model;
+using Nilsa.NilsaAndInterface;
+using Newtonsoft.Json;
+using Nilsa.TinderAssistent;
 
 namespace Nilsa
 {
     public partial class FormEditPersonenDB : Form
     {
         FormMain mFormMain;
-
         public String[,] sContHar;
         public int iContHarCount = 16;
         public int iContHarAttrCount = 4;
@@ -42,7 +46,7 @@ namespace Nilsa
 
         public Boolean bNeedPersoneChange, bNeedPersoneReread;
         public String suSelLogin, suSelPwd, suSelID;
-        public int suSelSocialNetwork;
+        public int suSelSocialNetwork = 3;
 
         private string sUnknownAge;
 
@@ -51,7 +55,7 @@ namespace Nilsa
             Application.EnableVisualStyles();
             mFormMain = _formmain;
             InitializeComponent();
-            button11.Visible = false;
+            //button11.Visible = false;
 
             NilsaUtils.Dictonary_ApplyAllControlsText(mFormMain.userInterface, this, this.Name);
             NilsaUtils.Dictonary_AddAllControlsText(mFormMain.userInterface, this, this.Name);
@@ -118,6 +122,10 @@ namespace Nilsa
                         tbShowMode.Image = Nilsa.Properties.Resources.social_facebook;
                         tbShowMode.Text = "Facebook";
                         break;
+                    case 3:
+                        tbShowMode.Image = Nilsa.Properties.Resources.social_tinder;
+                        tbShowMode.Text = "Tinder";
+                        break;
                 }
             }
         }
@@ -145,7 +153,7 @@ namespace Nilsa
             button7.Enabled = false;
             button8.Enabled = false;
             button12.Enabled = false;
-            button11.Enabled = false;
+            //button11.Enabled = false;
             button23.Enabled = false;
             buttonCopyParameters.Enabled = false;
             buttonPasteParameters.Enabled = false;
@@ -272,7 +280,7 @@ namespace Nilsa
             button5.Enabled = false;
             button7.Enabled = false;
             button8.Enabled = false;
-            button11.Enabled = false;
+            //button11.Enabled = false;
             button23.Enabled = false;
             buttonCopyParameters.Enabled = false;
             buttonPasteParameters.Enabled = false;
@@ -761,7 +769,6 @@ namespace Nilsa
                 lstPersonenList.Add(dbPerson);
 
             PersonenList_Store(iSocialNetworkID);
-
             return dbPerson;
         }
 
@@ -815,7 +822,7 @@ namespace Nilsa
                                     button5.Enabled = false;
                                     button7.Enabled = false;
                                     button8.Enabled = false;
-                                    button11.Enabled = false;
+                                    //button11.Enabled = false;
                                     buttonCopyParameters.Enabled = false;
                                     buttonPasteParameters.Enabled = false;
                                     toolStripButtonCopyToClipboard.Enabled = false;
@@ -1037,13 +1044,13 @@ namespace Nilsa
 
         private void button6_Click(object sender, EventArgs e)
         {
-            FormEnterLogin fel = new FormEnterLogin();
+            FormEnterLogin formEnterLogin = new FormEnterLogin();
 
-            if (fel.ShowDialog() == DialogResult.OK)
+            if (formEnterLogin.ShowDialog() == DialogResult.OK)
             {
-                String sULogin = fel.tbLogin.Text;
-                String sUPwd = fel.tbPassword.Text;
-                int iSocialNetwork = fel.cbSocialNetwork.SelectedIndex;
+                String sULogin = formEnterLogin.tbLogin.Text;
+                String sUPwd = formEnterLogin.tbPassword.Text;
+                int iSocialNetwork = formEnterLogin.cbSocialNetwork.SelectedIndex;
 
                 if (iSocialNetwork == 1)
                 {
@@ -1352,6 +1359,38 @@ namespace Nilsa
                     if (FormMain.SocialNetwork == 0 && iPersUserID >= 0)
                         AutorizeVK(mFormMain.userLogin, mFormMain.userPassword);
                 }
+                else if (iSocialNetwork == 3)
+                {
+                    //доработать, сделано первично
+                    String srec = Tinder_getUserRecord(sULogin, sUPwd);
+
+                    if (srec != null)
+                    {
+                        String sUID = NILSA_GetFieldFromStringRec(srec, 0);
+                        String sUName = NILSA_GetFieldFromStringRec(srec, 1);
+                        if (PersonenList_GetUserIdx(iSocialNetwork, sUID) >= 0)
+                        {
+                            MessageBox.Show("Персонаж с указанными данными уже есть в базе. Если он не отображается, смените настройки фильтра базы персонажей по характеристикам...", NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_11", this.Name, "Добавление Персонажа"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            sUID = lstTinder_UserDB.Count().ToString();
+                            PersonenList_AddUserToVisualList(PersonenList_AddUser(iSocialNetwork, sUID, sUName, sULogin, sUPwd));
+
+                            lvList.SelectedIndices.Clear();
+                            if (lvList.Items.Count > 0)
+                            {
+                                lvList.SelectedIndices.Add(lvList.Items.Count - 1);
+                                lvList.EnsureVisible(lvList.Items.Count - 1);
+                            }
+                            lvList_ItemChecked(null, null);
+                            lstTinder_UserDB.Add(lstPersonenList[lstPersonenList.Count() - 1].ToRecordString());
+                        }
+                    }
+                    else
+                        MessageBox.Show("Ошибка запроса Персонажа с указанными данными...", NilsaUtils.Dictonary_GetText(mFormMain.userInterface, "messageboxText_11", this.Name, "Добавление Персонажа"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Tinder_SaveUserDB();
+                }
             }
 
             //string value = "";
@@ -1553,6 +1592,7 @@ namespace Nilsa
         }
 
         List<String> lstNILSA_UserDB;
+        List<String> lstTinder_UserDB;
         private void NILSA_LoadUserDB()
         {
             lstNILSA_UserDB = new List<String>();
@@ -1569,10 +1609,27 @@ namespace Nilsa
             }
         }
 
+        private void Tinder_LoadUserDB()
+        {
+            lstTinder_UserDB = new List<String>();
+            if (File.Exists(Path.Combine(Application.StartupPath, "tinder_userdb.txt")))
+            {
+                var srcFile = File.ReadAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"));
+                lstTinder_UserDB = new List<String>(srcFile);
+            }
+        }
+
         private void NILSA_SaveUserDB()
         {
             if (lstNILSA_UserDB.Count > 0)
                 File.WriteAllLines(Path.Combine(Application.StartupPath, "nilsa_userdb.txt"), lstNILSA_UserDB, Encoding.UTF8);
+
+        }
+
+        private void Tinder_SaveUserDB()
+        {
+            if (lstTinder_UserDB.Count > 0)
+                File.WriteAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"), lstTinder_UserDB, Encoding.UTF8);
 
         }
 
@@ -1596,6 +1653,20 @@ namespace Nilsa
                     return srec;
             }
             return null;
+        }
+        public String Tinder_getUserRecord(String uLogin, String uPassword)
+        {
+            Tinder_LoadUserDB();
+            var srec = "";
+            foreach (var c in lstTinder_UserDB)
+            {
+                if (c.EndsWith("|" + uLogin + "|" + uPassword))
+                {
+                    srec = c;
+                    break;
+                }
+            }
+            return srec;
         }
 
         private String NILSA_GetFieldFromStringRec(String srec, int iFieldIdx)
@@ -4555,7 +4626,8 @@ namespace Nilsa
 
         private void buttonExportPersonenAsContactersServer_Click(object sender, EventArgs e)
         {
-            string value = "perscont" + FormMain.sLicenseUser.Replace(" ", "_").Replace(".", "_") + "_" + DateTime.Now.ToShortDateString().Replace(" ", "_").Replace(".", "_") + "_" + DateTime.Now.ToShortTimeString().Replace(" ", "_").Replace(":", "_");
+            string value = "perscont" + FormMain.sLicenseUser.Replace(" ", "_").Replace(".", "_") + 
+                "_" + DateTime.Now.ToShortDateString().Replace(" ", "_").Replace(".", "_") + "_" + DateTime.Now.ToShortTimeString().Replace(" ", "_").Replace(":", "_");
             string filename = Path.Combine(Application.StartupPath, value + FormMain.FTP_SERVER_CONT_NAME_POSTFIX);
 
             List<String> lstUsersToExport = new List<string>();
@@ -4941,6 +5013,120 @@ namespace Nilsa
             buttonPasteParameters.Enabled = copyedParameters != null && (lvList.SelectedItems.Count > 0 || lvList.CheckedItems.Count > 0);
         }
 
+        private void updatePersName_Click(object sender, EventArgs e)
+        {
+            if (lvList.SelectedIndices.Count > 0)
+            {
+                var selectedIndexInList = lvList.SelectedIndices[0];
+                var currentUserID = lvList.Items[selectedIndexInList].SubItems[1].Text;
+                var socialNetwork = lvList.Items[selectedIndexInList].ImageIndex;
+                var networkPrefix = "";
+                FormEditPersName formEditPersName;
+                //определяем идекс соцсети для поиска нужного файла
+                switch (socialNetwork)
+                {
+                    case 3:
+                        networkPrefix = "ti";
+                        break;
+                }
+                var path = Path.Combine(Application.StartupPath, "Data");
+                path = Path.Combine(path, "persone_name_" + networkPrefix + currentUserID + ".txt");
+                if (currentUserID.Length > 0)
+                {
+                    var dbUserName = "";
+                    if (File.Exists(path))
+                    {
+                        try
+                        {
+                            dbUserName = File.ReadAllText(path);
+                        }
+                        catch (Exception c)
+                        {
+                            ExceptionToLogList("File.ReadAllLines", "Reading lists", c);
+                        }
+                    }
+                    if (dbUserName.Length > 0)
+                    {
+                        var data = dbUserName.Split('|');
+                        var userFirstName = data[1];
+                        var userLastName = data[2];
+                        var photoPersURL = data[3];
+                        formEditPersName = new FormEditPersName(userFirstName, userLastName, photoPersURL);
+                    }
+                    else { formEditPersName = new FormEditPersName(); }
+                    if (formEditPersName.ShowDialog() == DialogResult.OK)
+                    {
+                        var result = $"{currentUserID}|{formEditPersName.Persone.FirstName}|{formEditPersName.Persone.LastName}|{formEditPersName.Persone.PhotoUrl}";
+                        File.WriteAllText(path, result);
+                        var name = formEditPersName.Persone.FirstName + " " + formEditPersName.Persone.LastName;
+                        PersonenList_AddUserToVisualList(PersonenList_AddUser(socialNetwork, currentUserID, name,
+                            lvList.Items[selectedIndexInList].SubItems[2].Text, lvList.Items[selectedIndexInList].SubItems[3].Text), selectedIndexInList);
+                    }
+                }
+            }
+        }
+
+        private void firstAuthorizationButton_Click(object sender, EventArgs e)
+        {
+            var interfaceListener = new InterfaceListener();
+            if (lvList.SelectedIndices.Count <= 0)
+            {
+                var selectedIndexInList = lvList.SelectedIndices[0];
+                var currentUserID = lvList.Items[selectedIndexInList].SubItems[1].Text;
+                var socialNetwork = lvList.Items[selectedIndexInList].ImageIndex;
+                var currentUserLogin = lvList.Items[selectedIndexInList].SubItems[2].Text;
+                var networkPrefix = lvList.Items[selectedIndexInList].SubItems[13].Text.ToLower();
+                if (networkPrefix.Length <= 0)
+                {
+                    MessageBox.Show("Обязательно заполните хозяина персонажа");
+                    return;
+                }
+                switch (networkPrefix)
+                {
+                    case "tinder":
+                        networkPrefix = "Tinder";
+                        break;
+                    case "whatsapp":
+                        networkPrefix = "Whatsapp";
+                        break;
+                    case "telegam":
+                        networkPrefix = "Telegram";
+                        break;
+                }
+                var requestString = $"{networkPrefix}FirstAuthorization\nLogin: {currentUserLogin}\nId: {currentUserID}";
+                interfaceListener.NilsaWriteToRequestFile(requestString);
+                var response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
+                if (response.STATUS != 200) MessageBox.Show(response.MESSAGE, "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                if (response.STATUS == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа", 
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                {
+                    //todo доделать запись кукис в пароль или самоописание или туда и туда пока
+                    var saveCookiesRequest = $"SaveCookies\nId: {currentUserID}";
+                    interfaceListener.NilsaWriteToRequestFile(saveCookiesRequest);
+                    response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
+                    if (response.STATUS == 200) MessageBox.Show("Успешная авторизация", "Завершение авторизации", MessageBoxButtons.OK);
+                    else MessageBox.Show(response.MESSAGE, "Завершение авторизации", MessageBoxButtons.OK);
+                }
+
+                if (response.STATUS == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No)
+                {
+                    var saveCookiesRequest = $"DeleteCookies\nId: {currentUserID}";
+                    interfaceListener.NilsaWriteToRequestFile(saveCookiesRequest);
+                    response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
+                    if (response.STATUS == 200) MessageBox.Show("Данные удалены", "Удаление данных", MessageBoxButtons.OK);
+                    else MessageBox.Show(response.MESSAGE, "Удаление данных", MessageBoxButtons.OK);
+                }
+            }
+            else if (lvList.CheckedIndices.Count > 0)
+            {
+
+            }
+        }
+
+        
+        
         private void buttonPasteParameters_Click(object sender, EventArgs e)
         {
             if (copyedParameters == null)
