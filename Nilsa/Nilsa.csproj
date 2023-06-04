@@ -451,6 +451,7 @@
       <DependentUpon>InputForm.cs</DependentUpon>
     </Compile>
     <Compile Include="NilsaAndInterface\InterfaceListener.cs" />
+    <Compile Include="NilsaAndInterface\OutgoingMessage.cs" />
     <Compile Include="NilsaOperatingMode.cs" />
     <Compile Include="TinderAssistent\IncomeMessage.cs" />
     <Compile Include="TinderAssistent\PersoneTinderAttributes.cs" />

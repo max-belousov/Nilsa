@@ -451,10 +451,10 @@ namespace Nilsa
 			Application.EnableVisualStyles();
 			sessionStartTime = DateTime.Now.ToString();
 			bInitStart = true;
-			//this.Location = new Point(0, 0);
-			//this.Size = Screen.PrimaryScreen.WorkingArea.Size;
-			//this.WindowState = FormWindowState.Maximized;
-			//this.Visible = false;
+            //this.Location = new Point(0, 0);
+            //this.Size = Screen.PrimaryScreen.WorkingArea.Size;
+            //this.WindowState = FormWindowState.Maximized;
+            //this.Visible = false;
 
 			LoadColorSettings();
 
@@ -1804,61 +1804,61 @@ namespace Nilsa
 		}
 
 
-		private FilesNilsaToInterfacePath SetPathConfig()
-		{
-			var path = new FilesNilsaToInterfacePath();
-			var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
-			//var configPath = @"Data\FilesNilsaToInterfacePath";
+		//private FilesNilsaToInterfacePath SetPathConfig()
+		//{
+		//	var path = new FilesNilsaToInterfacePath();
+		//	var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
+		//	//var configPath = @"Data\FilesNilsaToInterfacePath";
 
-			try
-			{
-				if (File.Exists(configPath))
-				{
-					var config = File.ReadAllText(configPath);
-					path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
-				}
-			}
-			catch (Exception e) { MessageBox.Show(e.Message); }
-			return path;
-		}
+		//	try
+		//	{
+		//		if (File.Exists(configPath))
+		//		{
+		//			var config = File.ReadAllText(configPath);
+		//			path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+		//		}
+		//	}
+		//	catch (Exception e) { MessageBox.Show(e.Message); }
+		//	return path;
+		//}
 
-		private void NilsaWriteToRequestFile(TinderRequest tinderRequest)
-		{
-			var settings = new JsonSerializerSettings
-			{
-				DefaultValueHandling = DefaultValueHandling.Ignore,
+		//private void NilsaWriteToRequestFile(TinderRequest tinderRequest)
+		//{
+		//	var settings = new JsonSerializerSettings
+		//	{
+		//		DefaultValueHandling = DefaultValueHandling.Ignore,
 
-			};
-			var path = SetPathConfig();
-			var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
-			try
-			{
-				string requestPath = Path.Combine(path.PathNilsa, path.FileData);
+		//	};
+		//	var path = SetPathConfig();
+		//	var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
+		//	try
+		//	{
+		//		string requestPath = Path.Combine(path.PathNilsa, path.FileData);
 
-				// Write the request to file
+		//		// Write the request to file
 
-				File.WriteAllText(requestPath, request, Encoding.UTF8);
-				File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
+		//		File.WriteAllText(requestPath, request, Encoding.UTF8);
+		//		File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
 
-			}
-			catch (Exception) { }
-		}
+		//	}
+		//	catch (Exception) { }
+		//}
 
-		private void NilsaWriteToRequestFile(string tinderRequest)
-		{
-			var path = SetPathConfig();
-			try
-			{
-				string requestPath = Path.Combine(path.PathNilsa, path.FileData);
+		//private void NilsaWriteToRequestFile(string tinderRequest)
+		//{
+		//	var path = SetPathConfig();
+		//	try
+		//	{
+		//		string requestPath = Path.Combine(path.PathNilsa, path.FileData);
 
-				// Write the request to file
+		//		// Write the request to file
 
-				File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
-				File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
+		//		File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
+		//		File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
 
-			}
-			catch (Exception) { }
-		}
+		//	}
+		//	catch (Exception) { }
+		//}
 
 		private int getLicenseType()
 		{
@@ -2465,11 +2465,6 @@ namespace Nilsa
 					lstReceivedMessages.Insert(0, "0|330643598|" + dt.ToShortDateString() + "|" + dt.ToShortTimeString() + "|" + "INIT_PERSONE_GROUPS_DIALOG");
 				}
 			}
-
-
-			timerChangePersoneOn();
-			SelectNextReceivedMessage(false);
-
             if (!_firstStart && needActivation)
             {
                 for (int i = 0; i < lstReceivedMessages.Count; i++)
@@ -2480,14 +2475,12 @@ namespace Nilsa
                         i--;
                     }
                 }
-				timerWriteMessagesOff();
-                timerWriteCycle = 2;
                 lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
-                SelectNextReceivedMessage(false);
-				timerWriteMessagesOn();
-                needActivation = false;
             }
 
+
+            timerChangePersoneOn();
+			SelectNextReceivedMessage(false);
             bSetupDone = true;
 			onAfterPersonenListChanged();
 			if (SocialNetwork == 0)
@@ -2956,7 +2949,7 @@ namespace Nilsa
 					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
 					lstOutgoingMessages = new List<String>();
 				}
-				timerPhysicalSendStart();
+				//timerPhysicalSendStart();
 			}
 		}
 
@@ -4651,8 +4644,8 @@ namespace Nilsa
 						}
 					}
 
-					if (bNeedSend)
-						timerPhysicalSendStart();
+					//if (bNeedSend)
+					//	timerPhysicalSendStart();
 
 					if (iContUserID == lgid)
 						return true;
@@ -4879,8 +4872,8 @@ namespace Nilsa
 			//if (bStatusService)
 			//    StartService();
 
-			if (bNeedSend)
-				timerPhysicalSendStart();
+			//if (bNeedSend)
+			//	timerPhysicalSendStart();
 
 			return true;
 		}
@@ -5123,11 +5116,11 @@ namespace Nilsa
 					snd.Play();
 				}
 
-				if (iContUserID == 330305148)
-				{
-					SelectNextReceivedMessage();
-					return;
-				}
+				//if (iContUserID == 330305148)
+				//{
+				//	SelectNextReceivedMessage();
+				//	return;
+				//}
 
 				if (ResendToOperators())
 				{
@@ -5175,7 +5168,7 @@ namespace Nilsa
 
 				if (adbrCurrent.MergeInMessages)
 				{
-					//value = mergeContacterMessageToTop(value);
+					value = mergeContacterMessageToTop(value);
 				}
 
 				LoadLastMessage();
@@ -5252,16 +5245,16 @@ namespace Nilsa
 
 					if (adbrCurrent.SplitTextIntoSentences)
 					{
-						//String msgSentenceCurrent = SplitTextIntoSentences(value);
-						//String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
-						//value = msgSentenceCurrent.Trim();
-						//if (msgSentenceEnd.Length > 0)
-						//{
-						//	String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + value;
-						//	lstReceivedMessages[0] = sCurRec;
-						//	String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + msgSentenceEnd;
-						//	lstReceivedMessages.Add(sEndRec);
-						//}
+						String msgSentenceCurrent = SplitTextIntoSentences(value);
+						String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
+						value = msgSentenceCurrent.Trim();
+						if (msgSentenceEnd.Length > 0)
+						{
+							String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + value;
+							lstReceivedMessages[0] = sCurRec;
+							String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + msgSentenceEnd;
+							lstReceivedMessages.Add(sEndRec);
+						}
 					}
 
 					value = SetMessageFields(value);
@@ -11655,7 +11648,7 @@ namespace Nilsa
 					sCurUserPrevGroupAnswerID = "-1";
 					sCurUserPrevGroupAnswerPostID = "-1";
 					sCurUserPrevGroupAnswerCommentID = "-1";
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
 				}
 			}
 		}
@@ -13467,7 +13460,7 @@ namespace Nilsa
 
 				if (lstOutgoingMessagesParts.Count > 0)
 				{
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
 
 					//Random rnd = new Random();
 					//TimerPhysicalSendCycle = rnd.Next(1, DefaultTimerPhysicalSendCycle);
@@ -13491,7 +13484,10 @@ namespace Nilsa
 				}
 				else
 				{
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
+					SelectNextReceivedMessage();
+
+					/*
 					//отправляем текст сообщения с подстановкой характеристик персонажа и контактера
 
 					if (checkMessageIgnor == 0)
@@ -13544,16 +13540,904 @@ namespace Nilsa
                     }
                     
 					if (needSelectNextMessage) SelectNextReceivedMessage(false);
+					*/
                 }
 
                 timerAnswerWaitingOn();
 			}
 		}
-		/// <summary>
-		/// Обработка ответа от интерфейса. Подбор нужного действия
-		/// </summary>
-		/// <param name="responseInterface"></param>
-		private void ResponseFindRightAction(List<TinderResponse> responseInterface)
+
+
+        private void timerOutgoingPull_Tick(object sender, EventArgs e)
+        {
+            var path = _interfaceListener.SetPathConfig();
+            if (!File.Exists(Path.Combine(path.PathNilsa, path.FileFlag)) && lstOutgoingMessages.Count > 0)
+            {
+                var msg = lstOutgoingMessages[0];
+                lstOutgoingMessages.RemoveAt(0);
+                var msgParts = OutgoingMsgParser(msg);
+                _interfaceListener.NilsaWriteToRequestFile($"{msgParts.Message}\nId: {iPersUserID}");
+                if (msgParts.Message.Length > 0)
+                {
+                    cntE1++;
+                    cntE2++;
+                    cntE7++;
+                    cntE8++;
+                    SaveProgramCountersE1E2E3();
+                    UpdateProgramCountersInfoE1E2E3();
+
+                    cntE4++;
+                    cntE5++;
+                    SaveProgramCountersE4E5E6();
+                    UpdateProgramCountersInfoE4E5E6();
+                }
+                addToHistory(iPersUserID, msgParts.ContacterId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), msgParts.Message.Replace("\n", " "));
+                SaveOutgoingMessagesPull();
+                ReadAllUserMessages(iPersUserID, msgParts.ContacterId);
+                _interfaceListener.NilsaCreateFlag();
+            }
+
+            #region убрано в задача 75 03.06.2023
+            // убрано в задача 75 timerPhysicalSendStop();
+
+            //if (lstOutgoingMessages.Count > 0)
+            //{
+            //	bool bErrorParsing = false;
+            //	String srec = lstOutgoingMessages[0];
+            //	lstOutgoingMessages.RemoveAt(0);
+            //	long contid = 0;
+            //	long _iGroupAnswerID = -1;
+            //	long _iGroupAnswerPostID = -1;
+            //	long _iGroupAnswerCommentID = -1;
+            //	String message = "";
+            //	long channel = 0; // 0 - ЛС, 1 - стена
+            //	string name = "";
+            //	try
+            //	{
+            //		if (srec.StartsWith("*#|"))
+            //		{
+            //			message = srec.Substring(srec.IndexOf("|") + 1);
+            //			channel = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
+            //			message = message.Substring(message.IndexOf("|") + 1);
+            //			if (channel == 4)
+            //			{
+            //				string strUsrId = message.Substring(0, message.IndexOf("|"));
+            //				//Convert.ToString(_ownerId)+"/"+ Convert.ToString(_postId) + "/"+ Convert.ToString(msg.Id) + "/" + Convert.ToString(msg.FromId) + "|";
+            //				_iGroupAnswerID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+            //				strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+            //				_iGroupAnswerPostID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+            //				strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+            //				_iGroupAnswerCommentID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+            //				strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+            //				contid = Convert.ToInt64(strUsrId);
+
+            //			}
+            //			else
+            //				contid = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
+
+            //			message = message.Substring(message.IndexOf("|") + 1);
+            //			name = message.Substring(message.IndexOf("|") + 1);
+            //			message = message.Substring(message.IndexOf("|") + 1);
+
+            //			if (contid < 0 && channel == 0)
+            //			{
+            //				contid = -contid;
+            //				channel = 3;
+            //			}
+
+            //		}
+            //		else
+            //		{
+            //			contid = Convert.ToInt64(srec.Substring(0, srec.IndexOf("|")));
+            //			message = srec.Substring(srec.IndexOf("|") + 1);
+            //			message = message.Substring(message.IndexOf("|") + 1);
+            //		}
+            //	}
+            //	catch (Exception exp)
+            //	{
+            //		bErrorParsing = true;
+            //		ExceptionToLogList("timerOutgoingPull_Tick Parsing srec error", contid.ToString() + ", " + srec, exp);
+            //	}
+            //	finally { }
+
+            //	if (!bErrorParsing)
+            //	{
+            //		/*
+            //		bool bNotDelayed = true;
+            //		if (message.IndexOf("time_delay:") >= 0)
+            //		{
+            //			bNotDelayed = false;
+            //			String timeDelay = message.Substring(message.IndexOf("time_delay:") + 11).Trim();
+
+            //			int iDelayType = 1;
+            //			if (timeDelay.EndsWith("min"))
+            //			{
+            //				iDelayType = 0;
+            //				timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("min")).Trim();
+            //			}
+            //			else if (timeDelay.EndsWith("hour"))
+            //			{
+            //				iDelayType = 1;
+            //				timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("hour")).Trim();
+            //			}
+            //			else if (timeDelay.EndsWith("day"))
+            //			{
+            //				iDelayType = 2;
+            //				timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("day")).Trim();
+            //			}
+
+            //			int iDelay = -1;
+            //			try
+            //			{
+            //				iDelay = Convert.ToInt32(timeDelay);
+            //			}
+            //			catch
+            //			{
+            //				iDelay = -1;
+            //			}
+
+            //			if (iDelay >= 0)
+            //			{
+            //				String text = srec.Substring(0, srec.IndexOf("time_delay:"));
+            //				DateTime dtDelay = DateTime.Now;
+            //				if (iDelayType == 0)
+            //					dtDelay = dtDelay.AddMinutes((double)iDelay);
+            //				else if (iDelayType == 1)
+            //					dtDelay = dtDelay.AddHours((double)iDelay);
+            //				else if (iDelayType == 2)
+            //					dtDelay = dtDelay.AddDays((double)iDelay);
+
+            //				lstOutgoingMessagesDelayed.Add(dtDelay.ToBinary().ToString() + "|" + text);
+            //				SaveOutgoingDelayedMessagesPull();
+            //			}
+            //		}
+            //		*/
+
+            //		if (((message.Length > 0) || (channel == 2))/* && bNotDelayed*/)
+            //		{
+            //			cntE1++;
+            //			cntE2++;
+            //			cntE7++;
+            //			cntE8++;
+            //			SaveProgramCountersE1E2E3();
+            //			UpdateProgramCountersInfoE1E2E3();
+
+            //			cntE4++;
+            //			cntE5++;
+            //			SaveProgramCountersE4E5E6();
+            //			UpdateProgramCountersInfoE4E5E6();
+
+            //			if (SocialNetwork == 0)
+            //			{
+            //				try
+            //				{
+            //					if (channel == 0)
+            //					{
+            //						string attachlist = null;
+            //						if (message.IndexOf("attach:") >= 0)
+            //						{
+            //							attachlist = message.Substring(message.IndexOf("attach:") + 7);
+            //							if (attachlist.Length == 0)
+            //								attachlist = null;
+            //						}
+
+            //						if (attachlist == null)
+            //						{
+            //							apiMessagesSend(contid, false, message);
+            //						}
+            //						else
+            //							apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, null, null, attachlist);
+            //					}
+            //					else if (channel == 1)
+            //					{
+            //						/*
+            //						string attachlist = null;
+            //						if (message.IndexOf("wallattach:") >= 0)
+            //						{
+            //							attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
+            //							if (attachlist.Length == 0)
+            //								attachlist = null;
+            //						}
+
+            //						if (attachlist == null)
+            //						{
+            //							//api.Messages.Send(contid, false, message);
+            //							api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message));
+            //						}
+            //						else
+            //							api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, null, null, attachlist);
+            //							*/
+            //					}
+            //					else if (channel == 2)
+            //					{
+            //						//api.Friends.Add(contid, message);
+            //						apiFriendsAdd(contid, false, message);
+            //					}
+            //					else if (channel == 3)
+            //					{
+            //						/*
+            //						string attachlist = null;
+            //						List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+            //						string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+            //						if (msgrealtext.IndexOf("attach:") >= 0)
+            //						{
+            //							attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+            //							if (attachlist.Length == 0)
+            //								attachlist = null;
+            //						}
+
+            //						long postId = -1;
+            //						if (attachlist == null)
+            //						{
+            //							postId = api.Wall.Post(-contid, false, false, msgrealtext);
+            //						}
+            //						else
+            //							postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
+
+            //						if (postId >= 0)
+            //						{
+            //							Wall_AddPostToMonitoring(contid, postId);
+
+            //							if (listAdditionalPersonen.Count > 0)
+            //							{
+            //								DBPersonListItem personListItem = listAdditionalPersonen[0];
+            //								listAdditionalPersonen.RemoveAt(0);
+            //								putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
+
+            //								if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+            //									Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
+            //							}
+            //						}
+            //						*/
+            //					}
+            //					else if (channel == 4)
+            //					{
+            //						/*
+            //						string attachlist = null;
+            //						List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+            //						string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+            //						if (msgrealtext.IndexOf("attach:") >= 0)
+            //						{
+            //							attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+            //							if (attachlist.Length == 0)
+            //								attachlist = null;
+            //						}
+
+            //						long postId = -1;
+            //						if (attachlist == null)
+            //						{
+            //							if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+            //								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext);
+            //							else
+            //								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID);
+            //						}
+            //						else
+            //						{
+            //							if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+            //								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
+            //							else
+            //								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist);
+            //						}
+
+            //						if (postId >= 0)
+            //						{
+            //							if (listAdditionalPersonen.Count > 0)
+            //							{
+            //								DBPersonListItem personListItem = listAdditionalPersonen[0];
+            //								listAdditionalPersonen.RemoveAt(0);
+            //								putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
+
+            //								if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+            //									Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
+            //							}
+            //						}
+            //						*/
+            //					}
+            //				}
+            //				/*
+            //				catch (VkNet.Exception.CaptchaNeededException ex)
+            //				{
+            //					bool bStatusService = !tbStartService.Enabled;
+            //					tbStopService_Click(null, null);
+
+            //					long? captcha_sid = ex.Sid;
+            //					string captcha_key = null;
+            //					Uri imguri = ex.Img;
+            //					bool bCycle = true;
+            //					do
+            //					{
+            //						var form = new FormCaptcha(this, imguri, captcha_sid);
+            //						DialogResult dr = DialogResult.Cancel;
+            //						try
+            //						{
+            //							dr = form.ShowDialog();
+            //						}
+            //						catch
+            //						{
+            //							dr = DialogResult.Cancel;
+            //						}
+            //						if (dr == DialogResult.OK)
+            //						{
+            //							captcha_key = form.CaptchaKey.Text;
+            //							//---
+            //							try
+            //							{
+            //								if (channel == 0)
+            //								{
+            //									string attachlist = null;
+            //									if (message.IndexOf("attach:") >= 0)
+            //									{
+            //										attachlist = message.Substring(message.IndexOf("attach:") + 7);
+            //										if (attachlist.Length == 0)
+            //											attachlist = null;
+            //									}
+
+            //									if (attachlist == null)
+            //									{
+            //										apiMessagesSend(contid, false, message, "", null, null, false, null, null, null, captcha_sid, captcha_key);
+            //									}
+            //									else
+            //										apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, captcha_sid, captcha_key, attachlist);
+            //								}
+            //								else if (channel == 1)
+            //								{
+            //									//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
+            //									//bCycle = false;
+            //									string attachlist = null;
+            //									if (message.IndexOf("wallattach:") >= 0)
+            //									{
+            //										attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
+            //										if (attachlist.Length == 0)
+            //											attachlist = null;
+            //									}
+
+            //									if (attachlist == null)
+            //									{
+            //										//api.Messages.Send(contid, false, message);
+            //										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
+            //									}
+            //									else
+            //										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key, attachlist);
+            //								}
+            //								else if (channel == 2)
+            //								{
+            //									api.Friends.Add(contid, message, captcha_sid, captcha_key);
+            //								}
+            //								else if (channel == 3)
+            //								{
+            //									string attachlist = null;
+            //									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+            //									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+            //									if (msgrealtext.IndexOf("attach:") >= 0)
+            //									{
+            //										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+            //										if (attachlist.Length == 0)
+            //											attachlist = null;
+            //									}
+
+            //									long postId = -1;
+            //									if (attachlist == null)
+            //									{
+            //										postId = api.Wall.Post(-contid, false, false, msgrealtext, null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
+            //									}
+            //									else
+            //										postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, null, false, null, null, null, null, null, captcha_sid, captcha_key);
+
+            //									if (postId >= 0)
+            //									{
+            //										Wall_AddPostToMonitoring(contid, postId);
+
+            //										if (listAdditionalPersonen.Count > 0)
+            //										{
+            //											DBPersonListItem personListItem = listAdditionalPersonen[0];
+            //											listAdditionalPersonen.RemoveAt(0);
+            //											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
+
+            //											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+            //												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
+            //										}
+            //									}
+
+            //								}
+            //								else if (channel == 4)
+            //								{
+            //									string attachlist = null;
+            //									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+            //									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+            //									if (msgrealtext.IndexOf("attach:") >= 0)
+            //									{
+            //										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+            //										if (attachlist.Length == 0)
+            //											attachlist = null;
+            //									}
+
+            //									if (attachlist == null)
+            //									{
+            //										api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
+            //									}
+            //									else
+            //										api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
+
+            //									long postId = -1;
+            //									if (attachlist == null)
+            //									{
+            //										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+            //											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, null, null, captcha_sid, captcha_key);
+            //										else
+            //											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
+            //									}
+            //									else
+            //									{
+            //										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+            //											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, captcha_sid, captcha_key);
+            //										else
+            //											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
+            //									}
+
+            //									if (postId >= 0)
+            //									{
+            //										if (listAdditionalPersonen.Count > 0)
+            //										{
+            //											DBPersonListItem personListItem = listAdditionalPersonen[0];
+            //											listAdditionalPersonen.RemoveAt(0);
+            //											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
+
+            //											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+            //												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
+            //										}
+            //									}
+
+            //								}
+            //								bCycle = false;
+            //							}
+            //							catch (VkNet.Exception.CaptchaNeededException ex1)
+            //							{
+            //								captcha_sid = ex1.Sid;
+            //								imguri = ex1.Img;
+            //							}
+            //							catch (VkNet.Exception.AccessTokenInvalidException atiexp)
+            //							{
+            //								ReAutorize(userLogin, userPassword);
+            //								lstOutgoingMessages.Add(srec);
+            //								bCycle = false;
+            //							}
+            //							catch (System.Net.WebException)
+            //							{
+            //								ReAutorize(userLogin, userPassword);
+            //								lstOutgoingMessages.Add(srec);
+            //								bCycle = false;
+            //							}
+            //							catch (VkNet.Exception.VkApiException vkexpapi)
+            //							{
+            //								if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
+            //								{
+            //									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+            //									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+            //								}
+            //								else if (vkexpapi as VkNet.Exception.PostLimitException != null)
+            //								{
+            //									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+            //									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+            //								}
+            //								else if (vkexpapi.Message != null)
+            //								{
+            //									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+            //									if (vkexpapi.Message.IndexOf("Flood control") < 0)
+            //									{
+            //										GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+            //									}
+            //									if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
+            //									{
+            //										ReAutorize(userLogin, userPassword);
+            //										lstOutgoingMessages.Add(srec);
+            //									}
+            //								}
+            //								else
+            //								{
+            //									ReAutorize(userLogin, userPassword);
+            //									lstOutgoingMessages.Add(srec);
+            //								}
+            //								bCycle = false;
+            //							}
+            //							catch (Exception exp)
+            //							{
+            //								//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
+            //								ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
+            //							}
+            //							//---
+            //						}
+            //						else
+            //						{
+            //							GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
+            //							//ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, "VkNet.Exception.CaptchaNeededException");
+            //							bCycle = false;
+            //						}
+            //					}
+            //					while (bCycle);
+
+            //					if (bStatusService)
+            //						StartService();
+            //				}
+            //				catch (VkNet.Exception.AccessTokenInvalidException atiexp)
+            //				{
+            //					ReAutorize(userLogin, userPassword);
+            //					lstOutgoingMessages.Add(srec);
+            //				}
+            //				catch (System.Net.WebException)
+            //				{
+            //					ReAutorize(userLogin, userPassword);
+            //					lstOutgoingMessages.Add(srec);
+            //				}
+            //				catch (VkNet.Exception.VkApiException vkexpapi)
+            //				{
+            //					if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
+            //					{
+            //						GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+            //						ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+            //					}
+            //					else if (vkexpapi as VkNet.Exception.PostLimitException != null)
+            //					{
+            //						GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+            //						ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+            //					}
+            //					else if (vkexpapi.Message != null)
+            //					{
+            //						ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+            //						if (vkexpapi.Message.IndexOf("Flood control") < 0)
+            //						{
+            //							GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+            //						}
+            //						if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
+            //						{
+            //							ReAutorize(userLogin, userPassword);
+            //							lstOutgoingMessages.Add(srec);
+            //						}
+            //					}
+            //					else
+            //					{
+            //						ReAutorize(userLogin, userPassword);
+            //						lstOutgoingMessages.Add(srec);
+            //					}
+
+            //				}
+            //				*/
+            //				catch (Exception exp)
+            //				{
+            //					//lstOutgoingMessages.Add(srec);
+            //					GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
+            //					ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
+            //				}
+            //				finally { }
+
+            //				// 2019-04-13
+            //				if ((channel == 0 || channel == 4) && contid == iContUserID && iContUserID != -1)
+            //					ReadAllUserMessages(iPersUserID,iContUserID);
+            //			}
+            //			else if (SocialNetwork == 1)
+            //			{
+            //				NILSA_SendMessage(iPersUserID, contid, message);
+            //			}
+            //		}
+            //	}
+            //	//--
+            //}
+
+            //if (!tbStartService.Enabled && lstOutgoingMessages.Count > 0)
+            //{
+            //	timerPhysicalSendStart();
+            //}
+            #endregion
+        }
+
+        private void TimerReadFromInterface_Tick(object sender, EventArgs e)
+        {
+            var path = _interfaceListener.SetPathConfig();
+            if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)))
+            {
+                var response = _interfaceListener.NilsaReadFromResponseFile();
+                responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
+                needSelectNextMessage = true;
+				ResponseFindRightAction2(responseInterface);
+
+
+                _interfaceListener.NilsaDeleteFlag();
+            }
+        }
+
+
+        /// <summary>
+        /// Обработка ответа от интерфейса. Подбор нужного действия
+        /// </summary>
+        /// <param name="responseInterface"></param>
+        private void ResponseFindRightAction2(List<TinderResponse> responseInterface)
+        {
+            foreach (var resp in responseInterface)
+            {
+                var localPersId = resp.ID;
+                var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+
+                if (resp.CONTACTER != null)
+                {
+                    localContId = GetContactIdByParametrValue(6, resp.CONTACTER, localPersId);
+                }
+
+                if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+                {
+                    addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+                    if (iPersUserID == localPersId) getMessageHistory(localPersId, localContId);
+                }
+                else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
+                {
+                    foreach (var newmessage in resp.DATA)
+                    {
+                        localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER, localPersId);
+                        if (newmessage.MESSAGES == null) continue;
+						/*
+                        //реализация добавления контактера в БД по настройке алгоритма
+                        if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
+                        {
+                            localContId = FindFreeIndex(lstContactsList);
+                            var userRec = $"{localContId}||";
+                            lstContactsList.Add(userRec);
+                            FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                            ContactsList_Load();
+                            //загрузка характеристик конкретного алгоритма
+                            var lstContHarAlgValues = new List<String>();
+                            if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
+                            {
+                                var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
+                                lstContHarAlgValues = new List<String>(srcFile);
+                            }
+
+                            for (int i = 0; i < lstContHarAlgValues.Count; i++)
+                            {
+                                lstContHarAlgValues[i] = $"{i + 1}|{lstContHarAlgValues[i]}";
+                            }
+
+                            lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
+                            File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
+                        }
+                        else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
+						*/
+						foreach (var msg in newmessage.MESSAGES)
+						{
+                            if (iPersUserID != localPersId)
+                            {
+                                SaveAnswerIfPersoneChanged2(localPersId, msg.TEXT);
+                                continue;
+                            }
+                            lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msg.TEXT);
+                        }
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.PATH != null)
+                {
+                    if (String.IsNullOrWhiteSpace(resp.PATH)) continue;
+                    switch (resp.MESSAGE)
+                    {
+                        case "PERSON GET PHOTO SUCCESS":
+                            if (iPersUserID == localPersId)
+                            {
+                                photoPersURL = resp.PATH;
+                                SetPhoto(true, photoPersURL);
+                                SavePersoneParamersValues();
+                            }
+                            else
+                            {
+                                if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+                                {
+                                    var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+                                    var data = pers.Split('|');
+                                    var localName = data[1];
+                                    var localSurName = data[2];
+                                    File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + localSurName + "|" + photoPersURL, Encoding.UTF8);
+                                }
+                            }
+                            break;
+                        case "CONTACTER GET PHOTO SUCCESS":
+                            if (iPersUserID == localPersId)
+                            {
+                                photoContURL = resp.PATH;
+                                SetPhoto(false, photoContURL);
+                                try
+                                {
+                                    lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                                    File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+                                }
+                                catch (Exception e)
+                                {
+                                    MessageBox.Show($"Ошибка {e.Message}");
+                                }
+                            }
+                            else
+                            {
+                                List<string> localContacters;
+                                if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                                {
+                                    try
+                                    {
+                                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                                        localContacters = new List<String>(srcFile);
+                                        var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+                                        var data = cont.Split('|');
+                                        localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + data[1] + "|" + resp.PATH;
+                                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                                    }
+                                    catch (Exception e) { }
+                                }
+                            }
+                            break;
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.FIRST_NAME_PERSONE != null) //получение имени или фамилии персонажа
+                {
+                    if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_PERSONE)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        userNameName = resp.FIRST_NAME_PERSONE;
+                        File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+                            userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+                        dbUserName = "";
+                        userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+                        SetPersoneParametersValues();
+                        PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+                    }
+                    else
+                    {
+                        if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+                        {
+                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+                            var data = pers.Split('|');
+                            //var localName = data[1];
+                            var localSurName = data[2];
+                            var photo = data[3];
+                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + resp.FIRST_NAME_PERSONE + "|" + localSurName + "|" + photo, Encoding.UTF8);
+                        }
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.LAST_NAME_PERSONE != null)
+                {
+                    if (String.IsNullOrWhiteSpace(resp.LAST_NAME_PERSONE)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        userNameFamily = resp.LAST_NAME_PERSONE;
+                        File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+                            userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+                        dbUserName = "";
+                        userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+                        SetPersoneParametersValues();
+                        PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+                    }
+                    else
+                    {
+                        if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+                        {
+                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+                            var data = pers.Split('|');
+                            var localName = data[1];
+                            //var localSurName = data[2];
+                            var photo = data[3];
+                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + resp.LAST_NAME_PERSONE + "|" + photo, Encoding.UTF8);
+                        }
+                    }
+                }
+                else if (resp.STATUS == 200 && resp.FIRST_NAME_CONTACTER != null) //получение имени или фамилии контактера
+                {
+                    if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_CONTACTER)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        contName = $"{resp.FIRST_NAME_CONTACTER} {contNameFamily}";
+                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                        SaveContactParamersValues();
+                        contNameName = "";
+                        contNameFamily = "";
+                        SetContactNamesAndPhoto();
+                    }
+                    else
+                    {
+                        List<string> localContacters;
+                        if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                        {
+                            try
+                            {
+                                var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                                localContacters = new List<String>(srcFile);
+                                var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+                                var data = cont.Split('|');
+                                var names = data[1].Split(' ');
+                                names[0] = resp.FIRST_NAME_CONTACTER;
+                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                            }
+                            catch (Exception e) { }
+                        }
+                    }
+
+                    /*var mode = -1;
+                    if (resp.FIRST_NAME_CONTACTER != null) mode = 0;
+                    else if (resp.LAST_NAME_CONTACTER != null) mode = 1;
+                    else mode = 3;
+
+                    switch (mode)
+                    {
+                        case 0:
+                            if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+                            else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+                            break;
+                        case 1:
+                            if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+                            else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+                            break;
+                        case 2:
+                            if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+                            else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+                            if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+                            else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+                            break;
+                    }
+
+                    lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                    SaveContactParamersValues();
+                    contNameName = "";
+                    contNameFamily = "";
+                    SetContactNamesAndPhoto();*/
+                }
+                else if (resp.STATUS == 200 && resp.LAST_NAME_CONTACTER != null)
+                {
+                    if (String.IsNullOrWhiteSpace(resp.LAST_NAME_CONTACTER)) continue;
+
+                    if (localPersId == iPersUserID)
+                    {
+                        contName = $"{contNameName} {resp.LAST_NAME_CONTACTER}";
+                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+                        SaveContactParamersValues();
+                        contNameName = "";
+                        contNameFamily = "";
+                        SetContactNamesAndPhoto();
+                    }
+                    else
+                    {
+                        List<string> localContacters;
+                        if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                        {
+                            try
+                            {
+                                var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                                localContacters = new List<String>(srcFile);
+                                var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+                                var data = cont.Split('|');
+                                var names = data[1].Split(' ');
+                                names[1] = resp.LAST_NAME_CONTACTER;
+                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                            }
+                            catch (Exception e) { }
+                        }
+                    }
+                }
+
+                else
+                {
+                    if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
+                    var message = resp.ToString();
+                    message = message.Replace("\r\n", " ");
+                    message = message.Replace("\n", " ");
+                    if (iPersUserID == localPersId)
+                    {
+                        lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Обработка ответа от интерфейса. Подбор нужного действия
+        /// </summary>
+        /// <param name="responseInterface"></param>
+        private void ResponseFindRightAction(List<TinderResponse> responseInterface)
 		{
             foreach (var resp in responseInterface)
             {
@@ -13563,7 +14447,6 @@ namespace Nilsa
                 if (resp.CONTACTER != null)
                 {
                     localContId = GetContactIdByParametrValue(6, resp.CONTACTER,localPersId);
-
                 }
 
                 if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
@@ -13884,14 +14767,41 @@ namespace Nilsa
                 File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
         }
 
+        /// <summary>
+        /// позволяет добавить ответ от интерфейса нужному персонажу, даже если он поменялся
+        /// </summary>
+        private void SaveAnswerIfPersoneChanged2(long persId, string message)
+        {
+            var localMsgList = new List<string>();
+            if (File.Exists(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt")))
+            {
+                try
+                {
+                    var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
+                    localMsgList = new List<string>(srcFile);
+                }
+                catch (Exception e)
+                {
+                    ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+                    localMsgList = new List<string>();
+                }
+            }
+            //addToList
+            localMsgList.Add($"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
+            if ((localMsgList.Count > 0) && (/*userSelectUserIdx*/persId >= 0))
+                FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"), localMsgList, Encoding.UTF8);
+            else
+                File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
+        }
 
-		/// <summary>
-		/// Данный метод позволяет отрабатывать полученные сообщения сразу же, не затирая первый ответ от браузера, где еще есть ответы
-		/// </summary>
-		/// <param name="persId"></param>
-		/// <param name="contId"></param>
-		/// <param name="contMessages"></param>
-		private void SendMessage(long persId ,long contId, List<UnreadMessage> contMessages)
+
+        /// <summary>
+        /// Данный метод позволяет отрабатывать полученные сообщения сразу же, не затирая первый ответ от браузера, где еще есть ответы
+        /// </summary>
+        /// <param name="persId"></param>
+        /// <param name="contId"></param>
+        /// <param name="contMessages"></param>
+        private void SendMessage(long persId ,long contId, List<UnreadMessage> contMessages)
 		{
 			if (contMessages.Count <= 0) return;
 
@@ -14352,7 +15262,7 @@ namespace Nilsa
 					string strpartvalue = lstOutgoingMessagesParts[0];
 					lstOutgoingMessages.Insert(0, strpartvalue);
 					lstOutgoingMessagesParts.RemoveAt(0);
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
 
 					if (lstOutgoingMessagesParts.Count == 0)
 						SelectNextReceivedMessage();
@@ -14416,7 +15326,7 @@ namespace Nilsa
 				timerAnswerWaitingOff();
                 //timerReadMessagesOn();
                 //написать получение сообщения END_WAITING_TIMER от The System
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
+                lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
                 SelectNextReceivedMessage(false);
                 if (lstPersoneChange.Count > 0)
 				{
@@ -15191,7 +16101,7 @@ namespace Nilsa
 			if (timerReadCycle <= 0)
 			{
 				timerReadMessagesOff();
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+                lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
                 SelectNextReceivedMessage(false);
 
 				//задача 53 в рамках нее убран функционал
@@ -15341,9 +16251,11 @@ namespace Nilsa
             if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
             else timerWriteMessagesOn();
 
-            timerPhysicalSendStart();
+            timerOutgoingPull.Enabled = true;
+            //timerPhysicalSendStart();
+            TimerReadFromInterface.Enabled = true;
 
-			tbNewOutMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+            tbNewOutMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			tbInitContactDialogContacter.Enabled = iPersUserID >= 0 && (iContUserID >= 0 || iContUserID < -1);
 			tbNewInMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
@@ -15372,7 +16284,9 @@ namespace Nilsa
 			//timerAnswerWaiting.Enabled = false;
 			timerAnswerWaitingOff();
 
-			timerPhysicalSendStop();
+			//timerPhysicalSendStop();
+			timerOutgoingPull.Enabled = false;
+			TimerReadFromInterface.Enabled = false;
 			SaveProgramCountersC1C2C3();
 			SaveProgramCountersC4C5C6();
 			timerCountersStart.Enabled = false;
@@ -16485,25 +17399,25 @@ namespace Nilsa
 			ProgressBar_Paint(e, progressBarChangePersone.ProgressBar, Convert.ToString(timerChangePersoneCycle), Color.Black, Color.FromArgb(((System.Byte)(0)), ((System.Byte)(0)), ((System.Byte)(255))));
 		}
 
-		public void timerPhysicalSendStart()
-		{
-			if (bServiceStart)
-			{
-				if (lstOutgoingMessages.Count > 0)
-				{
-					timerOutgoingPull.Enabled = true;
-				}
-				else
-				{
-					timerPhysicalSendStop();
-				}
-			}
-		}
+		//public void timerPhysicalSendStart()
+		//{
+		//	if (bServiceStart)
+		//	{
+		//		if (lstOutgoingMessages.Count > 0)
+		//		{
+		//			timerOutgoingPull.Enabled = true;
+		//		}
+		//		else
+		//		{
+		//			timerPhysicalSendStop();
+		//		}
+		//	}
+		//}
 
-		private void timerPhysicalSendStop()
-		{
-			timerOutgoingPull.Enabled = false;
-		}
+		//private void timerPhysicalSendStop()
+		//{
+		//	timerOutgoingPull.Enabled = false;
+		//}
 
 		public void NILSA_SendMessage(long from, long to, String text)
 		{
@@ -17060,7 +17974,7 @@ namespace Nilsa
 							SaveProgramCountersE4E5E6();
 							UpdateProgramCountersInfoE4E5E6();
 						}
-						timerPhysicalSendStart();
+						//timerPhysicalSendStart();
 						//---
 					}
 				}
@@ -18294,559 +19208,28 @@ namespace Nilsa
 			}
 		}
 
-		private void timerOutgoingPull_Tick(object sender, EventArgs e)
+		private OutgoingMessage OutgoingMsgParser(string outMsg)
 		{
-			timerPhysicalSendStop();
-			if (lstOutgoingMessages.Count > 0)
-			{
-				bool bErrorParsing = false;
-				String srec = lstOutgoingMessages[0];
-				lstOutgoingMessages.RemoveAt(0);
-				long contid = 0;
-				long _iGroupAnswerID = -1;
-				long _iGroupAnswerPostID = -1;
-				long _iGroupAnswerCommentID = -1;
-				String message = "";
-				long channel = 0; // 0 - ЛС, 1 - стена
-				string name = "";
-				try
-				{
-					if (srec.StartsWith("*#|"))
-					{
-						message = srec.Substring(srec.IndexOf("|") + 1);
-						channel = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
-						message = message.Substring(message.IndexOf("|") + 1);
-						if (channel == 4)
-						{
-							string strUsrId = message.Substring(0, message.IndexOf("|"));
-							//Convert.ToString(_ownerId)+"/"+ Convert.ToString(_postId) + "/"+ Convert.ToString(msg.Id) + "/" + Convert.ToString(msg.FromId) + "|";
-							_iGroupAnswerID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
-							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
-							_iGroupAnswerPostID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
-							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
-							_iGroupAnswerCommentID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
-							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
-							contid = Convert.ToInt64(strUsrId);
+			var  outMessages = new OutgoingMessage();
 
-						}
-						else
-							contid = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
+            //отбрасываем начало
+            outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+            //берем канал
+            outMessages.Channel = outMsg.Substring(0, outMsg.IndexOf("|"));
+            outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+            //берем айди контактера
+            outMessages.ContacterId = Convert.ToInt64(outMsg.Substring(0, outMsg.IndexOf("|")));
+            outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+            //берем имя контактера
+            outMessages.ContacterName = outMsg.Substring(0, outMsg.IndexOf("|"));
+            outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+            //берем сообщение
+            outMessages.Message = outMsg.Replace("<br>","\n");
 
-						message = message.Substring(message.IndexOf("|") + 1);
-						name = message.Substring(message.IndexOf("|") + 1);
-						message = message.Substring(message.IndexOf("|") + 1);
-
-						if (contid < 0 && channel == 0)
-						{
-							contid = -contid;
-							channel = 3;
-						}
-
-					}
-					else
-					{
-						contid = Convert.ToInt64(srec.Substring(0, srec.IndexOf("|")));
-						message = srec.Substring(srec.IndexOf("|") + 1);
-						message = message.Substring(message.IndexOf("|") + 1);
-					}
-				}
-				catch (Exception exp)
-				{
-					bErrorParsing = true;
-					ExceptionToLogList("timerOutgoingPull_Tick Parsing srec error", contid.ToString() + ", " + srec, exp);
-				}
-				finally { }
-
-				if (!bErrorParsing)
-				{
-					/*
-					bool bNotDelayed = true;
-					if (message.IndexOf("time_delay:") >= 0)
-					{
-						bNotDelayed = false;
-						String timeDelay = message.Substring(message.IndexOf("time_delay:") + 11).Trim();
-
-						int iDelayType = 1;
-						if (timeDelay.EndsWith("min"))
-						{
-							iDelayType = 0;
-							timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("min")).Trim();
-						}
-						else if (timeDelay.EndsWith("hour"))
-						{
-							iDelayType = 1;
-							timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("hour")).Trim();
-						}
-						else if (timeDelay.EndsWith("day"))
-						{
-							iDelayType = 2;
-							timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("day")).Trim();
-						}
-
-						int iDelay = -1;
-						try
-						{
-							iDelay = Convert.ToInt32(timeDelay);
-						}
-						catch
-						{
-							iDelay = -1;
-						}
-
-						if (iDelay >= 0)
-						{
-							String text = srec.Substring(0, srec.IndexOf("time_delay:"));
-							DateTime dtDelay = DateTime.Now;
-							if (iDelayType == 0)
-								dtDelay = dtDelay.AddMinutes((double)iDelay);
-							else if (iDelayType == 1)
-								dtDelay = dtDelay.AddHours((double)iDelay);
-							else if (iDelayType == 2)
-								dtDelay = dtDelay.AddDays((double)iDelay);
-
-							lstOutgoingMessagesDelayed.Add(dtDelay.ToBinary().ToString() + "|" + text);
-							SaveOutgoingDelayedMessagesPull();
-						}
-					}
-					*/
-
-					if (((message.Length > 0) || (channel == 2))/* && bNotDelayed*/)
-					{
-						cntE1++;
-						cntE2++;
-						cntE7++;
-						cntE8++;
-						SaveProgramCountersE1E2E3();
-						UpdateProgramCountersInfoE1E2E3();
-
-						cntE4++;
-						cntE5++;
-						SaveProgramCountersE4E5E6();
-						UpdateProgramCountersInfoE4E5E6();
-
-						if (SocialNetwork == 0)
-						{
-							try
-							{
-								if (channel == 0)
-								{
-									string attachlist = null;
-									if (message.IndexOf("attach:") >= 0)
-									{
-										attachlist = message.Substring(message.IndexOf("attach:") + 7);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									if (attachlist == null)
-									{
-										apiMessagesSend(contid, false, message);
-									}
-									else
-										apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, null, null, attachlist);
-								}
-								else if (channel == 1)
-								{
-									/*
-									string attachlist = null;
-									if (message.IndexOf("wallattach:") >= 0)
-									{
-										attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									if (attachlist == null)
-									{
-										//api.Messages.Send(contid, false, message);
-										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message));
-									}
-									else
-										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, null, null, attachlist);
-										*/
-								}
-								else if (channel == 2)
-								{
-									//api.Friends.Add(contid, message);
-									apiFriendsAdd(contid, false, message);
-								}
-								else if (channel == 3)
-								{
-									/*
-									string attachlist = null;
-									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-									if (msgrealtext.IndexOf("attach:") >= 0)
-									{
-										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									long postId = -1;
-									if (attachlist == null)
-									{
-										postId = api.Wall.Post(-contid, false, false, msgrealtext);
-									}
-									else
-										postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
-
-									if (postId >= 0)
-									{
-										Wall_AddPostToMonitoring(contid, postId);
-
-										if (listAdditionalPersonen.Count > 0)
-										{
-											DBPersonListItem personListItem = listAdditionalPersonen[0];
-											listAdditionalPersonen.RemoveAt(0);
-											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
-
-											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
-										}
-									}
-									*/
-								}
-								else if (channel == 4)
-								{
-									/*
-									string attachlist = null;
-									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-									if (msgrealtext.IndexOf("attach:") >= 0)
-									{
-										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									long postId = -1;
-									if (attachlist == null)
-									{
-										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext);
-										else
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID);
-									}
-									else
-									{
-										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
-										else
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist);
-									}
-
-									if (postId >= 0)
-									{
-										if (listAdditionalPersonen.Count > 0)
-										{
-											DBPersonListItem personListItem = listAdditionalPersonen[0];
-											listAdditionalPersonen.RemoveAt(0);
-											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
-
-											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
-										}
-									}
-									*/
-								}
-							}
-							/*
-							catch (VkNet.Exception.CaptchaNeededException ex)
-							{
-								bool bStatusService = !tbStartService.Enabled;
-								tbStopService_Click(null, null);
-
-								long? captcha_sid = ex.Sid;
-								string captcha_key = null;
-								Uri imguri = ex.Img;
-								bool bCycle = true;
-								do
-								{
-									var form = new FormCaptcha(this, imguri, captcha_sid);
-									DialogResult dr = DialogResult.Cancel;
-									try
-									{
-										dr = form.ShowDialog();
-									}
-									catch
-									{
-										dr = DialogResult.Cancel;
-									}
-									if (dr == DialogResult.OK)
-									{
-										captcha_key = form.CaptchaKey.Text;
-										//---
-										try
-										{
-											if (channel == 0)
-											{
-												string attachlist = null;
-												if (message.IndexOf("attach:") >= 0)
-												{
-													attachlist = message.Substring(message.IndexOf("attach:") + 7);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												if (attachlist == null)
-												{
-													apiMessagesSend(contid, false, message, "", null, null, false, null, null, null, captcha_sid, captcha_key);
-												}
-												else
-													apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, captcha_sid, captcha_key, attachlist);
-											}
-											else if (channel == 1)
-											{
-												//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
-												//bCycle = false;
-												string attachlist = null;
-												if (message.IndexOf("wallattach:") >= 0)
-												{
-													attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												if (attachlist == null)
-												{
-													//api.Messages.Send(contid, false, message);
-													api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
-												}
-												else
-													api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key, attachlist);
-											}
-											else if (channel == 2)
-											{
-												api.Friends.Add(contid, message, captcha_sid, captcha_key);
-											}
-											else if (channel == 3)
-											{
-												string attachlist = null;
-												List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-												string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-												if (msgrealtext.IndexOf("attach:") >= 0)
-												{
-													attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												long postId = -1;
-												if (attachlist == null)
-												{
-													postId = api.Wall.Post(-contid, false, false, msgrealtext, null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
-												}
-												else
-													postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, null, false, null, null, null, null, null, captcha_sid, captcha_key);
-
-												if (postId >= 0)
-												{
-													Wall_AddPostToMonitoring(contid, postId);
-
-													if (listAdditionalPersonen.Count > 0)
-													{
-														DBPersonListItem personListItem = listAdditionalPersonen[0];
-														listAdditionalPersonen.RemoveAt(0);
-														putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
-
-														if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-															Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
-													}
-												}
-
-											}
-											else if (channel == 4)
-											{
-												string attachlist = null;
-												List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-												string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-												if (msgrealtext.IndexOf("attach:") >= 0)
-												{
-													attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												if (attachlist == null)
-												{
-													api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
-												}
-												else
-													api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
-
-												long postId = -1;
-												if (attachlist == null)
-												{
-													if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, null, null, captcha_sid, captcha_key);
-													else
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
-												}
-												else
-												{
-													if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, captcha_sid, captcha_key);
-													else
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
-												}
-
-												if (postId >= 0)
-												{
-													if (listAdditionalPersonen.Count > 0)
-													{
-														DBPersonListItem personListItem = listAdditionalPersonen[0];
-														listAdditionalPersonen.RemoveAt(0);
-														putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
-
-														if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-															Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
-													}
-												}
-
-											}
-											bCycle = false;
-										}
-										catch (VkNet.Exception.CaptchaNeededException ex1)
-										{
-											captcha_sid = ex1.Sid;
-											imguri = ex1.Img;
-										}
-										catch (VkNet.Exception.AccessTokenInvalidException atiexp)
-										{
-											ReAutorize(userLogin, userPassword);
-											lstOutgoingMessages.Add(srec);
-											bCycle = false;
-										}
-										catch (System.Net.WebException)
-										{
-											ReAutorize(userLogin, userPassword);
-											lstOutgoingMessages.Add(srec);
-											bCycle = false;
-										}
-										catch (VkNet.Exception.VkApiException vkexpapi)
-										{
-											if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
-											{
-												GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-												ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-											}
-											else if (vkexpapi as VkNet.Exception.PostLimitException != null)
-											{
-												GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-												ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-											}
-											else if (vkexpapi.Message != null)
-											{
-												ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-												if (vkexpapi.Message.IndexOf("Flood control") < 0)
-												{
-													GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-												}
-												if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
-												{
-													ReAutorize(userLogin, userPassword);
-													lstOutgoingMessages.Add(srec);
-												}
-											}
-											else
-											{
-												ReAutorize(userLogin, userPassword);
-												lstOutgoingMessages.Add(srec);
-											}
-											bCycle = false;
-										}
-										catch (Exception exp)
-										{
-											//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
-											ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
-										}
-										//---
-									}
-									else
-									{
-										GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
-										//ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, "VkNet.Exception.CaptchaNeededException");
-										bCycle = false;
-									}
-								}
-								while (bCycle);
-
-								if (bStatusService)
-									StartService();
-							}
-							catch (VkNet.Exception.AccessTokenInvalidException atiexp)
-							{
-								ReAutorize(userLogin, userPassword);
-								lstOutgoingMessages.Add(srec);
-							}
-							catch (System.Net.WebException)
-							{
-								ReAutorize(userLogin, userPassword);
-								lstOutgoingMessages.Add(srec);
-							}
-							catch (VkNet.Exception.VkApiException vkexpapi)
-							{
-								if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
-								{
-									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-								}
-								else if (vkexpapi as VkNet.Exception.PostLimitException != null)
-								{
-									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-								}
-								else if (vkexpapi.Message != null)
-								{
-									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-									if (vkexpapi.Message.IndexOf("Flood control") < 0)
-									{
-										GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-									}
-									if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
-									{
-										ReAutorize(userLogin, userPassword);
-										lstOutgoingMessages.Add(srec);
-									}
-								}
-								else
-								{
-									ReAutorize(userLogin, userPassword);
-									lstOutgoingMessages.Add(srec);
-								}
-
-							}
-							*/
-							catch (Exception exp)
-							{
-								//lstOutgoingMessages.Add(srec);
-								GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
-								ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
-							}
-							finally { }
-
-							// 2019-04-13
-							if ((channel == 0 || channel == 4) && contid == iContUserID && iContUserID != -1)
-								ReadAllUserMessages(iPersUserID,iContUserID);
-						}
-						else if (SocialNetwork == 1)
-						{
-							NILSA_SendMessage(iPersUserID, contid, message);
-						}
-					}
-				}
-				//--
-			}
-
-			if (!tbStartService.Enabled && lstOutgoingMessages.Count > 0)
-			{
-				timerPhysicalSendStart();
-			}
-
+            return outMessages;
 		}
 
-		private string NILSA_ARCHIVE_Create(string strExternalZipFileName = "", int[] _settings = null)
+        private string NILSA_ARCHIVE_Create(string strExternalZipFileName = "", int[] _settings = null)
 		{
 			string strZipFileName = strExternalZipFileName.Length > 0 ? strExternalZipFileName : "nilsa_" + FormMain.sLicenseUser.Replace(" ", "_").Replace(".", "_") + "_" + DateTime.Now.ToShortDateString().Replace(" ", "_").Replace(".", "_") + "_" + DateTime.Now.ToShortTimeString().Replace(" ", "_").Replace(":", "_") + ".nilsa.zip";
 			string strZipFilePath = Path.Combine(Application.StartupPath, strZipFileName);

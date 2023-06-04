@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CefSharp;
+using Newtonsoft.Json;
 using Nilsa.ConfigFiles;
 using Nilsa.TinderAssistent;
 using System;
@@ -20,7 +21,7 @@ namespace Nilsa.NilsaAndInterface
             SetPathConfig();
         }
 
-        private void SetPathConfig()
+        public FilesNilsaToInterfacePath SetPathConfig()
         {
             _path = new FilesNilsaToInterfacePath();
             var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
@@ -33,6 +34,7 @@ namespace Nilsa.NilsaAndInterface
                 }
             }
             catch (Exception e) { MessageBox.Show(e.Message); }
+            return _path;
         }
 
         public void NilsaWriteToRequestFile(TinderRequest tinderRequest)
@@ -44,7 +46,19 @@ namespace Nilsa.NilsaAndInterface
             };
             string flagPath = Path.Combine(_path.PathNilsa, _path.FileFlag);
             var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
-            try
+
+            if (!File.Exists(flagPath))
+            {
+                try
+                {
+                    string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
+                    // Write the request to file
+                    File.WriteAllText(requestPath, request);
+                }
+                catch (Exception) { }
+            }
+
+            /*try
             {
                 while (File.Exists(flagPath)) WaitNSeconds(3);
                 string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
@@ -52,15 +66,27 @@ namespace Nilsa.NilsaAndInterface
                 // Write the request to file
 
                 File.WriteAllText(requestPath, request, Encoding.UTF8);
-                File.WriteAllText(flagPath, "OK");
+                //File.WriteAllText(flagPath, "OK");
             }
-            catch (Exception) { }
+            catch (Exception) { }*/
         }
 
         public void NilsaWriteToRequestFile(string tinderRequest)
         {
             string flagPath = Path.Combine(_path.PathNilsa, _path.FileFlag);
-            try
+
+            if (!File.Exists(flagPath))
+            {
+                try
+                {
+                    string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
+                    // Write the request to file
+                    File.WriteAllText(requestPath, tinderRequest);
+                }
+                catch (Exception) { }
+            }
+
+            /*try
             {
                 while (File.Exists(flagPath)) WaitNSeconds(3);
                 string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
@@ -82,14 +108,57 @@ namespace Nilsa.NilsaAndInterface
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception) { }*/
+        }
+
+        public void NilsaCreateFlag()
+        {
+            while (!File.Exists(Path.Combine(_path.PathNilsa, _path.FileFlag)))
+            {
+                try
+                {
+                    File.WriteAllText(Path.Combine(_path.PathNilsa, _path.FileFlag), "OK");
+                }
+                catch (Exception e)
+                {
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                }
+            }
+        }
+
+        public void NilsaDeleteFlag()
+        {
+            while (File.Exists(Path.Combine(_path.PathWebDriver, _path.FileFlag)))
+            {
+                try
+                {
+                    File.Delete(Path.Combine(_path.PathWebDriver, _path.FileFlag));
+                }
+                catch (Exception e)
+                {
+
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                }
+            }
         }
 
         public string NilsaReadFromResponseFile()
         {
             string flagPath = Path.Combine(_path.PathWebDriver, _path.FileFlag);
             var incomeInterfaceMessage = "";
-            try
+
+            if (File.Exists(flagPath))
+            {
+                try
+                {
+                    string responsePath = Path.Combine(_path.PathWebDriver, _path.FileData);
+                    // Read the request from file
+                    incomeInterfaceMessage = File.ReadAllText(responsePath);
+                }
+                catch (Exception) { }
+            }
+
+            /*try
             {
                 while (!File.Exists(flagPath)) WaitNSeconds(3);
 
@@ -111,7 +180,7 @@ namespace Nilsa.NilsaAndInterface
 
                     File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
                 }
-            }
+            }*/
             return incomeInterfaceMessage;
         }
 
