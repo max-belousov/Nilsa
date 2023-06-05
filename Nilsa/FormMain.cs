@@ -14163,7 +14163,10 @@ namespace Nilsa
 
                 if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
                 {
-                    addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+                    resp.TEXT = resp.TEXT.Replace("\r\n", " ");
+                    resp.TEXT = resp.TEXT.Replace("\n", " ");
+
+                    addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT.Replace("\n", " "));
                     if (iPersUserID == localPersId) getMessageHistory(localPersId, localContId);
                 }
                 else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
@@ -14206,6 +14209,9 @@ namespace Nilsa
                                 SaveAnswerIfPersoneChanged2(localPersId, msg.TEXT);
                                 continue;
                             }
+                            msg.TEXT = msg.TEXT.Replace("\r\n", " ");
+                            msg.TEXT = msg.TEXT.Replace("\n", " ");
+
                             lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msg.TEXT);
                         }
                     }
