@@ -8740,7 +8740,10 @@ namespace Nilsa
         /// <param name="_text"></param>
         private void addToHistory(long _iPersUserID, long _iContUserID, bool inboundMessage, String _date, String _time, String _text)
 		{
-			File.AppendAllText(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt"), (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine);
+            _text = _text.Replace("\r\n", " ");
+            _text = _text.TEXT.Replace("\n", " ");
+            _text = _text.TEXT.Replace("\r", " ");
+            File.AppendAllText(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt"), (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine);
 		}
 
 		//---
@@ -9153,6 +9156,7 @@ namespace Nilsa
 					clearTrashList(lstHistory);
 					foreach (String str in lstHistory)
 					{
+						if (String.IsNullOrWhiteSpace(str)) continue;
 						String value = str;
 						String inboundStr = value.Substring(0, value.IndexOf("|"));
 						value = value.Substring(value.IndexOf("|") + 1);
@@ -13572,7 +13576,7 @@ namespace Nilsa
                     SaveProgramCountersE4E5E6();
                     UpdateProgramCountersInfoE4E5E6();
                 }
-                addToHistory(iPersUserID, msgParts.ContacterId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), msgParts.Message.Replace("\n", " "));
+                addToHistory(iPersUserID, msgParts.ContacterId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), msgParts.Message);
                 SaveOutgoingMessagesPull();
                 ReadAllUserMessages(iPersUserID, msgParts.ContacterId);
                 _interfaceListener.NilsaCreateFlag();
