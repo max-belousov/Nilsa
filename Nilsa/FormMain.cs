@@ -77,8 +77,9 @@ namespace Nilsa
 		public List<TinderResponse> responseInterface = new List<TinderResponse>();
 		public TheSystemContacter theSystemContacter;
 		private bool needSelectNextMessage = true;
+        private bool isTimerReadNewMessagesFinished = false;
 
-		const bool externalCommandProcess = false; //!!!
+        const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
 		private bool needResetName = true;
 		private bool _firstStart = true;
@@ -14132,14 +14133,14 @@ namespace Nilsa
         private void TimerReadFromInterface_Tick(object sender, EventArgs e)
         {
             var path = _interfaceListener.SetPathConfig();
-            if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)))
+            if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)) && isTimerReadNewMessagesFinished)
             {
                 var response = _interfaceListener.NilsaReadFromResponseFile();
                 responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
                 needSelectNextMessage = true;
 				ResponseFindRightAction2(responseInterface);
 
-
+                isTimerReadNewMessagesFinished = false;
                 _interfaceListener.NilsaDeleteFlag();
             }
         }
@@ -14465,7 +14466,7 @@ namespace Nilsa
                     foreach (var newmessage in resp.DATA)
                     {
                         if (newmessage.UNREAD_COUNT == 0 || newmessage.MESSAGES == null) continue;
-                        timerAnswerWaitingOff();//testing
+                        //timerAnswerWaitingOff();//testing
                         localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER, localPersId);
                         //реализация добавления контактера в БД по настройке алгоритма
                         if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
@@ -16107,8 +16108,10 @@ namespace Nilsa
 			if (timerReadCycle <= 0)
 			{
 				timerReadMessagesOff();
-                lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
-                SelectNextReceivedMessage(false);
+				isTimerReadNewMessagesFinished = true;
+				//deleted 05/06/2023 
+                //lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+                //SelectNextReceivedMessage(false);
 
 				//задача 53 в рамках нее убран функционал
 
@@ -20276,11 +20279,11 @@ namespace Nilsa
 			progressBarChangePersone.Value = pbvalue;
 			progressBarChangePersone.Invalidate();
 			Application.DoEvents();
-			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle <=0 && timerReadCycle <=0 && timerWriteCycle <= 0 && !tbStartService.Enabled)
+			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle >=0 && timerReadCycle <=0 && timerWriteCycle <= 0 && !tbStartService.Enabled)
 			{
 				timerChangePersoneOff();
 				StopService();
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "CHANGE_THE_PERSON");
+                lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "CHANGE_THE_PERSON");
 				SelectNextReceivedMessage(false);
 				StartService();
                 //onChangePersoneByTimer(true, true);
