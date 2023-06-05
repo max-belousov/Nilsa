@@ -8741,15 +8741,15 @@ namespace Nilsa
         private void addToHistory(long _iPersUserID, long _iContUserID, bool inboundMessage, String _date, String _time, String _text)
 		{
             _text = _text.Replace("\r\n", " ");
-            _text = _text.TEXT.Replace("\n", " ");
-            _text = _text.TEXT.Replace("\r", " ");
+            _text = _text.Replace("\n", " ");
+            _text = _text.Replace("\r", " ");
             File.AppendAllText(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt"), (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine);
 		}
 
 		//---
 		private void ReadNewReceivedMessages(bool bBoycootCurrent = false)
 		{
-			timerReadMessagesOff();
+			//timerReadMessagesOff();
 
 			// получаем id пользователей из группы, макс. кол-во записей = 1000
 			int totalCount; // общее кол-во участников
@@ -8887,8 +8887,8 @@ namespace Nilsa
 			}
 			if (bServiceStart)
 			{
-				if (lstReceivedMessages.Count == 0)
-					timerReadMessagesOn();
+				//if (lstReceivedMessages.Count == 0)
+				//	timerReadMessagesOn();
 			}
 		}
 
@@ -13548,7 +13548,7 @@ namespace Nilsa
 					*/
                 }
 
-                timerAnswerWaitingOn();
+                //timerAnswerWaitingOn();
 			}
 		}
 
@@ -14145,6 +14145,8 @@ namespace Nilsa
 				ResponseFindRightAction2(responseInterface);
 
                 isTimerReadNewMessagesFinished = false;
+				StopService();
+				StartService();
                 _interfaceListener.NilsaDeleteFlag();
             }
         }
@@ -14432,7 +14434,8 @@ namespace Nilsa
 
                 else
                 {
-                    if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
+					if (iPersUserID != localPersId) continue;
+					if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
                     var message = resp.ToString();
                     message = message.Replace("\r\n", " ");
                     message = message.Replace("\n", " ");
@@ -15293,9 +15296,16 @@ namespace Nilsa
 				else
 				{
 					if (tbSendOutMessage.Enabled)
-						tbSendOutMessageAction();
-					else
-						tbSkipMessage_Click(null, null);
+					{
+                        tbSendOutMessageAction();
+						if (lstReceivedMessages.Count <= 0)
+						{
+                            //timerReadMessagesOn();
+                            timerAnswerWaitingOn();
+                        }
+                    }
+                    else
+                        tbSkipMessage_Click(null, null);
 				}
 
 			}
@@ -15335,6 +15345,7 @@ namespace Nilsa
 			if (timerAnswerWaitingCycle <= 0)
 			{
 				timerAnswerWaitingOff();
+                //if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
                 //timerReadMessagesOn();
                 //написать получение сообщения END_WAITING_TIMER от The System
                 lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
@@ -15902,7 +15913,7 @@ namespace Nilsa
 			progressBarRead.Value = 0;
 			progressBarRead.Invalidate();
 			Application.DoEvents();
-			if (doDelayedMessages())
+			//if (doDelayedMessages())
 				timerReadMessages.Enabled = true;
 		}
 
@@ -16113,6 +16124,11 @@ namespace Nilsa
 			{
 				timerReadMessagesOff();
 				isTimerReadNewMessagesFinished = true;
+				timerReadMessagesOn();
+                //if (lstReceivedMessages.Count == 0) timerAnswerWaitingOn();
+                //else timerWriteMessagesOn();
+
+
 				//deleted 05/06/2023 
                 //lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
                 //SelectNextReceivedMessage(false);
@@ -16251,18 +16267,24 @@ namespace Nilsa
 			/*убрано 30.05.2023 задача 66
 			timerAnswerWaitingOn();
 			timerWriteMessagesOn();*/
-            //if (tbSendOutMessage.Enabled)
-            //{
-            //    TimerSendAnswerCycle = DefaultTimerSendAnswerCycle;
-            //    Set_pbSendMessage_Value();
-            //    timerWriteMessages.Enabled = true;
-            //    timerPhysicalSend.Enabled = false;
-            //}
-            //else
-            //    if (iInMsgID >= 0) timerSkipMessage.Enabled = true;
+			//if (tbSendOutMessage.Enabled)
+			//{
+			//    TimerSendAnswerCycle = DefaultTimerSendAnswerCycle;
+			//    Set_pbSendMessage_Value();
+			//    timerWriteMessages.Enabled = true;
+			//    timerPhysicalSend.Enabled = false;
+			//}
+			//else
+			//    if (iInMsgID >= 0) timerSkipMessage.Enabled = true;
 
-            if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+			if (lstReceivedMessages.Count == 0)
+			{
+                //timerReadMessagesOn();
+                timerAnswerWaitingOn();
+            }
             else timerWriteMessagesOn();
+
+            timerReadMessagesOn();
 
             timerOutgoingPull.Enabled = true;
             //timerPhysicalSendStart();
@@ -20283,7 +20305,7 @@ namespace Nilsa
 			progressBarChangePersone.Value = pbvalue;
 			progressBarChangePersone.Invalidate();
 			Application.DoEvents();
-			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle >=0 && timerReadCycle <=0 && timerWriteCycle <= 0 && !tbStartService.Enabled)
+			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle > 0 /*&& timerReadCycle <=0*/ && timerWriteCycle <= 0 /*&& !tbStartService.Enabled*/)
 			{
 				timerChangePersoneOff();
 				StopService();
