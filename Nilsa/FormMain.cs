@@ -78,6 +78,7 @@ namespace Nilsa
 		public TheSystemContacter theSystemContacter;
 		private bool needSelectNextMessage = true;
         private bool isTimerReadNewMessagesFinished = false;
+        private Process _process;
 
         const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
@@ -3859,10 +3860,10 @@ namespace Nilsa
 			//TimerPhysicalSendCycle = DefaultTimerPhysicalSendCycle;
 		}
 
-		private void SaveAlgorithmSettings()
+		private void SaveAlgorithmSettings(int algid)
 		{
 			List<String> lstTS = new List<String>();
-			lstTS.Add(adbrCurrent.ID.ToString());
+			lstTS.Add(algid.ToString());
 
 			FileWriteAllLines(Path.Combine(sDataPath, "_algotithm_settings_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstTS, Encoding.UTF8);
 		}
@@ -4152,7 +4153,7 @@ namespace Nilsa
 				//                }
 				//            }
 
-				SaveAlgorithmSettings();
+				SaveAlgorithmSettings(algid);
 				setlabelAlgorithmNameText(adbrCurrent.Name);
 
 			}
@@ -5639,64 +5640,7 @@ namespace Nilsa
 					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
 				}
 			}
-
-			//Image bitmapPicture = null;
-   //         buttonEditPersHarValues.BackgroundImage = null;
-			//bool bRead = false;
-			////прописать получение адреса фото
-			//if (photoURL.Length > 0)
-			//{
-			//	var request = WebRequest.Create(photoURL);
-
-			//	using (var response = request.GetResponse())
-			//	using (var stream = response.GetResponseStream())
-			//	{
-			//		bitmapPicture = Bitmap.FromStream(stream);
-			//		bRead = true;
-   //                 buttonEditPersHarValues.BackgroundImage = bitmapPicture;
-			//		personPicture = bitmapPicture;
-			//		personPictureID = iPersUserID;
-			//	}
-			//}
-			//if (!bRead)
-			//{
-			//	personPicture = null;
-			//	personPictureID = -1;
-			//}
-
-			//FormWebBrowser.Persone usrAdr = null;
-			//if (fwbVKontakte != null)
-			//{
-			//    if (fwbVKontakteFirstShow)
-			//    {
-			//        if (fwbVKontakte.personeAtrributes != null)
-			//            usrAdr = fwbVKontakte.personeAtrributes;
-			//    }
-			//}
-
-			//if (usrAdr != null)
-			//    if (usrAdr.id != fwbVKontakte.loggedPersoneID)
-			//        usrAdr = null;
-			//if (usrAdr == null)
-			//    usrAdr = loadPersoneAttributes(fwbVKontakte.loggedPersoneID);
-
-			//labelPers1Name.Text = usrAdr.FirstName;
-			//labelPers1Family.Text = usrAdr.LastName;
-			//labelPers1FIO.Text = usrAdr.FirstName + " " + usrAdr.LastName;
-			//toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-
-
-
-			//contName = usrAdr.FirstName + " " + usrAdr.LastName;
-
-			/*
-			if (cbPers1.Items.Contains(userName))
-				cbPers1.SelectedIndex = cbPers1.Items.IndexOf(userName);
-			 */
-
 			LoadPersoneParametersDescription();
-			//UpdatePersoneParametersValues_Friends();
-			//UpdatePersoneParametersValues_Algorithm();
 		}
 
 		private void SetUserPictureFromID(long userid, Button button, bool bPerson)
@@ -14145,8 +14089,8 @@ namespace Nilsa
 				ResponseFindRightAction2(responseInterface);
 
                 isTimerReadNewMessagesFinished = false;
-				StopService();
-				StartService();
+				//StopService();
+				//StartService();
                 _interfaceListener.NilsaDeleteFlag();
             }
         }
@@ -16357,18 +16301,24 @@ namespace Nilsa
 		{
 			if (FormMain_FormClosing_Action)
 			{
-				if (fwbVKontakte != null)
-				{
-					if (fwbVKontakte.Visible)
-					{
-						fwbVKontakte.saveSettings();
-						fwbVKontakte.exitBrowser = true;
-						fwbVKontakte.stopAllTimers(); 
-						fwbVKontakte.Hide();
-					}
-				}
 
-				setMonitorTime(false);
+				var path = _interfaceListener.Path;
+
+                if (_process != null && !_process.HasExited)
+                {
+                    while (!File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)) && File.Exists(Path.Combine(path.PathNilsa, path.FileFlag)))
+                    {
+                        WaitNSeconds(1);
+                    }
+
+                    TimerReadFromInterface.Enabled = true;
+
+                    _process.CloseMainWindow();
+                    _process.Close();
+                    _process.Dispose();
+                }
+
+                setMonitorTime(false);
 				SaveProgramCountersC1C2C3();
 				SaveProgramCountersC4C5C6();
 				StopService();
@@ -17580,7 +17530,30 @@ namespace Nilsa
 		private void FormMain_Load(object sender, EventArgs e)
 		{
 			backgroundWorkerUpdate.RunWorkerAsync(false);
-		}
+
+            //Start the Interface
+			string pathToExe = @"C:\путь\к\файлу.exe";
+
+			if (!File.Exists(pathToExe))
+			{
+                MessageBox.Show("The Interface.exe not found");
+				return;
+            }
+            // Creating the process
+            var _process = new Process();
+            _process.StartInfo.FileName = pathToExe;
+            _process.StartInfo.CreateNoWindow = true;  // Do not create winwow
+            _process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
+            try
+            {
+                _process.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to start Interface: {ex.Message}");
+            }
+        }
 
 		private void labelCont1Name_Click(object sender, EventArgs e)
 		{
