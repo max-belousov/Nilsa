@@ -444,12 +444,16 @@ namespace Nilsa
 
         public String getItemID(int rowIndex)
         {
-            return grid1[rowIndex, columnOrder[ATTRIBUTES_COLUMN_ID]].Value.ToString();
+            var cell = grid1[rowIndex, columnOrder[ATTRIBUTES_COLUMN_ID]];
+            if (cell != null && cell.Value != null) return cell.Value.ToString();
+            else return "";
         }
 
         private String getItemName(int rowIndex)
         {
-            return grid1[rowIndex, columnOrder[ATTRIBUTES_COLUMN_TEXT]].Value.ToString();
+            var cell = grid1[rowIndex, columnOrder[ATTRIBUTES_COLUMN_TEXT]];
+            if (cell != null && cell.Value != null) return cell.Value.ToString();
+            else return "";
         }
 
         private void ApplyFilter(bool bNotShowDialog = true)

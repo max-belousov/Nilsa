@@ -14211,13 +14211,16 @@ namespace Nilsa
 						*/
 						foreach (var msg in newmessage.MESSAGES)
 						{
+							if (String.IsNullOrWhiteSpace(msg.TEXT)) continue;
+
+                            msg.TEXT = msg.TEXT.Replace("\r\n", " ");
+                            msg.TEXT = msg.TEXT.Replace("\n", " ");
+
                             if (iPersUserID != localPersId)
                             {
                                 SaveAnswerIfPersoneChanged2(localPersId, msg.TEXT);
                                 continue;
                             }
-                            msg.TEXT = msg.TEXT.Replace("\r\n", " ");
-                            msg.TEXT = msg.TEXT.Replace("\n", " ");
 
                             lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msg.TEXT);
                         }
