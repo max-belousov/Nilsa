@@ -34,7 +34,7 @@ namespace Nilsa.NilsaAndInterface
                 }
                 else
                 {
-                    string relativePath = @"..\Interface";
+                    string relativePath = @"..\Interface\Sockets";
                     string fullPath = System.IO.Path.GetFullPath(relativePath);
                     Path.PathWebDriver = System.IO.Path.Combine(fullPath, "Browser");
                     Path.PathNilsa = System.IO.Path.Combine(fullPath, "Nilsa");

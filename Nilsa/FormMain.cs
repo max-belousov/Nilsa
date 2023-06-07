@@ -17531,10 +17531,11 @@ namespace Nilsa
 		{
 			backgroundWorkerUpdate.RunWorkerAsync(false);
 
-            //Start the Interface
-			string pathToExe = @"C:\путь\к\файлу.exe";
+			//Start the Interface
+			string pathToExe = @"..\Interface\main.exe"; //@"C:\путь\к\файлу.exe";
 
-			if (!File.Exists(pathToExe))
+
+            if (!File.Exists(pathToExe))
 			{
                 MessageBox.Show("The Interface.exe not found");
 				return;
