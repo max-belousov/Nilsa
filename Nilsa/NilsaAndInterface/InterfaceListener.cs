@@ -34,12 +34,16 @@ namespace Nilsa.NilsaAndInterface
                 }
                 else
                 {
-                    string relativePath = @"..\Interface\Sockets";
-                    string fullPath = System.IO.Path.GetFullPath(relativePath);
-                    Path.PathWebDriver = System.IO.Path.Combine(fullPath, "Browser");
-                    Path.PathNilsa = System.IO.Path.Combine(fullPath, "Nilsa");
-                    Path.FileData = System.IO.Path.Combine(fullPath, "data");
-                    Path.FileFlag = System.IO.Path.Combine(fullPath, "FLAG");
+                    string browserPath = @"..\Interface\Sockets\Browser";
+                    string fullBrowserPath = System.IO.Path.GetFullPath(browserPath);
+                    Path.PathWebDriver = fullBrowserPath;
+
+                    string nilsaPath = @"..\Interface\Sockets\Nilsa";
+                    string fullNilsaPath = System.IO.Path.GetFullPath(nilsaPath);
+                    Path.PathNilsa = fullNilsaPath;
+
+                    Path.FileData = "data";
+                    Path.FileFlag = "FLAG";
                 }
             }
             catch (Exception e) { MessageBox.Show(e.Message); }
@@ -91,6 +95,8 @@ namespace Nilsa.NilsaAndInterface
                     string requestPath = System.IO.Path.Combine(Path.PathNilsa, Path.FileData);
                     // Write the request to file
                     File.WriteAllText(requestPath, tinderRequest);
+                    var logPath = System.IO.Path.Combine(Application.StartupPath, "RequestLogs.txt");
+                    File.AppendAllText(logPath, tinderRequest + "\n");
                 }
                 catch (Exception) { }
             }
@@ -163,6 +169,8 @@ namespace Nilsa.NilsaAndInterface
                     string responsePath = System.IO.Path.Combine(Path.PathWebDriver, Path.FileData);
                     // Read the request from file
                     incomeInterfaceMessage = File.ReadAllText(responsePath);
+                    var logPath = System.IO.Path.Combine(Application.StartupPath,"ResponseLogs.txt");
+                    File.AppendAllText(logPath, incomeInterfaceMessage + "\n");
                 }
                 catch (Exception) { }
             }
