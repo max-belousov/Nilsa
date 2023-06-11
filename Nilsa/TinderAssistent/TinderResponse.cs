@@ -24,6 +24,7 @@ namespace Nilsa.TinderAssistent
         public string LAST_NAME_CONTACTER { get; set; }
         public string CONTACTER { get; set; }
         public string COMMAND { get; set; }
+        public string ORIGINAL_MESSAGE { get; set; }
         public IncomeMessage[] NEW_MESSAGES { get; set; }
         public UnreadMessage[] MESSAGES { get; set;  }
 
@@ -94,6 +95,11 @@ namespace Nilsa.TinderAssistent
             if (!string.IsNullOrEmpty(CONTACTER))
             {
                 builder.Append("CONTACTER: ").AppendLine(CONTACTER);
+            }
+
+            if (!string.IsNullOrEmpty(ORIGINAL_MESSAGE))
+            {
+                builder.Append("ORIGINAL_MESSAGE: ").AppendLine(ORIGINAL_MESSAGE);
             }
 
             if (!string.IsNullOrEmpty(COMMAND))

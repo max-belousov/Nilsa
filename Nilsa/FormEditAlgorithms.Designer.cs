@@ -35,6 +35,7 @@
             this.buttonSelect = new System.Windows.Forms.Button();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.selflearningSettingsButton = new System.Windows.Forms.Button();
             this.buttonContacterSettings = new System.Windows.Forms.Button();
             this.buttonTimersSettings = new System.Windows.Forms.Button();
             this.buttonAlgorithmMarkers = new System.Windows.Forms.Button();
@@ -197,6 +198,7 @@
             // 
             // panel4
             // 
+            this.panel4.Controls.Add(this.selflearningSettingsButton);
             this.panel4.Controls.Add(this.buttonContacterSettings);
             this.panel4.Controls.Add(this.buttonTimersSettings);
             this.panel4.Controls.Add(this.buttonAlgorithmMarkers);
@@ -208,6 +210,17 @@
             this.panel4.Padding = new System.Windows.Forms.Padding(10, 5, 10, 5);
             this.panel4.Size = new System.Drawing.Size(1576, 36);
             this.panel4.TabIndex = 3;
+            // 
+            // selflearningSettingsButton
+            // 
+            this.selflearningSettingsButton.Dock = System.Windows.Forms.DockStyle.Left;
+            this.selflearningSettingsButton.Location = new System.Drawing.Point(979, 5);
+            this.selflearningSettingsButton.Name = "selflearningSettingsButton";
+            this.selflearningSettingsButton.Size = new System.Drawing.Size(189, 26);
+            this.selflearningSettingsButton.TabIndex = 31;
+            this.selflearningSettingsButton.Text = "Настройки самообучения";
+            this.selflearningSettingsButton.UseVisualStyleBackColor = true;
+            this.selflearningSettingsButton.Click += new System.EventHandler(this.SelflearningSettingsButton_Click);
             // 
             // buttonContacterSettings
             // 
@@ -1112,5 +1125,6 @@
         private System.Windows.Forms.Button buttonContacterSettings;
         public System.Windows.Forms.ComboBox comboBoxCompareStarLevel;
         private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Button selflearningSettingsButton;
     }
 }

@@ -79,8 +79,10 @@ namespace Nilsa
 		private bool needSelectNextMessage = true;
 		private bool isTimerReadNewMessagesFinished = false;
 		private Process _process;
+		private bool temporaryStopSplitToSentencse = true;
 
-		const bool externalCommandProcess = false; //!!!
+
+        const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
 		private bool needResetName = true;
 		private bool _firstStart = true;
@@ -136,6 +138,7 @@ namespace Nilsa
 		public int[] iCompareVectorsKoefOut;
 		public String[] sMsgHarFilter;
 		public static int iMsgHarCount = 16;
+		public  int iMsgHarCountNonStatic = 16;
 		public int iMsgHarAttrCount = 4;
 
 		MessagesLabel[] lblMsgHarNames;
@@ -5186,6 +5189,11 @@ namespace Nilsa
 					SelectNextReceivedMessage();
 					return;
 				}
+				/*if (value.StartsWith("READ_NEW_MESSAGES"))
+				{
+					tbSendOutMessageAction();
+					return;
+				}*/
 				//if (value.StartsWith("READ_NEW_MESSAGES"))
 				//{
 				//    SelectNextReceivedMessage();
@@ -5245,7 +5253,7 @@ namespace Nilsa
 						UpdateProgramCountersInfoD4D5D6();
 					}
 
-					if (adbrCurrent.SplitTextIntoSentences)
+					if (adbrCurrent.SplitTextIntoSentences && temporaryStopSplitToSentencse)
 					{
 						String msgSentenceCurrent = SplitTextIntoSentences(value);
 						String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
@@ -6238,13 +6246,14 @@ namespace Nilsa
 								}
 								else
 								{
-									var request = WebRequest.Create(photoContURL);
+									buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
+									/*var request = WebRequest.Create(photoContURL);
 									using (var response = request.GetResponse())
 									using (var stream = response.GetResponseStream())
 									{
 										var bitmapPicture = Bitmap.FromStream(stream);
 										buttonEditContHarValues.BackgroundImage = bitmapPicture;
-									}
+									}*/
 								}
 							}
 							catch (Exception e)
@@ -7206,7 +7215,7 @@ namespace Nilsa
 					
 					if (formEditPersoneDb.bNeedPersoneChange)
 					{
-						timerAnswerWaitingOff();
+						//timerAnswerWaitingOff();
 
 						initPersonenLists(formEditPersoneDb);
 
@@ -7236,7 +7245,7 @@ namespace Nilsa
 							userID = "";
 							clearPersonenLists();
 
-							timerAnswerWaitingOff();
+							//timerAnswerWaitingOff();
 							//toolStripMenuItemClearInMsgPullPersonen.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
 							onAfterPersonenListChanged();
 							bShowAutorizeForm = false;
@@ -7551,7 +7560,7 @@ namespace Nilsa
 
 					if (formEditPersoneDb.bNeedPersoneChange)
 					{
-						timerAnswerWaitingOff();
+						//timerAnswerWaitingOff();
 
 						initPersonenLists(formEditPersoneDb);
 
@@ -7580,7 +7589,7 @@ namespace Nilsa
 							userID = "";
 							clearPersonenLists();
 
-							timerAnswerWaitingOff();
+							//timerAnswerWaitingOff();
 							onAfterPersonenListChanged();
 							bShowAutorizeForm = false;
 							OnSocialNetworkChanged();
@@ -11362,6 +11371,55 @@ namespace Nilsa
 			StartAnswerTimer();
 		}
 
+		private void AddEQInMessageParametersValuesHiddenForm(String sText)
+		{
+			// manual set timers
+			//StopAnswerTimer();
+			FormEditMsgValues fe = new FormEditMsgValues(this);
+			fe.Visible = false;
+			fe.Text += " " + "Сообщения Контактера";
+			fe.sPersHar = new String[iMsgHarCount, iMsgHarAttrCount + 1];
+			for (int i = 0; i < iMsgHarCount; i++)
+			{
+				for (int j = 0; j < iMsgHarAttrCount; j++)
+					fe.sPersHar[i, j] = sMsgHar[i, j];
+				fe.sPersHar[i, iMsgHarAttrCount] = sMsgHar[i, 3];//(i > 0 ? "" : sMsgHar[i, 3]);
+			}
+			fe.sPersHar[MSG_ID_COLUMN, iMsgHarAttrCount] = (iMsgINMaxID + 1).ToString();
+
+			fe.iPersHarAttrCount = iMsgHarAttrCount;
+			fe.iPersHarCount = iMsgHarCount;
+			fe.textBox1.Text = NilsaUtils.StringToText(sText);
+			fe.comboBox2.SelectedIndex = 0;
+			fe.Setup();
+
+			//fe.ShowDialog();
+			fe.DialogResult = DialogResult.OK;
+
+			String sMsgNewRec = "000000|";
+			for (int i = 0; i < iMsgHarCount; i++)
+			{
+				sMsgHar[i, 3] = fe.sPersHar[i, iMsgHarAttrCount].Trim();
+				sMsgNewRec = sMsgNewRec + fe.sPersHar[i, iMsgHarAttrCount] + "|";
+			}
+
+			sMsgNewRec = sMsgNewRec + "@!" + NilsaUtils.TextToString(fe.textBox1.Text) + (fe.comboBox2.SelectedIndex > 0 ? ("|!*#0" + Convert.ToString(fe.comboBox2.SelectedIndex)) : "");
+
+			if (!hashsetEQInMessagesDB.Contains(sMsgNewRec))
+			{
+				lstEQInMessagesDB.Add(sMsgNewRec);
+				hashsetEQInMessagesDB.Add(sMsgNewRec);
+				SaveEQInMessageDB();
+				iMsgINMaxID++;
+				NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+			}
+			UndoMarkerChanges();
+			SetEQInMessageList(labelInMsgHarTitleValue_Text);
+
+			//StartAnswerTimer();
+		}
+
+
 		private void EditEQInMessageParametersValues(String sMessage, String sMarker)
 		{
 			// manual set timers
@@ -11598,8 +11656,8 @@ namespace Nilsa
 				lstReceivedMessages.Add(lstReceivedMessages[0]);
 
 			SelectNextReceivedMessage();
-			if (!timerAnswerWaiting.Enabled)
-				timerAnswerWaitingOn();
+			/*if (!timerAnswerWaiting.Enabled)
+				timerAnswerWaitingOn();*/
 		}
 
 		public String SetMessageFields(String message)
@@ -14146,22 +14204,38 @@ namespace Nilsa
 			#endregion
 		}
 
+		private void CheckIfActiveInMsgEmpty()
+		{
+			if (lstReceivedMessages.Count > 0 && String.IsNullOrWhiteSpace(labelInEqMsgHarTitleValue_Text))
+			{
+				SelectNextReceivedMessage(false);
+			}
+		}
+
 		private void TimerReadFromInterface_Tick(object sender, EventArgs e)
 		{
 			var path = _interfaceListener.SetPathConfig();
-			if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)) && isTimerReadNewMessagesFinished)
+			if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)))
 			{
-				isTimerReadNewMessagesFinished = false;
-				var response = _interfaceListener.NilsaReadFromResponseFile();
-				responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
-				needSelectNextMessage = true;
-				ResponseFindRightAction2(responseInterface);
+				try
+				{
+					//isTimerReadNewMessagesFinished = false;
+					var response = _interfaceListener.NilsaReadFromResponseFile();
+					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
+					needSelectNextMessage = true;
+					ResponseFindRightAction2(responseInterface);
 
-				StopService();
-				StartService();
-				_interfaceListener.NilsaDeleteFlag();
-				SelectNextReceivedMessage(false);
+					//StopService();
+					//StartService();
+					_interfaceListener.NilsaDeleteFlag();
+					SelectNextReceivedMessage(false);
+				}
+				catch (Exception exp)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", exp);
+				}
 			}
+			//else if (!timerReadMessages.Enabled && !timerAnswerWaiting.Enabled && !timerAnswerWaiting.Enabled) CheckIfActiveInMsgEmpty();
 		}
 
 
@@ -14398,7 +14472,7 @@ namespace Nilsa
 								var data = cont.Split('|');
 								var names = data[1].Split(' ');
 								names[0] = resp.FIRST_NAME_CONTACTER;
-								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1]+ "|" + data[2];
 								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
 							}
 							catch (Exception e) { }
@@ -14460,15 +14534,79 @@ namespace Nilsa
 								var data = cont.Split('|');
 								var names = data[1].Split(' ');
 								names[1] = resp.LAST_NAME_CONTACTER;
-								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1] + "|" + data[2]; 
 								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
 							}
 							catch (Exception e) { }
 						}
 					}
 				}
+				else if (resp.STATUS == 200 && resp.COMMAND.Contains("TEACHING_VIA_GPT"))
+				{
+					TimerReadFromInterface.Enabled = false;
+					var lstMsgHarAlgValues = new List<String>();
+					if (File.Exists(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_{Convert.ToString(adbrCurrent.ID)}.values")))
+					{
+						var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_{Convert.ToString(adbrCurrent.ID)}.values"));
+						lstMsgHarAlgValues = new List<String>(srcFile);
+					}
+					else
+					{
+						for (int i = 0; i < iMsgHarAttrCount; i++)
+						{
+							lstMsgHarAlgValues.Add("");
+						}
+					}
+					//распознать объяснение и сохранить характеристики
+					temporaryStopSplitToSentencse = false;
+                    lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.TEXT);
+					//StopService();
+					SelectNextReceivedMessage(false);
+					temporaryStopSplitToSentencse = true;
+                    /*var tempList = new List<string>();
+					for (int i = 0; i < lstMsgHarAlgValues.Count; i++)
+					{
+						if (lstMsgHarAlgValues[i].Contains("#origin#")) tempList.Add(sMsgHar[i]);
+						else tempList.Add(lstMsgHarAlgValues[i]);
+					}*/
 
-				else
+                    //generation and adding message to database
+                    AddEQInMessageParametersValuesHiddenForm(resp.ORIGINAL_MESSAGE);
+					lstReceivedMessages.RemoveAt(0);
+                    resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\r\n", " ");
+                    resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\n", " ");
+
+                    if (iPersUserID != localPersId)
+                    {
+                        SaveAnswerIfPersoneChanged2(localPersId, resp.ORIGINAL_MESSAGE, localContId);
+                        continue;
+                    }
+                    lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.ORIGINAL_MESSAGE);
+                    TimerReadFromInterface.Enabled = true;
+
+
+
+                    /*String sMsgNewRec = "000000|";
+					for (int i = 0; i < iMsgHarCount; i++)
+					{
+						sMsgHar[i, 3] = fe.sPersHar[i, iMsgHarAttrCount].Trim();
+						sMsgNewRec = sMsgNewRec + fe.sPersHar[i, iMsgHarAttrCount] + "|";
+					}
+
+					sMsgNewRec = sMsgNewRec + "@!" + NilsaUtils.TextToString(fe.textBox1.Text) + (fe.comboBox2.SelectedIndex > 0 ? ("|!*#0" + Convert.ToString(fe.comboBox2.SelectedIndex)) : "");
+
+					if (!hashsetEQInMessagesDB.Contains(sMsgNewRec))
+					{
+						lstEQInMessagesDB.Add(sMsgNewRec);
+						hashsetEQInMessagesDB.Add(sMsgNewRec);
+						SaveEQInMessageDB();
+						iMsgINMaxID++;
+						NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+					}
+					UndoMarkerChanges();
+					SetEQInMessageList(labelInMsgHarTitleValue_Text);*/
+                }
+                else
 				{
 					if (iPersUserID != localPersId) continue;
 					if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
@@ -14701,7 +14839,7 @@ namespace Nilsa
 								var data = cont.Split('|');
 								var names = data[1].Split(' ');
 								names[0] = resp.FIRST_NAME_CONTACTER;
-								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1] + "|" + data[2];
 								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
 							}
 							catch (Exception e) { }
@@ -14763,7 +14901,7 @@ namespace Nilsa
 								var data = cont.Split('|');
 								var names = data[1].Split(' ');
 								names[1] = resp.LAST_NAME_CONTACTER;
-								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1] + "|" + data[2];
 								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
 							}
 							catch (Exception e) { }
@@ -15334,11 +15472,16 @@ namespace Nilsa
 					if (tbSendOutMessage.Enabled)
 					{
 						tbSendOutMessageAction();
-						if (lstReceivedMessages.Count <= 0)
+						/*if (lstReceivedMessages.Count <= 0)
 						{
 							//timerReadMessagesOn();
 							timerAnswerWaitingOn();
-						}
+						}*/
+					}
+					if (lstReceivedMessages.Count == 0 && bServiceStart)
+					{
+						timerAnswerWaitingOn();
+						timerReadMessagesOn();
 					}
 					//else
 					//    tbSkipMessage_Click(null, null);
@@ -15382,6 +15525,7 @@ namespace Nilsa
 			{
 				timerAnswerWaitingOff();
 				//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+				//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
 				//timerReadMessagesOn();
 				//написать получение сообщения END_WAITING_TIMER от The System
 				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
@@ -15402,7 +15546,7 @@ namespace Nilsa
 			timerAnswerWaitingCycle = 0;
 			progressBarAnswerWaiting.Value = 0;
 			progressBarAnswerWaiting.Invalidate();
-			Application.DoEvents(); 
+			Application.DoEvents();
 		}
 
 
@@ -15816,7 +15960,7 @@ namespace Nilsa
 			setBtnB4(sUID);
 			if (sULogin.Length == 0 || sUPwd.Length == 0)
 			{
-				timerAnswerWaitingOff();
+				//timerAnswerWaitingOff();
 			}
 			else
 			{
@@ -16148,6 +16292,7 @@ namespace Nilsa
 
 		private void timerReadMessages_Tick(object sender, EventArgs e)
 		{
+			if (lstReceivedMessages.Count > 0) timerReadMessagesOff();
 			timerReadCycle--;
 
 			int pbvalue = (int)(100 * (float)(timerDefaultReadCycle - timerReadCycle) / (float)(timerDefaultReadCycle));
@@ -16159,16 +16304,21 @@ namespace Nilsa
 			if (timerReadCycle <= 0)
 			{
 				timerReadMessagesOff();
-				isTimerReadNewMessagesFinished = true;
-				timerReadMessagesOn();
+				//isTimerReadNewMessagesFinished = true;
+				//timerReadMessagesOn();
 				//if (lstReceivedMessages.Count == 0) timerAnswerWaitingOn();
 				//else timerWriteMessagesOn();
 
 
 				//deleted 05/06/2023 
-				//lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
-				//SelectNextReceivedMessage(false);
+				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+				SelectNextReceivedMessage(false);
+				tbSendOutMessageAction();
 
+				/*if (lstReceivedMessages.Count == 0)
+				{
+					timerAnswerWaitingOn();
+				}*/
 				//задача 53 в рамках нее убран функционал
 
 	//            bool bNotChanged = true;
@@ -16225,7 +16375,10 @@ namespace Nilsa
 			if (labelInEqMsgHarTitleValue_Text.Trim().Length > 0 || labelOutEqMsgHarTitleValue_Text.Trim().Length > 0)
 			{
 				if (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0 && tbSendOutMessage.Enabled)
-					timerAnswerWaitingOff();
+				{
+					//timerAnswerWaitingOff();
+					timerReadMessagesOff();
+				}
 				Random rnd = new Random();
 				timerDefaultWriteCycle = (labelInEqMsgHarTitleValue_Text.Trim().Length * 60) / timersValues[1] + rnd.Next(1, timersValues[3]) + (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0 && tbSendOutMessage.Enabled ? ((labelOutEqMsgHarTitleValue_Text.Trim().Length * 60) / timersValues[4] + timersValues[2]) : timersValues[2]);
 				timerWriteCycle = timerDefaultWriteCycle;
@@ -16287,7 +16440,7 @@ namespace Nilsa
 			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/) timerChangePersone.Enabled = true;
 
 			bServiceStart = true;
-
+			startTimers();
 			//if (fwbVKontakte == null)
 			//{
 			//    fwbVKontakte = new FormWebBrowser(this, true);
@@ -16315,12 +16468,12 @@ namespace Nilsa
 
 			if (lstReceivedMessages.Count == 0)
 			{
-				//timerReadMessagesOn();
-				timerAnswerWaitingOn();
+				timerReadMessagesOn();
+				//timerAnswerWaitingOn();
 			}
 			else timerWriteMessagesOn();
 
-			timerReadMessagesOn();
+			//timerReadMessagesOn();
 
 			timerOutgoingPull.Enabled = true;
 			//timerPhysicalSendStart();
@@ -16343,17 +16496,19 @@ namespace Nilsa
 		public void StopService()
 		{
 			HideBrowserCommand();
-			tbStartServiceIsClickedNow = false;
+			//tbStartServiceIsClickedNow = false;
 			bServiceStart = false;
 			tbStartService.Enabled = true;
 			tbStopService.Enabled = false;
 			timerChangePersone.Enabled = false;
-
+			stopTimers();
 			//timerWriteMessages.Enabled = false;
 			timerReadMessagesOff();
 			//timerSkipMessage.Enabled = false;
 			//timerAnswerWaiting.Enabled = false;
-			timerAnswerWaitingOff();
+			if (!tbStartServiceIsClickedNow) timerAnswerWaitingOff();
+			//timerAnswerWaitingOff();
+
 
 			//timerPhysicalSendStop();
 			timerOutgoingPull.Enabled = false;
@@ -17744,7 +17899,7 @@ namespace Nilsa
 
 			if (formEditPersonenDB.bNeedPersoneChange)
 			{
-				timerAnswerWaitingOff();
+				//timerAnswerWaitingOff();
 
 				initPersonenLists(formEditPersonenDB);
 

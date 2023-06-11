@@ -227,6 +227,12 @@
     <Compile Include="FormEditMsgHarDefalutValues.Designer.cs">
       <DependentUpon>FormEditMsgHarDefalutValues.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormSelfLearningSettings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormSelfLearningSettings.designer.cs">
+      <DependentUpon>FormSelfLearningSettings.cs</DependentUpon>
+    </Compile>
     <Compile Include="FormEditMsgValues.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -503,6 +509,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormEditMsgHarDefalutValues.resx">
       <DependentUpon>FormEditMsgHarDefalutValues.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormSelfLearningSettings.resx">
+      <DependentUpon>FormSelfLearningSettings.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormEditMsgValues.resx">
       <DependentUpon>FormEditMsgValues.cs</DependentUpon>
