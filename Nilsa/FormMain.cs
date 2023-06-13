@@ -21,7 +21,7 @@ using System.Windows.Forms;
 using VkNet;
 using VkNet.Enums;
 using VkNet.Enums.Filters;
-using CefSharp;
+//using CefSharp;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Nilsa.Data;
@@ -34,7 +34,7 @@ using VkNet.Model;
 using Nilsa.TinderAssistent;
 using Nilsa.ConfigFiles;
 using Nilsa.NilsaAndInterface;
-using SourceGrid;
+//using SourceGrid;
 
 namespace Nilsa
 {
@@ -82,7 +82,7 @@ namespace Nilsa
 		private bool temporaryStopSplitToSentencse = true;
 
 
-        const bool externalCommandProcess = false; //!!!
+		const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
 		private bool needResetName = true;
 		private bool _firstStart = true;
@@ -2010,7 +2010,7 @@ namespace Nilsa
 			if (!showBrowserCommand)
 				toolStripTop.BackColor = Color.FromArgb(192, 0, 0);
 
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		public void HideFormWait()
@@ -2021,7 +2021,7 @@ namespace Nilsa
 
 			if (!showBrowserCommand)
 				toolStripTop.BackColor = SystemColors.Control;
-			Application.DoEvents();
+			//Application.DoEvents();
 
 			//if (fwait.Visible)
 			//    fwait.Hide();
@@ -2033,7 +2033,7 @@ namespace Nilsa
 			showBrowserCommand = true;
 			if (!showFormWait)
 				toolStripTop.BackColor = Color.FromArgb(192, 0, 0);
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		public void HideBrowserCommand()
@@ -2042,7 +2042,7 @@ namespace Nilsa
 
 			if (!showFormWait)
 				toolStripTop.BackColor = SystemColors.Control;
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		public void Shuffle(List<string> list)
@@ -2470,19 +2470,6 @@ namespace Nilsa
 					lstReceivedMessages.Insert(0, "0|330643598|" + dt.ToShortDateString() + "|" + dt.ToShortTimeString() + "|" + "INIT_PERSONE_GROUPS_DIALOG");
 				}
 			}
-			if (!_firstStart && needActivation)
-			{
-				for (int i = 0; i < lstReceivedMessages.Count; i++)
-				{
-					if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE")))
-					{
-						lstReceivedMessages.RemoveAt(i);
-						i--;
-					}
-				}
-				lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
-			}
-
 
 			timerChangePersoneOn();
 			SelectNextReceivedMessage(false);
@@ -3836,7 +3823,7 @@ namespace Nilsa
 					timerDefaultChangePersoneCycle = timersValues[7];
 					if (timerChangePersoneCycle <= 0)
 						timerChangePersoneCycle = 1;
-					timerChangePersone_Tick(null, null);
+					//timerChangePersone_Tick(null, null);
 				}
 			}
 			else if (lstPersoneChange.Count > 0)// && SocialNetwork == 0)
@@ -3845,7 +3832,7 @@ namespace Nilsa
 				{
 					timerDefaultChangePersoneCycle = timersValues[7];
 					timerChangePersoneCycle = timerDefaultChangePersoneCycle + 1;
-					timerChangePersone_Tick(null, null);
+					//timerChangePersone_Tick(null, null);
 				}
 			}
 
@@ -4954,6 +4941,495 @@ namespace Nilsa
 			return true;
 		}
 
+		private async Task SelectNextReceivedMessageAsync(bool bDelete = true, bool bBoycottCurrent = false)
+		{
+			bool localBoycottCurrent = bBoycottCurrent;
+			await Task.Run(() =>
+			{
+				long iLastContacterID = -1;
+				long iLastGroupAnswerID = -1;
+				long iLastGroupAnswerPostID = -1;
+				long iLastGroupAnswerCommentID = -1;
+
+				//timerWriteMessages.Enabled = false;
+				//timerSkipMessage.Enabled = false;
+
+				//Set_pbSkipMessage_Default();
+				timerWriteMessagesOff();
+
+				tbUndoMarkerChanges.Enabled = false;
+				if (bDelete)
+				{
+					if (lstReceivedMessages.Count > 0)
+						lstReceivedMessages.RemoveAt(0);
+
+					if (lstReceivedMessages.Count == 0)
+						ReadNewReceivedMessages(localBoycottCurrent);
+				}
+				else
+					ReadNewReceivedMessages(localBoycottCurrent);
+
+				if (iContUserID != -1)
+				{
+					iLastContacterID = iContUserID;
+					iLastGroupAnswerID = iGroupAnswerID;
+					iLastGroupAnswerPostID = iGroupAnswerPostID;
+					iLastGroupAnswerCommentID = iGroupAnswerCommentID;
+				}
+				else
+				{
+					if (SocialNetwork == 1)
+					{
+						if (iPersUserID == 0)
+							iLastContacterID = 1;
+					}
+				}
+
+				iContUserID = -1;
+				iGroupAnswerID = -1;
+				iGroupAnswerPostID = -1;
+				iGroupAnswerCommentID = -1;
+				//labelCont1.Text = "";
+				//cbCont1.SelectedIndex = -1;
+				if (needResetName)
+				{
+					contName = contNameFamily = contNameName = "";
+					labelCont1Family.Text = "";
+					labelCont1Name.Text = "";
+					labelCont1FIO.Text = $"{theSystemContacter.FirstName} {theSystemContacter.LastName}";
+					sGroupAdditinalUsers = "";
+					toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+					buttonEditContHarValues.BackgroundImage = Image.FromFile(theSystemContacter.PhotoPath);
+				}
+				needResetName = true;
+
+				for (int i = 0; i < iContHarCount; i++)
+				{
+					lblContHarValues[i].Text = "";
+					//toolTipMessage.SetToolTip(lblContHarNames[i], lblContHarNames[i].Text);
+					toolTipMessage.SetToolTip(lblContHarValues[i], "");
+				}
+				iInMsgID = -1;
+				//labelInMsgHarDateValue.Text = "";
+				//labelInMsgHarTimeValue.Text = "";
+				Set_labelInMsgHarTitleValue_Text("");
+				try
+				{
+					comboBoxCompareLexicalLevel.SelectedIndex = (adbrCurrent.ID >= 0 ? adbrCurrent.CompareLexicalLevel : CompareLexicalLevel);
+				}
+				catch
+				{
+
+				}
+
+
+				listBoxInMsg.Items.Clear();
+				listBoxOutMsg.Items.Clear();
+				//buttonEditInMsgHar.Enabled = false;
+				//buttonNewOutMsgHar.Enabled = false;
+				//buttonEditInEqMsgHar.Enabled = true;
+				//buttonEditOutEqMsgHar.Enabled = true;
+				tbSkipMessage.Enabled = false;
+				tbDeleteMessage.Enabled = false;
+				tbSendOutMessage.Enabled = false;
+				Set_labelInEqMsgHarTitleValue_Text("");
+				CompareVetors_RestoreDefaultValues();
+
+				clearlblEQInHarValues();
+				Set_labelOutEqMsgHarTitleValue_Text("");
+
+				clearlblEQOutHarValues();
+				sCurrentEQInMessageRecord = "";
+				sCurrentEQOutMessageRecord = "";
+				sCurrentEQOutMessageRecordOut = "";
+
+				//? Зачистка подобного входящего и возможного исходящего сообщения
+				labelPersMsgCount.Text = lstReceivedMessages.Count.ToString();
+				if (lstReceivedMessages.Count > 0)
+				{
+					String value = lstReceivedMessages[0];
+					iInMsgID = Convert.ToInt64(value.Substring(0, value.IndexOf("|")));
+					value = value.Substring(value.IndexOf("|") + 1);
+					if (iInMsgID > 0)
+						iContUserID = Convert.ToInt64(value.Substring(0, value.IndexOf("|")));
+					else
+					{
+						string strUsrId = value.Substring(0, value.IndexOf("|"));
+						if (strUsrId.IndexOf('/') > 0)
+						{
+							//Convert.ToString(_ownerId)+"/"+ Convert.ToString(_postId) + "/"+ Convert.ToString(msg.Id) + "/" + Convert.ToString(msg.FromId) + "|";
+							iGroupAnswerID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+							iGroupAnswerPostID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+							iGroupAnswerCommentID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+							iContUserID = Convert.ToInt64(strUsrId);
+						}
+						//else if (strUsrId.Equals("330643598")) iContUserID = iLastContacterID;
+						else iContUserID = Convert.ToInt64(strUsrId);
+					}
+					cntE1++;
+					cntE3++;
+					cntE7++;
+					cntE9++;
+					SaveProgramCountersE1E2E3();
+					UpdateProgramCountersInfoE1E2E3();
+
+					cntE4++;
+					cntE6++;
+					SaveProgramCountersE4E5E6();
+					UpdateProgramCountersInfoE4E5E6();
+
+					if (contC9 != iContUserID)
+					{
+						contC9 = iContUserID;
+						cntC9 = 0;
+						UpdateProgramCountersInfoC8C9();
+					}
+
+					sendPrevUserMessage();
+					LoadContactParamersValues();
+					LoadAlgorithmSettingsContacter();
+
+					if (adbrCurrent.Name.ToLower().Equals("boycott"))
+					{
+						SelectNextReceivedMessage(true, true);
+						return;
+					}
+
+					if (SocialNetwork == 0)
+					{
+						if (iInMsgID > 0)
+							api_Messages_MarkAsRead(iInMsgID);
+					}
+
+					if (adbrCurrent.PlayReceiveMsg)
+					{
+						Stream str = Properties.Resources._2;
+						SoundPlayer snd = new SoundPlayer(str);
+						snd.Play();
+					}
+
+					//if (iContUserID == 330305148)
+					//{
+					//	SelectNextReceivedMessage();
+					//	return;
+					//}
+
+					if (ResendToOperators())
+					{
+						SelectNextReceivedMessage();
+						return;
+					}
+
+					value = value.Substring(value.IndexOf("|") + 1);
+					String sDate = value.Substring(0, value.IndexOf("|"));
+					value = value.Substring(value.IndexOf("|") + 1);
+					String sTime = value.Substring(0, value.IndexOf("|"));
+					value = value.Substring(value.IndexOf("|") + 1);
+
+					if (doOperatorsCommand(value))
+					{
+						SelectNextReceivedMessage();
+						return;
+					}
+
+					if (ResendFromOperators(value))
+					{
+						SelectNextReceivedMessage();
+						return;
+					}
+
+					/*if (iContUserID != iPersUserID)
+					{
+						if (iContUserID >= 0 && iContUserID != 330643598)
+						{
+							if (ContactsList_GetUserIdx(iContUserID.ToString(), lstContactsList) < 0)
+							{
+								if (adbrCurrent.bIgnoreMessagesFromNotContacter)
+								{
+									SelectNextReceivedMessage();
+									return;
+								}
+								else
+								{
+									if (iContactsGroupsMode == 0)
+										ContactsList_AddUser(iContUserID.ToString(), "");
+								}
+							}
+						}
+					}*/
+
+					if (adbrCurrent.MergeInMessages)
+					{
+						value = mergeContacterMessageToTop(value);
+					}
+
+					LoadLastMessage();
+
+					if (value.Contains("<ADD_PERS_LIST>"))
+					{
+						sGroupAdditinalUsers = "<ADD_PERS_LIST>" + getTagValue(value, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>") + "</ADD_PERS_LIST>";
+						value = removeTagValue(value, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+					}
+
+					if (value.StartsWith("PERSONE_CHANGED"))
+					{
+						SelectNextReceivedMessage();
+						return;
+					}
+					/*if (value.StartsWith("READ_NEW_MESSAGES"))
+					{
+						tbSendOutMessageAction();
+						return;
+					}*/
+					//if (value.StartsWith("READ_NEW_MESSAGES"))
+					//{
+					//    SelectNextReceivedMessage();
+					//    return;
+					//}
+					if (value.StartsWith("INIT_DIALOG|"))
+					{
+						SaveInitDialogFlag();
+						Set_labelInMsgHarTitleValue_Text("INIT_DIALOG");
+						cntD1++;
+						cntD7++;
+						SaveProgramCountersD1D2D3();
+						UpdateProgramCountersInfoD1D2D3();
+
+						cntD4++;
+						SaveProgramCountersD4D5D6();
+						UpdateProgramCountersInfoD4D5D6();
+					}
+					else if (value.StartsWith("INIT_GROUP_DIALOG|"))
+					{
+						SaveInitDialogFlag();
+						Set_labelInMsgHarTitleValue_Text("INIT_GROUP_DIALOG");
+						cntD1++;
+						cntD7++;
+						SaveProgramCountersD1D2D3();
+						UpdateProgramCountersInfoD1D2D3();
+
+						cntD4++;
+						SaveProgramCountersD4D5D6();
+						UpdateProgramCountersInfoD4D5D6();
+					}
+					else
+					{
+						if (CheckInitDialogFlag())
+						{
+							if (!value.StartsWith("ERROR_SEND_MESSAGE"))
+							{
+								cntD2++;
+								cntD8++;
+								SaveProgramCountersD1D2D3();
+								UpdateProgramCountersInfoD1D2D3();
+
+								cntD5++;
+								SaveProgramCountersD4D5D6();
+								UpdateProgramCountersInfoD4D5D6();
+							}
+						}
+						else if (value.StartsWith("DIALOG_DONE"))
+						{
+							cntD3++;
+							cntD9++;
+							SaveProgramCountersD1D2D3();
+							UpdateProgramCountersInfoD1D2D3();
+
+							cntD6++;
+							SaveProgramCountersD4D5D6();
+							UpdateProgramCountersInfoD4D5D6();
+						}
+
+						if (adbrCurrent.SplitTextIntoSentences && temporaryStopSplitToSentencse)
+						{
+							String msgSentenceCurrent = SplitTextIntoSentences(value);
+							String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
+							value = msgSentenceCurrent.Trim();
+							if (msgSentenceEnd.Length > 0)
+							{
+								String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + value;
+								lstReceivedMessages[0] = sCurRec;
+								String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + msgSentenceEnd;
+								lstReceivedMessages.Add(sEndRec);
+							}
+						}
+
+						value = SetMessageFields(value);
+						Set_labelInMsgHarTitleValue_Text(NilsaUtils.StringToText(value));
+					}
+
+					if (comboBoxCompareLexicalLevel != null)
+						comboBoxCompareLexicalLevel.SelectedIndex = (adbrCurrent.ID >= 0 ? adbrCurrent.CompareLexicalLevel : CompareLexicalLevel);
+					//buttonEditInMsgHar.Enabled = true;
+					//buttonNewOutMsgHar.Enabled = true;
+
+					LoadContactParamersValues();
+					SetContactParametersValues();
+					UpdateContactParametersValues_Algorithm();
+					//buttonEditContHarValues.Enabled = true;
+
+					lstUndoMarkerChangesContHarValues = new List<string>();
+					foreach (string _str in lstContHarValues)
+						lstUndoMarkerChangesContHarValues.Add(_str);
+					iUndoMarkerChangesContHarValuesContID = iContUserID;
+					iUndoMarkerChangesAlgorithm = adbrCurrent.ID;
+					sUndoMarkerCurrentEQInMessageRecord = "";
+					tbUndoMarkerChanges.Enabled = true;
+
+					tbSkipMessage.Enabled = true;
+					tbDeleteMessage.Enabled = true;
+
+					// 2019-04-13
+					ReadAllUserMessages(iPersUserID, iContUserID);
+					if (value.StartsWith("INIT_DIALOG|"))
+					{
+						//ReadAndMarkAsReadedNewReceivedMessages(iContUserID);
+						int iMsgPos = 1;
+						while (iMsgPos < lstReceivedMessages.Count)
+						{
+							string _smv = lstReceivedMessages[iMsgPos];
+							_smv = _smv.Substring(_smv.IndexOf("|") + 1);
+							long _imuid = Convert.ToInt64(_smv.Substring(0, _smv.IndexOf("|")));
+							if (_imuid == iContUserID)
+								lstReceivedMessages.RemoveAt(iMsgPos);
+							else
+								iMsgPos++;
+						}
+
+						value = value.Substring(value.IndexOf("|") + 1);
+						listBoxInMsg.Items.Clear();
+						clearlblEQInHarValues();
+						Set_labelOutEqMsgHarTitleValue_Text(value.Substring(0, value.IndexOf("|")));
+						value = value.Substring(value.IndexOf("|") + 1);
+						if (value.Length > 0)
+						{
+							lstEQOutMessagesList.Clear();
+							lstEQOutMessagesList.Add(value);
+							listBoxOutMsg.Items.Clear();
+							listBoxOutMsg.Items.Add("100% " + GetMessageTextWithMarker(value.Substring(value.IndexOf("|@!") + 3)));
+							listBoxOutMsg.SelectedIndex = 0;
+						}
+					}
+					else if (value.StartsWith("INIT_GROUP_DIALOG|"))
+					{
+						// 2019-04-13
+						//ReadAndMarkAsReadedNewReceivedMessages(iContUserID);
+						int iMsgPos = 1;
+						while (iMsgPos < lstReceivedMessages.Count)
+						{
+							string _smv = lstReceivedMessages[iMsgPos];
+							_smv = _smv.Substring(_smv.IndexOf("|") + 1);
+							long _imuid = -1;
+							try
+							{
+								_imuid = Convert.ToInt64(_smv.Substring(0, _smv.IndexOf("|")));
+							}
+							catch (Exception e)
+							{
+
+							}
+							if (_imuid == iContUserID)
+								lstReceivedMessages.RemoveAt(iMsgPos);
+							else
+								iMsgPos++;
+						}
+
+						value = value.Substring(value.IndexOf("|") + 1);
+						listBoxInMsg.Items.Clear();
+						clearlblEQInHarValues();
+						Set_labelOutEqMsgHarTitleValue_Text(value.Substring(0, value.IndexOf("|")));
+						value = value.Substring(value.IndexOf("|") + 1);
+						if (value.Length > 0)
+						{
+							lstEQOutMessagesList.Clear();
+							lstEQOutMessagesList.Add(value);
+							listBoxOutMsg.Items.Clear();
+							listBoxOutMsg.Items.Add("100% " + GetMessageTextWithMarker(value.Substring(value.IndexOf("|@!") + 3)));
+							listBoxOutMsg.SelectedIndex = 0;
+						}
+					}
+					else if (value.Equals("INIT_PERSONE_DIALOG")/*labelInMsgHarTitleValue_Text.Equals("INIT_PERSONE_DIALOG")*/)
+					{
+						Set_labelOutEqMsgHarTitleValue_Text("EXECUTE...");
+						lstEQOutMessagesList.Clear();
+						listBoxOutMsg.Items.Clear();
+						listBoxInMsg.Items.Clear();
+						INIT_PERSONE_DIALOG = true;
+						btnInitContactsDialog_Click(null, null);
+						INIT_PERSONE_DIALOG = false;
+						SelectNextReceivedMessage();
+						//return;
+						//---
+
+					}
+					else if (value.Equals("INIT_PERSONE_GROUPS_DIALOG")/*labelInMsgHarTitleValue_Text.Equals("INIT_PERSONE_DIALOG")*/)
+					{
+						Set_labelOutEqMsgHarTitleValue_Text("EXECUTE...");
+						lstEQOutMessagesList.Clear();
+						listBoxOutMsg.Items.Clear();
+						listBoxInMsg.Items.Clear();
+						INIT_PERSONE_DIALOG = true;
+						btnInitGroupsDialog_Click(null, null);
+						// InitContactsDialog_Click(null, null);
+						INIT_PERSONE_DIALOG = false;
+						SelectNextReceivedMessage();
+						//return;
+						//---
+
+					}
+					else if (value.Equals("CLEAR_PERSONE_DIALOGS"))
+					{
+						Set_labelOutEqMsgHarTitleValue_Text("EXECUTE...");
+						lstEQOutMessagesList.Clear();
+						while (lstReceivedMessages.Count > 1)
+							lstReceivedMessages.RemoveAt(1);
+						ReadAndMarkAsReadedNewReceivedMessages();
+						SelectNextReceivedMessage();
+					}
+					else
+						SetEQInMessageList(labelInMsgHarTitleValue_Text);
+				}
+				else
+				{
+					sendPrevUserMessage();
+					if (iLastContacterID != -1)
+					{
+						iContUserID = iLastContacterID;
+						iGroupAnswerID = iLastGroupAnswerID;
+						iGroupAnswerPostID = iLastGroupAnswerPostID;
+						iGroupAnswerCommentID = iLastGroupAnswerCommentID;
+
+						if (contC9 != iContUserID)
+						{
+							contC9 = iContUserID;
+							cntC9 = 0;
+							UpdateProgramCountersInfoC8C9();
+						}
+						ContactsList_Load();
+						LoadContactParamersValues();
+						SetContactParametersValues();
+						LoadAlgorithmSettingsContacter();
+						UpdateContactParametersValues_Algorithm();
+
+						//LoadContactParametersDescription();
+
+						OnSelectOtherContacter(false);
+					}
+					else
+						listBoxUserMessages.Items.Clear();
+				}
+				tbNewOutMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+				tbNewInMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+				tbInitContactDialogContacter.Enabled = iPersUserID >= 0 && (iContUserID >= 0 || iContUserID < -1);
+				tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+				//UpdatePersoneParametersValues_Friends();
+				UpdatePersoneParametersValues_Algorithm();
+			});
+		}
+
 		private void SelectNextReceivedMessage(Boolean bDelete = true, bool bBoycootCurrent = false)
 		{
 			long iLastContacterID = -1;
@@ -5437,6 +5913,23 @@ namespace Nilsa
 			tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			//UpdatePersoneParametersValues_Friends();
 			UpdatePersoneParametersValues_Algorithm();
+			if (lblEQOutHarValues[11].Text.ToUpper().Equals("READ_NEW_MESSAGE_NO_TIMER"))
+			{
+				//timerWriteMessages.Enabled = false;
+				lstReceivedMessages.RemoveAt(0);
+				listBoxOutMsg.Items.Clear();
+				listBoxInMsg.Items.Clear();
+				lstOutgoingMessages_Insert(iPersUserID.ToString(), userName, labelOutEqMsgHarTitleValue_Text);
+				Set_labelOutEqMsgHarTitleValue_Text("");
+				Set_labelInMsgHarTitleValue_Text("");
+				//labelInEqMsgHarTitleValue_Text = "";
+				//labelInMsgHarTitleValue_Text = "";
+				timerWriteMessagesOff();
+				timerAnswerWaiting.Enabled = true;
+				SelectNextReceivedMessage(false);
+
+				//MessageBox.Show("READ_NEW_MESSAGE_NO_TIMER");
+			}
 		}
 
 		int iUndoMarkerChangesAlgorithm;
@@ -6759,6 +7252,7 @@ namespace Nilsa
 		//---
 		public String GetPersoneParametersValue(String sPersHarID)
 		{
+			if (lstPersHarValues == null) return "";
 			for (int i = 0; i < lstPersHarValues.Count; i++)
 			{
 				if (lstPersHarValues[i].IndexOf("|") >= 0)
@@ -7684,8 +8178,9 @@ namespace Nilsa
 								//persId = null;
 								iPersUserID = 1;// Convert.ToInt64(persId);
 							}
-							//iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
-							userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
+                            SetPersoneParametersValues();
+                            //iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
+                            /*userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
 							if (userName.IndexOf(" ") > 0)
 							{
 								userNameName = userName.Substring(0, userName.IndexOf(" ")); ;
@@ -7695,9 +8190,9 @@ namespace Nilsa
 							{
 								userNameName = userName;
 								userNameFamily = "";
-							}
-							SetStandardCaption();
-							SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
+							}*/
+                            SetStandardCaption();
+							//SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
 							return true;
 						}
 					}
@@ -8482,11 +8977,11 @@ namespace Nilsa
 		private void TinderLoadUserDB()
 		{
 			listTinderUserDB = new List<String>();
-			if (File.Exists(Path.Combine(Application.StartupPath, "tinder_userdb.txt")))
+			if (File.Exists(Path.Combine(sDataPath, "_personenti.txt")))
 			{
 				try
 				{
-					var srcFile = File.ReadAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"));
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_personenti.txt"));
 					listTinderUserDB = new List<String>(srcFile);
 				}
 				catch (Exception e)
@@ -13646,7 +14141,7 @@ namespace Nilsa
 					SaveProgramCountersE4E5E6();
 					UpdateProgramCountersInfoE4E5E6();
 				}
-				addToHistory(iPersUserID, msgParts.ContacterId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), msgParts.Message);
+				addToHistory(iPersUserID, msgParts.ContacterId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), msgParts.Message);
 				SaveOutgoingMessagesPull();
 				ReadAllUserMessages(iPersUserID, msgParts.ContacterId);
 				_interfaceListener.NilsaCreateFlag();
@@ -14212,7 +14707,7 @@ namespace Nilsa
 			}
 		}
 
-		private void TimerReadFromInterface_Tick(object sender, EventArgs e)
+		private async void TimerReadFromInterface_Tick(object sender, EventArgs e)
 		{
 			var path = _interfaceListener.SetPathConfig();
 			if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)))
@@ -14221,7 +14716,7 @@ namespace Nilsa
 				{
 					//isTimerReadNewMessagesFinished = false;
 					var response = _interfaceListener.NilsaReadFromResponseFile();
-					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
+					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(await response);
 					needSelectNextMessage = true;
 					ResponseFindRightAction2(responseInterface);
 
@@ -14559,34 +15054,34 @@ namespace Nilsa
 					}
 					//распознать объяснение и сохранить характеристики
 					temporaryStopSplitToSentencse = false;
-                    lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.TEXT);
+					lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.TEXT);
 					//StopService();
 					SelectNextReceivedMessage(false);
 					temporaryStopSplitToSentencse = true;
-                    /*var tempList = new List<string>();
+					/*var tempList = new List<string>();
 					for (int i = 0; i < lstMsgHarAlgValues.Count; i++)
 					{
 						if (lstMsgHarAlgValues[i].Contains("#origin#")) tempList.Add(sMsgHar[i]);
 						else tempList.Add(lstMsgHarAlgValues[i]);
 					}*/
 
-                    //generation and adding message to database
-                    AddEQInMessageParametersValuesHiddenForm(resp.ORIGINAL_MESSAGE);
+					//generation and adding message to database
+					AddEQInMessageParametersValuesHiddenForm(resp.ORIGINAL_MESSAGE);
 					lstReceivedMessages.RemoveAt(0);
-                    resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\r\n", " ");
-                    resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\n", " ");
+					resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\r\n", " ");
+					resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\n", " ");
 
-                    if (iPersUserID != localPersId)
-                    {
-                        SaveAnswerIfPersoneChanged2(localPersId, resp.ORIGINAL_MESSAGE, localContId);
-                        continue;
-                    }
-                    lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.ORIGINAL_MESSAGE);
-                    TimerReadFromInterface.Enabled = true;
+					if (iPersUserID != localPersId)
+					{
+						SaveAnswerIfPersoneChanged2(localPersId, resp.ORIGINAL_MESSAGE, localContId);
+						continue;
+					}
+					lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.ORIGINAL_MESSAGE);
+					TimerReadFromInterface.Enabled = true;
 
 
 
-                    /*String sMsgNewRec = "000000|";
+					/*String sMsgNewRec = "000000|";
 					for (int i = 0; i < iMsgHarCount; i++)
 					{
 						sMsgHar[i, 3] = fe.sPersHar[i, iMsgHarAttrCount].Trim();
@@ -14605,8 +15100,8 @@ namespace Nilsa
 					}
 					UndoMarkerChanges();
 					SetEQInMessageList(labelInMsgHarTitleValue_Text);*/
-                }
-                else
+				}
+				else
 				{
 					if (iPersUserID != localPersId) continue;
 					if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
@@ -15072,8 +15567,8 @@ namespace Nilsa
 				webBrowserInMessageText.DocumentText = emptyInMessage;
 				webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
 
-				localResponse = _interfaceListener.NilsaReadFromResponseFile();
-				localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
+				//localResponse = _interfaceListener.NilsaReadFromResponseFile();
+				//localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(await localResponse);
 				ResponseFindRightAction(localResponseInterface);
 				/*foreach (var resp in localResponseInterface)
 				{
@@ -15412,6 +15907,48 @@ namespace Nilsa
 			timerWriteMessagesActivityCount = 6;
 		}
 
+		/*private void timerWriteMessages_Tick(object sender, EventArgs e)
+		{
+			if (timerWriteMessagesActivity)
+			{
+				setWriteMessageActivity();
+				timerWriteMessagesActivity = false;
+			}
+
+			timerWriteMessagesActivityCount--;
+
+			if (timerWriteMessagesActivityCount <= 0)
+				resetTimerWriteMessagesActivity();
+
+			timerWriteCycle--;
+
+			int pbvalue = (int)(100 * (float)(timerDefaultWriteCycle - timerWriteCycle) / (float)(timerDefaultWriteCycle));
+			if (pbvalue < 0) pbvalue = 0;
+			else if (pbvalue > 100) pbvalue = 100;
+			progressBarWrite.Value = pbvalue;
+			progressBarWrite.Invalidate();
+			Application.DoEvents();
+
+			if (needAnswer && timerWriteCycle <= 0)
+			{
+				timerWriteMessagesOff();
+				needAnswer = false;
+				return;
+			}
+			else if (needAnswer) return;
+
+			if (timerWriteCycle <= 0)
+			{
+				// Запуск выполнения операции в фоновом потоке
+				backgroundWorkerTimerWriteMessages.RunWorkerAsync();
+				if (lstReceivedMessages.Count == 0 && bServiceStart)
+				{
+					timerAnswerWaitingOn();
+					timerReadMessagesOn();
+				}
+			}
+		}*/
+
 		private void timerWriteMessages_Tick(object sender, EventArgs e)
 		{
 			if (timerWriteMessagesActivity)
@@ -15431,7 +15968,7 @@ namespace Nilsa
 			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
 			progressBarWrite.Value = pbvalue;
 			progressBarWrite.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 
 			if (needAnswer && timerWriteCycle <= 0)
 			{
@@ -15444,7 +15981,8 @@ namespace Nilsa
 			if (timerWriteCycle <= 0)
 			{
 				timerWriteMessagesOff();
-
+				timerReadMessagesOff();
+				timerAnswerWaitingOff();
 				if (lstOutgoingMessagesParts.Count > 0)
 				{
 					string strpartvalue = lstOutgoingMessagesParts[0];
@@ -15461,7 +15999,7 @@ namespace Nilsa
 						timerWriteCycle = timerDefaultWriteCycle;
 						progressBarWrite.Value = timerDefaultWriteCycle;
 						progressBarWrite.Invalidate();
-						Application.DoEvents();
+						//Application.DoEvents();
 
 						resetTimerWriteMessagesActivity();
 						timerWriteMessages.Enabled = true;
@@ -15472,73 +16010,97 @@ namespace Nilsa
 					if (tbSendOutMessage.Enabled)
 					{
 						tbSendOutMessageAction();
-						/*if (lstReceivedMessages.Count <= 0)
+						if (lstReceivedMessages.Count == 0 && bServiceStart)
 						{
-							//timerReadMessagesOn();
 							timerAnswerWaitingOn();
-						}*/
+							timerReadMessagesOn();
+						}
+						//if (lstReceivedMessages.Count <= 0)
+						//{
+							////timerReadMessagesOn();
+							//timerAnswerWaitingOn();
+						//}
 					}
-					if (lstReceivedMessages.Count == 0 && bServiceStart)
-					{
-						timerAnswerWaitingOn();
-						timerReadMessagesOn();
-					}
-					//else
-					//    tbSkipMessage_Click(null, null);
+					else
+						tbSkipMessage_Click(null, null);
 				}
+
 
 			}
 		}
 
 		//bool bSendBefore = false;
+		//      private void timerAnswerWaiting_Tick(object sender, EventArgs e)
+		//{
+		//	//if (timerWriteMessages.Enabled && TimerPersoneChangeCycle <= 1)
+		//	//{
+		//	//    TimerPersoneChangeCycle += TimerSendAnswerCycle + 5;
+		//	//    bSendBeforeChange = true;
+		//	//}
+
+		//	//if (timerPhysicalSend.Enabled && TimerPersoneChangeCycle <= 1)
+		//	//{
+		//	//    TimerPersoneChangeCycle += TimerPhysicalSendCycle + 5;
+		//	//    bSendBeforeChange = true;
+		//	//}
+
+		//	//if (bSendBeforeChange && TimerPersoneChangeCycle <= 1)
+		//	//{
+		//	//    TimerPersoneChangeCycle += TimerNewMessagesRereadCycle + DefaultTimerNewMessagesRereadDelayCycle + 5;
+		//	//    bSendBeforeChange = false;
+		//	//}
+		//	timerAnswerWaitingCycle--;
+
+		//	int pbvalue = (int)(100 * (float)(timerDefaultAnswerWaitingCycle - timerAnswerWaitingCycle) / (float)(timerDefaultAnswerWaitingCycle));
+		//	if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
+		//	progressBarAnswerWaiting.Value = pbvalue;
+		//	progressBarAnswerWaiting.Invalidate();
+		//	Application.DoEvents();
+		//	/* Timers
+		//	pbPersoneChange.ToolTipText = NilsaUtils.Dictonary_GetText(userInterface, "toolTips_9", this.Name, "Смена Персонажа через") + " " + Convert.ToString(TimerPersoneChangeCycle) + " " + NilsaUtils.Dictonary_GetText(userInterface, "toolTips_8", this.Name, "сек.");
+		//	pbPersoneChange.Value = (int)(100 * (float)(DefaultTimerPersoneChangeCycle - TimerPersoneChangeCycle) / (float)(DefaultTimerPersoneChangeCycle));
+		//	*/
+		//	if (timerAnswerWaitingCycle <= 0)
+		//	{
+		//		timerAnswerWaitingOff();
+		//		//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+		//		//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+		//		//timerReadMessagesOn();
+		//		//написать получение сообщения END_WAITING_TIMER от The System
+		//		lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
+		//		SelectNextReceivedMessage(false);
+		//		if (lstPersoneChange.Count > 0)
+		//		{
+		//			bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
+		//		}
+		////           else
+		//			//timerAnswerWaitingOn();
+		//	}
+
+		//}
+
 		private void timerAnswerWaiting_Tick(object sender, EventArgs e)
 		{
-			//if (timerWriteMessages.Enabled && TimerPersoneChangeCycle <= 1)
-			//{
-			//    TimerPersoneChangeCycle += TimerSendAnswerCycle + 5;
-			//    bSendBeforeChange = true;
-			//}
-
-			//if (timerPhysicalSend.Enabled && TimerPersoneChangeCycle <= 1)
-			//{
-			//    TimerPersoneChangeCycle += TimerPhysicalSendCycle + 5;
-			//    bSendBeforeChange = true;
-			//}
-
-			//if (bSendBeforeChange && TimerPersoneChangeCycle <= 1)
-			//{
-			//    TimerPersoneChangeCycle += TimerNewMessagesRereadCycle + DefaultTimerNewMessagesRereadDelayCycle + 5;
-			//    bSendBeforeChange = false;
-			//}
 			timerAnswerWaitingCycle--;
 
 			int pbvalue = (int)(100 * (float)(timerDefaultAnswerWaitingCycle - timerAnswerWaitingCycle) / (float)(timerDefaultAnswerWaitingCycle));
-			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
+			if (pbvalue < 0) pbvalue = 0;
+			else if (pbvalue > 100) pbvalue = 100;
 			progressBarAnswerWaiting.Value = pbvalue;
 			progressBarAnswerWaiting.Invalidate();
-			Application.DoEvents();
-			/* Timers
-			pbPersoneChange.ToolTipText = NilsaUtils.Dictonary_GetText(userInterface, "toolTips_9", this.Name, "Смена Персонажа через") + " " + Convert.ToString(TimerPersoneChangeCycle) + " " + NilsaUtils.Dictonary_GetText(userInterface, "toolTips_8", this.Name, "сек.");
-			pbPersoneChange.Value = (int)(100 * (float)(DefaultTimerPersoneChangeCycle - TimerPersoneChangeCycle) / (float)(DefaultTimerPersoneChangeCycle));
-			*/
-			if (timerAnswerWaitingCycle <= 0)
+            //Application.DoEvents();
+
+            if(timerAnswerWaitingCycle <= 0)
 			{
 				timerAnswerWaitingOff();
-				//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
-				//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
-				//timerReadMessagesOn();
-				//написать получение сообщения END_WAITING_TIMER от The System
-				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
-				SelectNextReceivedMessage(false);
-				if (lstPersoneChange.Count > 0)
-				{
-					bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
-				}
-	 //           else
-					//timerAnswerWaitingOn();
-			}
-
-		}
+				// Проверяем, свободен ли BackgroundWorker
+                if (!backgroundWorkerTimerAnswerWaiting.IsBusy)
+                {
+                    // Запуск выполнения операции в фоновом потоке
+                    backgroundWorkerTimerAnswerWaiting.RunWorkerAsync();
+                }
+            }
+        }
 
 		private void timerAnswerWaitingOff()
 		{
@@ -15546,7 +16108,7 @@ namespace Nilsa
 			timerAnswerWaitingCycle = 0;
 			progressBarAnswerWaiting.Value = 0;
 			progressBarAnswerWaiting.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 
@@ -15597,8 +16159,15 @@ namespace Nilsa
 		{
 			if (!bServiceStart)
 				return;
+			timerDefaultAnswerWaitingCycle = timersValues[5];
+			timerAnswerWaitingCycle = timerDefaultAnswerWaitingCycle;
+			progressBarAnswerWaiting.Value = 0;
+			progressBarAnswerWaiting.Invalidate();
+			//Application.DoEvents();
 
-			if (bSessionAnswerSended && !timerWriteMessages.Enabled)
+			timerAnswerWaiting.Enabled = true;
+
+			/*if (bSessionAnswerSended && !timerWriteMessages.Enabled)
 			{
 				timerDefaultAnswerWaitingCycle = timersValues[5];
 				timerAnswerWaitingCycle = timerDefaultAnswerWaitingCycle;
@@ -15607,7 +16176,7 @@ namespace Nilsa
 				Application.DoEvents();
 
 				timerAnswerWaiting.Enabled = true;
-			}
+			}*/
 		}
 
 		private void setReinitDialogsWhenFreeFlag()
@@ -16076,16 +16645,42 @@ namespace Nilsa
 			}
 		}
 
-		private void timerReadMessagesOff()
+		/*private void timerReadMessagesOff()
 		{
 			timerReadMessages.Enabled = false;
 			timerReadCycle = 0;
 			progressBarRead.Value = 0;
 			progressBarRead.Invalidate();
 			Application.DoEvents();
+		}*/
+
+		private void timerReadMessagesOff()
+		{
+			this.Invoke((MethodInvoker)(() =>
+			{
+				timerReadMessages.Enabled = false;
+				timerReadCycle = 0;
+				progressBarRead.Value = 0;
+				progressBarRead.Invalidate();
+			}));
 		}
 
+
 		private void timerReadMessagesOn()
+		{
+			Random rnd = new Random();
+			timerDefaultReadCycle = timersValues[6] + rnd.Next(0, timersValues[0]);
+			timerReadCycle = timerDefaultReadCycle;
+
+			this.Invoke((MethodInvoker)(() =>
+			{
+				progressBarRead.Value = 0;
+				progressBarRead.Invalidate();
+				timerReadMessages.Enabled = true;
+			}));
+		}
+
+		/*private void timerReadMessagesOn()
 		{
 			Random rnd = new Random();
 			timerDefaultReadCycle = timersValues[6] + rnd.Next(0, timersValues[0]);
@@ -16095,7 +16690,7 @@ namespace Nilsa
 			Application.DoEvents();
 			//if (doDelayedMessages())
 				timerReadMessages.Enabled = true;
-		}
+		}*/
 
 		private bool doDelayedMessages()
 		{
@@ -16292,17 +16887,45 @@ namespace Nilsa
 
 		private void timerReadMessages_Tick(object sender, EventArgs e)
 		{
-			if (lstReceivedMessages.Count > 0) timerReadMessagesOff();
+			if (lstReceivedMessages.Count > 0)
+			{
+				timerReadMessagesOff();
+				return;
+			}
+
 			timerReadCycle--;
 
 			int pbvalue = (int)(100 * (float)(timerDefaultReadCycle - timerReadCycle) / (float)(timerDefaultReadCycle));
-			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
+			if (pbvalue < 0) pbvalue = 0;
+			else if (pbvalue > 100) pbvalue = 100;
 			progressBarRead.Value = pbvalue;
 			progressBarRead.Invalidate();
-			Application.DoEvents();
+
+			//Application.DoEvents();
 
 			if (timerReadCycle <= 0)
 			{
+				timerReadMessagesOff();
+
+				// Запуск выполнения операции в фоновом потоке
+				backgroundWorkerReadNewMessagesTimer.RunWorkerAsync();
+				
+			}
+
+			/*await Task.Run(() =>
+			{
+				if (timerReadCycle <= 0)
+				{
+					timerReadMessagesOff();
+					lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+					SelectNextReceivedMessage(false);
+					if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+				}
+			});
+			*/
+			/*if (timerReadCycle <= 0)
+			{
+				//timerReadMessages.Enabled = false;
 				timerReadMessagesOff();
 				//isTimerReadNewMessagesFinished = true;
 				//timerReadMessagesOn();
@@ -16313,45 +16936,49 @@ namespace Nilsa
 				//deleted 05/06/2023 
 				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
 				SelectNextReceivedMessage(false);
-				tbSendOutMessageAction();
+				//tbSendOutMessageAction();
+
+				//timerReadMessagesOff();
+				if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+				//timerReadMessagesOn();
 
 				/*if (lstReceivedMessages.Count == 0)
 				{
 					timerAnswerWaitingOn();
 				}*/
-				//задача 53 в рамках нее убран функционал
+			//задача 53 в рамках нее убран функционал
 
-	//            bool bNotChanged = true;
-	//            if (lstReceivedMessages.Count > 0)
-				//{
-				//	//ReadNewReceivedMessages();
-				//	//if (iInMsgID == -1)
-				//	//	SelectNextReceivedMessage(false);
+			//            bool bNotChanged = true;
+			//            if (lstReceivedMessages.Count > 0)
+			//{
+			//	//ReadNewReceivedMessages();
+			//	//if (iInMsgID == -1)
+			//	//	SelectNextReceivedMessage(false);
 
-				//}
-				//else
-				//{
-	//                //tbSkipMessage_Click(null, null);
-	//                if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
-				//	{
-				//		bNotChanged = false;
-	//                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_READ_MESSAGE_FINISHED");
-				//		SelectNextReceivedMessage(false);
-	//                    //onChangePersoneByTimer(true, true);
-	//                }
-				//	else
-				//	{
-	//                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
-				//		//ReadNewReceivedMessages();
-	//                    SelectNextReceivedMessage(false);
-	//                }
-				//}
+			//}
+			//else
+			//{
+			//                //tbSkipMessage_Click(null, null);
+			//                if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
+			//	{
+			//		bNotChanged = false;
+			//                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_READ_MESSAGE_FINISHED");
+			//		SelectNextReceivedMessage(false);
+			//                    //onChangePersoneByTimer(true, true);
+			//                }
+			//	else
+			//	{
+			//                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+			//		//ReadNewReceivedMessages();
+			//                    SelectNextReceivedMessage(false);
+			//                }
+			//}
 
 
-				//if (bNotChanged && iContUserID != -1)
-				//	ReadAllUserMessages(iContUserID);
+			//if (bNotChanged && iContUserID != -1)
+			//	ReadAllUserMessages(iContUserID);
 
-			}
+			//}*/
 
 		}
 
@@ -16363,7 +16990,7 @@ namespace Nilsa
 			{
 				progressBarWrite.Value = 0;
 				progressBarWrite.Invalidate();
-				Application.DoEvents();
+				//Application.DoEvents();
 			}
 		}
 
@@ -16377,6 +17004,7 @@ namespace Nilsa
 				if (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0 && tbSendOutMessage.Enabled)
 				{
 					//timerAnswerWaitingOff();
+					timerAnswerWaiting.Enabled = false;
 					timerReadMessagesOff();
 				}
 				Random rnd = new Random();
@@ -16384,7 +17012,7 @@ namespace Nilsa
 				timerWriteCycle = timerDefaultWriteCycle;
 				progressBarWrite.Value = 0;
 				progressBarWrite.Invalidate();
-				Application.DoEvents();
+				//Application.DoEvents();
 
 				resetTimerWriteMessagesActivity();
 				timerWriteMessages.Enabled = true;
@@ -16434,13 +17062,28 @@ namespace Nilsa
 
 			tbStartService.Enabled = false;
 			tbStopService.Enabled = true;
+			if (timerAnswerWaitingCycle > 0) timerAnswerWaiting.Enabled = true;
 
 			timerCountersStart.Enabled = true;
 
 			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/) timerChangePersone.Enabled = true;
 
+			if (!_firstStart && needActivation)
+			{
+				for (int i = 0; i < lstReceivedMessages.Count; i++)
+				{
+					if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE")))
+					{
+						lstReceivedMessages.RemoveAt(i);
+						i--;
+					}
+				}
+				needActivation = false;
+				lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
+			}
+
 			bServiceStart = true;
-			startTimers();
+			//startTimers();
 			//if (fwbVKontakte == null)
 			//{
 			//    fwbVKontakte = new FormWebBrowser(this, true);
@@ -16470,6 +17113,7 @@ namespace Nilsa
 			{
 				timerReadMessagesOn();
 				//timerAnswerWaitingOn();
+				timerAnswerWaiting.Enabled = true;
 			}
 			else timerWriteMessagesOn();
 
@@ -16484,8 +17128,8 @@ namespace Nilsa
 			tbNewInMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 
-			//if (iInMsgID < 0)
-			//	tbSkipMessage_Click(null, null);
+			if (iInMsgID < 0)
+				tbSkipMessage_Click(null, null);
 		}
 
 		public void tbStopService_Click(object sender, EventArgs e)
@@ -16501,12 +17145,13 @@ namespace Nilsa
 			tbStartService.Enabled = true;
 			tbStopService.Enabled = false;
 			timerChangePersone.Enabled = false;
-			stopTimers();
+			timerAnswerWaiting.Enabled = false;
+			//stopTimers();
 			//timerWriteMessages.Enabled = false;
 			timerReadMessagesOff();
 			//timerSkipMessage.Enabled = false;
 			//timerAnswerWaiting.Enabled = false;
-			if (!tbStartServiceIsClickedNow) timerAnswerWaitingOff();
+			//if (!tbStartServiceIsClickedNow) timerAnswerWaiting.Enabled = false;//timerAnswerWaitingOff();
 			//timerAnswerWaitingOff();
 
 
@@ -16546,7 +17191,7 @@ namespace Nilsa
 			if (FormMain_FormClosing_Action)
 			{
 
-				var path = _interfaceListener.Path;
+				/*var path = _interfaceListener.Path;
 
 				if (_process != null && !_process.HasExited)
 				{
@@ -16560,7 +17205,7 @@ namespace Nilsa
 					_process.CloseMainWindow();
 					_process.Close();
 					_process.Dispose();
-				}
+				}*/
 
 				setMonitorTime(false);
 				SaveProgramCountersC1C2C3();
@@ -17778,7 +18423,7 @@ namespace Nilsa
 		{
 			backgroundWorkerUpdate.RunWorkerAsync(false);
 
-			//Start the Interface
+			/*//Start the Interface
 			string pathToExe = @"..\Interface\main.exe"; //@"C:\путь\к\файлу.exe";
 
 
@@ -17804,7 +18449,7 @@ namespace Nilsa
 			catch (Exception ex)
 			{
 				MessageBox.Show($"Failed to start Interface: {ex.Message}");
-			}
+			}*/
 		}
 
 		private void labelCont1Name_Click(object sender, EventArgs e)
@@ -19105,15 +19750,15 @@ namespace Nilsa
 
 		private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
 		{
-			try
-			{
-				if (FormWebBrowserEnabled)
-					Cef.Shutdown();
-			}
-			catch
-			{
+			//try
+			//{
+			//	if (FormWebBrowserEnabled)
+			//		Cef.Shutdown();
+			//}
+			//catch
+			//{
 
-			}
+			//}
 		}
 
 		private void tbContacterWorkMode_ButtonClick(object sender, EventArgs e)
@@ -20532,14 +21177,14 @@ namespace Nilsa
 			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
 			progressBarChangePersone.Value = pbvalue;
 			progressBarChangePersone.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle > 0 /*&& timerReadCycle <=0*/ && timerWriteCycle <= 0 /*&& !tbStartService.Enabled*/)
 			{
 				timerChangePersoneOff();
-				StopService();
+				//StopService();
 				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "CHANGE_THE_PERSON");
 				SelectNextReceivedMessage(false);
-				StartService();
+				//StartService();
 				//onChangePersoneByTimer(true, true);
 			}
 		}
@@ -20550,7 +21195,7 @@ namespace Nilsa
 			timerChangePersoneCycle = 0;
 			progressBarChangePersone.Value = 0;
 			progressBarChangePersone.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		private void timerChangePersoneOn()
@@ -20561,7 +21206,7 @@ namespace Nilsa
 			timerChangePersoneCycle = timerDefaultChangePersoneCycle;
 			progressBarChangePersone.Value = 0;
 			progressBarChangePersone.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 
 			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0)// && SocialNetwork == 0)
 				timerChangePersone.Enabled = true;
@@ -21846,6 +22491,135 @@ namespace Nilsa
 				msg += m + "\n";
 			}
 			MessageBox.Show(msg);
+		}
+
+		private void backgroundWorkerReadNewMessagesTimer_DoWork(object sender, DoWorkEventArgs e)
+		{
+			if (lstReceivedMessages.Count == 0)
+			{
+				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_01_FINISHED_READ_NEW_MESSAGE");
+				Invoke((MethodInvoker)delegate
+				{
+					SelectNextReceivedMessage(false);
+				});
+				//SelectNextReceivedMessage(false);
+			}
+		}
+
+		private void backgroundWorkerReadNewMessagesTimer_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			if (lstReceivedMessages.Count == 0)
+			{
+				timerReadMessagesOn();
+			}
+		}
+
+		private void backgroundWorkerTimerWriteMessages_DoWork(object sender, DoWorkEventArgs e)
+		{
+			if (lstOutgoingMessagesParts.Count > 0)
+			{
+				string strpartvalue = lstOutgoingMessagesParts[0];
+				lstOutgoingMessages.Insert(0, strpartvalue);
+				lstOutgoingMessagesParts.RemoveAt(0);
+				//timerPhysicalSendStart();
+
+				if (lstOutgoingMessagesParts.Count == 0)
+					SelectNextReceivedMessage();
+				else
+				{
+					Random rnd = new Random();
+					timerDefaultWriteCycle = rnd.Next(1, timersValues[3]) + (strpartvalue.Trim().Length * 60) / timersValues[4];
+					timerWriteCycle = timerDefaultWriteCycle;
+					// Обновление прогресса: backgroundWorkerWriteMessages.ReportProgress(timerDefaultWriteCycle);
+				}
+			}
+			else
+			{
+				if (tbSendOutMessage.Enabled)
+				{
+					tbSendOutMessageAction();
+					if (lstReceivedMessages.Count == 0 && bServiceStart)
+					{
+						timerAnswerWaitingOn();
+						timerReadMessagesOn();
+					}
+				}
+				else
+					tbSkipMessage_Click(null, null);
+			}
+		}
+
+		private void backgroundWorkerTimerWriteMessages_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			progressBarWrite.Value = timerDefaultWriteCycle;
+			progressBarWrite.Invalidate();
+
+			if (lstOutgoingMessagesParts.Count > 0)
+			{
+				// Выполнение обновлений в главном потоке
+				Invoke((MethodInvoker)delegate
+				{
+					SelectNextReceivedMessage();
+				});
+
+				Random rnd = new Random();
+				string strpartvalue = lstOutgoingMessagesParts[0];
+				timerDefaultWriteCycle = rnd.Next(1, timersValues[3]) + (strpartvalue.Trim().Length * 60) / timersValues[4];
+				timerWriteCycle = timerDefaultWriteCycle;
+				// Обновление прогресса: backgroundWorkerWriteMessages.ReportProgress(timerDefaultWriteCycle);
+			}
+			else
+			{
+				if (tbSendOutMessage.Enabled)
+				{
+					// Выполнение обновлений в главном потоке
+					Invoke((MethodInvoker)delegate
+					{
+						tbSendOutMessageAction();
+					});
+				}
+				else
+				{
+					// Выполнение обновлений в главном потоке
+					Invoke((MethodInvoker)delegate
+					{
+						tbSkipMessage_Click(null, null);
+					});
+				}
+			}
+		}
+
+		private void backgroundWorkerTimerAnswerWaiting_DoWork(object sender, DoWorkEventArgs e)
+		{
+			lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
+			Invoke((MethodInvoker)delegate
+			{
+				SelectNextReceivedMessage(false);
+			});
+            if (lstPersoneChange.Count > 0)
+            {
+                bSessionAnswerSended = false;
+            }
+        }
+
+		private void backgroundWorkerTimerAnswerWaiting_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			// Операция завершена
+			// Обновление UI или выполнение других действий
+
+			// Выполнение обновлений в главном потоке
+			/*Invoke((MethodInvoker)delegate
+			{
+				if (lstPersoneChange.Count > 0)
+				{
+					// Проверяем, свободен ли BackgroundWorker
+					if (!backgroundWorkerTimerAnswerWaiting.IsBusy)
+					{
+						// Запуск выполнения операции в фоновом потоке
+						backgroundWorkerTimerAnswerWaiting.RunWorkerAsync();
+					}
+				}
+			});*/
 		}
 
 		private void tbMessagesDBEqOutDeleteMessage_Click(object sender, EventArgs e)

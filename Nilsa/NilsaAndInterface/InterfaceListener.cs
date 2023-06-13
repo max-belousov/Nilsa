@@ -15,7 +15,8 @@ namespace Nilsa.NilsaAndInterface
     // this class writes to file system request to interface and listens for answer
     internal class InterfaceListener
     {
-        public FilesNilsaToInterfacePath Path { get; set; }
+        public FilesNilsaToInterfacePath NilsaToInterfacePath { get; set; }
+
         public InterfaceListener()
         {
             SetPathConfig();
@@ -23,199 +24,156 @@ namespace Nilsa.NilsaAndInterface
 
         public FilesNilsaToInterfacePath SetPathConfig()
         {
-            Path = new FilesNilsaToInterfacePath();
-            var configPath = System.IO.Path.Combine(System.IO.Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
+            NilsaToInterfacePath = new FilesNilsaToInterfacePath();
+            var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
             try
             {
                 if (File.Exists(configPath))
                 {
                     var config = File.ReadAllText(configPath);
-                    Path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+                    NilsaToInterfacePath = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
                 }
                 else
                 {
                     string browserPath = @"..\Interface\Sockets\Browser";
-                    string fullBrowserPath = System.IO.Path.GetFullPath(browserPath);
-                    Path.PathWebDriver = fullBrowserPath;
+                    string fullBrowserPath = Path.GetFullPath(browserPath);
+                    NilsaToInterfacePath.PathWebDriver = fullBrowserPath;
 
                     string nilsaPath = @"..\Interface\Sockets\Nilsa";
-                    string fullNilsaPath = System.IO.Path.GetFullPath(nilsaPath);
-                    Path.PathNilsa = fullNilsaPath;
+                    string fullNilsaPath = Path.GetFullPath(nilsaPath);
+                    NilsaToInterfacePath.PathNilsa = fullNilsaPath;
 
-                    Path.FileData = "data";
-                    Path.FileFlag = "FLAG";
+                    NilsaToInterfacePath.FileData = "data";
+                    NilsaToInterfacePath.FileFlag = "FLAG";
                 }
             }
-            catch (Exception e) { MessageBox.Show(e.Message); }
-            return Path;
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
+            return NilsaToInterfacePath;
         }
 
-        public void NilsaWriteToRequestFile(TinderRequest tinderRequest)
+        public async Task NilsaWriteToRequestFile(TinderRequest tinderRequest)
         {
             var settings = new JsonSerializerSettings
             {
                 DefaultValueHandling = DefaultValueHandling.Ignore,
-
             };
-            string flagPath = System.IO.Path.Combine(Path.PathNilsa, Path.FileFlag);
+
+            string flagPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag);
             var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
 
             if (!File.Exists(flagPath))
             {
                 try
                 {
-                    string requestPath = System.IO.Path.Combine(Path.PathNilsa, Path.FileData);
-                    // Write the request to file
-                    File.WriteAllText(requestPath, request);
+                    string requestPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData);
+                    await Task.Run(() => File.WriteAllText(requestPath, request));
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                }
             }
-
-            /*try
-            {
-                while (File.Exists(flagPath)) WaitNSeconds(3);
-                string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
-
-                // Write the request to file
-
-                File.WriteAllText(requestPath, request, Encoding.UTF8);
-                //File.WriteAllText(flagPath, "OK");
-            }
-            catch (Exception) { }*/
         }
 
-        public void NilsaWriteToRequestFile(string tinderRequest)
+        public async Task NilsaWriteToRequestFile(string tinderRequest)
         {
-            string flagPath = System.IO.Path.Combine(Path.PathNilsa, Path.FileFlag);
+            string flagPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag);
 
             if (!File.Exists(flagPath))
             {
                 try
                 {
-                    string requestPath = System.IO.Path.Combine(Path.PathNilsa, Path.FileData);
-                    // Write the request to file
-                    File.WriteAllText(requestPath, tinderRequest);
-                    var logPath = System.IO.Path.Combine(Application.StartupPath, "RequestLogs.txt");
-                    File.AppendAllText(logPath, tinderRequest + "\n");
+                    string requestPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData);
+                    await Task.Run(() =>
+                    {
+                        File.WriteAllText(requestPath, tinderRequest);
+                        var logPath = Path.Combine(Application.StartupPath, "RequestLogs.txt");
+                        File.AppendAllText(logPath, tinderRequest + "\n");
+                    });
                 }
-                catch (Exception) { }
-            }
-
-            /*try
-            {
-                while (File.Exists(flagPath)) WaitNSeconds(3);
-                string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
-
-                // Write the request to file
-
-                File.WriteAllText(requestPath, tinderRequest);
-
-                while (!File.Exists(flagPath))
+                catch (Exception)
                 {
-                    try
-                    {
-                        File.WriteAllText(flagPath, "OK");
-                    }
-                    catch (Exception e)
-                    {
-
-                        File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
-                    }
                 }
             }
-            catch (Exception) { }*/
         }
 
-        public void NilsaCreateFlag()
+        public async Task NilsaCreateFlag()
         {
-            while (!File.Exists(System.IO.Path.Combine(Path.PathNilsa, Path.FileFlag)))
+            while (!File.Exists(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag)))
             {
                 try
                 {
-                    File.WriteAllText(System.IO.Path.Combine(Path.PathNilsa, Path.FileFlag), "OK");
+                    await Task.Run(() => File.WriteAllText(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag), "OK"));
                 }
                 catch (Exception e)
                 {
-                    File.WriteAllText(System.IO.Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
                 }
             }
         }
 
-        public void NilsaDeleteFlag()
+        public async Task NilsaDeleteFlag()
         {
-            while (File.Exists(System.IO.Path.Combine(Path.PathWebDriver, Path.FileFlag)))
+            while (File.Exists(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag)))
             {
                 try
                 {
-                    File.Delete(System.IO.Path.Combine(Path.PathWebDriver, Path.FileFlag));
+                    await Task.Run(() => File.Delete(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag)));
                 }
                 catch (Exception e)
                 {
-
-                    File.WriteAllText(System.IO.Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
                 }
             }
         }
 
-        public string NilsaReadFromResponseFile()
+        public async Task<string> NilsaReadFromResponseFile()
         {
-            string flagPath = System.IO.Path.Combine(Path.PathWebDriver, Path.FileFlag);
+            string flagPath = Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag);
             var incomeInterfaceMessage = "";
 
             if (File.Exists(flagPath))
             {
                 try
                 {
-                    string responsePath = System.IO.Path.Combine(Path.PathWebDriver, Path.FileData);
-                    // Read the request from file
-                    incomeInterfaceMessage = File.ReadAllText(responsePath);
-                    var logPath = System.IO.Path.Combine(Application.StartupPath,"ResponseLogs.txt");
+                    string responsePath = Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileData);
+                    incomeInterfaceMessage = await Task.Run(() => File.ReadAllText(responsePath));
+                    var logPath = Path.Combine(Application.StartupPath, "ResponseLogs.txt");
                     File.AppendAllText(logPath, incomeInterfaceMessage + "\n");
                 }
-                catch (Exception) { }
+                catch (Exception)
+                {
+                }
             }
 
-            /*try
-            {
-                while (!File.Exists(flagPath)) WaitNSeconds(3);
-
-                string responsePath = Path.Combine(_path.PathWebDriver, _path.FileData);
-
-                // Read the request from file
-
-                incomeInterfaceMessage = File.ReadAllText(responsePath);
-            }
-            catch (Exception) { }
-            while (File.Exists(flagPath))
-            {
-                try
-                {
-                    File.Delete(flagPath);
-                }
-                catch (Exception e)
-                {
-
-                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
-                }
-            }*/
             return incomeInterfaceMessage;
         }
 
-        public void ResetCommunicationFoulders()
+        public void ResetCommunicationFolders()
         {
-            if (File.Exists(System.IO.Path.Combine(Path.PathNilsa, Path.FileFlag))) File.Delete(System.IO.Path.Combine(Path.PathNilsa, Path.FileFlag));
-            if (File.Exists(System.IO.Path.Combine(Path.PathWebDriver, Path.FileFlag))) File.Delete(System.IO.Path.Combine(Path.PathWebDriver, Path.FileFlag));
-            if (File.Exists(System.IO.Path.Combine(Path.PathNilsa, Path.FileData))) File.Delete(System.IO.Path.Combine(Path.PathNilsa, Path.FileData));
-            if (File.Exists(System.IO.Path.Combine(Path.PathWebDriver, Path.FileData))) File.Delete(System.IO.Path.Combine(Path.PathWebDriver, Path.FileData));
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag));
+
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag));
+
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData));
+
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileData)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileData));
         }
 
-        private void WaitNSeconds(int segundos)
+        private void WaitNSeconds(int seconds)
         {
-            if (segundos < 1) return;
-            DateTime _desired = DateTime.Now.AddSeconds(segundos);
-            while (DateTime.Now < _desired)
+            if (seconds < 1) return;
+            DateTime desiredTime = DateTime.Now.AddSeconds(seconds);
+            while (DateTime.Now < desiredTime)
             {
-                System.Windows.Forms.Application.DoEvents();
+                Application.DoEvents();
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Nilsa.NilsaAndInterface;
@@ -18,8 +19,17 @@ namespace Nilsa
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new FormMain());
+
+            Thread thread = new Thread(ResetCommunicationFolders);
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+        }
+
+        static void ResetCommunicationFolders()
+        {
             var _interfaceListener = new InterfaceListener();
-            _interfaceListener.ResetCommunicationFoulders();//очистили папки с общением с интерфейсом после прошлого запуска
+            _interfaceListener.ResetCommunicationFolders();
         }
     }
 }

@@ -1,7 +1,6 @@
-﻿namespace Nilsa
+﻿namespace Nilsa.SelfLearning
 {
-    partial class     FormSelfLearningSettings
-
+    partial class FormSelfLearningSettings
     {
         /// <summary>
         /// Required designer variable.
@@ -39,8 +38,6 @@
             this.comboBox2 = new System.Windows.Forms.ComboBox();
             this.button2 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
-            this.checkBoxSelfLearning = new System.Windows.Forms.CheckBox();
-            this.checkBoxUseTeachinhMessageType = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.panel1.SuspendLayout();
@@ -52,20 +49,20 @@
             this.groupBox1.Controls.Add(this.button3);
             this.groupBox1.Controls.Add(this.listBox1);
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.groupBox1.Location = new System.Drawing.Point(10, 50);
+            this.groupBox1.Location = new System.Drawing.Point(10, 10);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(10);
-            this.groupBox1.Size = new System.Drawing.Size(964, 416);
+            this.groupBox1.Size = new System.Drawing.Size(964, 456);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Характеристики";
+            this.groupBox1.Text = "Характеристики добавляемого сообщения";
             // 
             // panel2
             // 
             this.panel2.Controls.Add(this.comboBox1);
             this.panel2.Controls.Add(this.button4);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(10, 357);
+            this.panel2.Location = new System.Drawing.Point(10, 397);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(944, 49);
             this.panel2.TabIndex = 9;
@@ -133,7 +130,7 @@
             "16"});
             this.listBox1.Location = new System.Drawing.Point(10, 23);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(944, 383);
+            this.listBox1.Size = new System.Drawing.Size(944, 423);
             this.listBox1.TabIndex = 0;
             this.listBox1.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.listBox1_DrawItem);
             this.listBox1.SelectedIndexChanged += new System.EventHandler(this.listBox1_SelectedIndexChanged);
@@ -195,44 +192,18 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // checkBoxSelfLearning
-            // 
-            this.checkBoxSelfLearning.AutoSize = true;
-            this.checkBoxSelfLearning.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.checkBoxSelfLearning.Location = new System.Drawing.Point(105, 15);
-            this.checkBoxSelfLearning.Name = "checkBoxSelfLearning";
-            this.checkBoxSelfLearning.Size = new System.Drawing.Size(199, 28);
-            this.checkBoxSelfLearning.TabIndex = 6;
-            this.checkBoxSelfLearning.Text = "Enable Self-learning";
-            this.checkBoxSelfLearning.UseVisualStyleBackColor = true;
-            this.checkBoxSelfLearning.CheckedChanged += new System.EventHandler(this.checkBoxSelfLearning_CheckedChanged);
-            // 
-            // checkBoxUseTeachinhMessageType
-            // 
-            this.checkBoxUseTeachinhMessageType.AutoSize = true;
-            this.checkBoxUseTeachinhMessageType.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.checkBoxUseTeachinhMessageType.Location = new System.Drawing.Point(553, 15);
-            this.checkBoxUseTeachinhMessageType.Name = "checkBoxUseTeachinhMessageType";
-            this.checkBoxUseTeachinhMessageType.Size = new System.Drawing.Size(326, 28);
-            this.checkBoxUseTeachinhMessageType.TabIndex = 7;
-            this.checkBoxUseTeachinhMessageType.Text = "Use only TEACHING message type";
-            this.checkBoxUseTeachinhMessageType.UseVisualStyleBackColor = true;
-            this.checkBoxUseTeachinhMessageType.CheckedChanged += new System.EventHandler(this.checkBoxUseTeachinhMessageType_CheckedChanged);
-            // 
             // FormSelfLearningSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(984, 511);
-            this.Controls.Add(this.checkBoxUseTeachinhMessageType);
-            this.Controls.Add(this.checkBoxSelfLearning);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "FormSelfLearningSettings";
-            this.Padding = new System.Windows.Forms.Padding(10, 50, 10, 10);
+            this.Padding = new System.Windows.Forms.Padding(10);
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
@@ -241,7 +212,6 @@
             this.panel2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -257,7 +227,5 @@
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button button4;
-        private System.Windows.Forms.CheckBox checkBoxSelfLearning;
-        private System.Windows.Forms.CheckBox checkBoxUseTeachinhMessageType;
     }
 }

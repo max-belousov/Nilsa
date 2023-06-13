@@ -1,4 +1,5 @@
-﻿using SourceGrid;
+﻿//using SourceGrid;
+using Nilsa.SelfLearning;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -1706,7 +1707,11 @@ namespace Nilsa
 
 		private void SelflearningSettingsButton_Click(object sender, EventArgs e)
 		{
-			if (comboBoxAlgorithmsItems.SelectedIndex >= 0)
+            int isel = comboBoxAlgorithmsItems.SelectedIndex;
+            AlgorithmsDBRecord dbr = (AlgorithmsDBRecord)comboBoxAlgorithmsItems.Items[isel];
+            FormMainSelfLearning formMainSelfLearning = new FormMainSelfLearning(mFormMain, this, dbr);
+			formMainSelfLearning.ShowDialog();
+			/*if (comboBoxAlgorithmsItems.SelectedIndex >= 0)
 			{
 				int isel = comboBoxAlgorithmsItems.SelectedIndex;
 				var formMainMsgHarCount = mFormMain.iMsgHarCountNonStatic;
@@ -1754,7 +1759,7 @@ namespace Nilsa
 						File.WriteAllLines(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_{Convert.ToString(dbr.ID)}.values"), lstMsgHarAlgValues, Encoding.UTF8);
 					//SaveFormEditPersHarValues(dbr.ID, 2);
 				}
-			}
+			}*/
 		}
 
 		private void buttonVectorCompare_Click(object sender, EventArgs e)

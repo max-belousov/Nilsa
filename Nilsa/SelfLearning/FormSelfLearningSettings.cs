@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Nilsa
+namespace Nilsa.SelfLearning
 {
     public partial class FormSelfLearningSettings : Form
     {
