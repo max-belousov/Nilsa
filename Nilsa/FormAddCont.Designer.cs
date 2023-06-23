@@ -28,72 +28,38 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.firstNameTextBox = new System.Windows.Forms.TextBox();
-            this.lastNameTextBox = new System.Windows.Forms.TextBox();
             this.cidTextBox = new System.Windows.Forms.TextBox();
-            this.firstNameLabel = new System.Windows.Forms.Label();
-            this.lastNameLabel = new System.Windows.Forms.Label();
             this.cidLabel = new System.Windows.Forms.Label();
             this.okButton = new System.Windows.Forms.Button();
             this.cancelButton = new System.Windows.Forms.Button();
-            this.ownerLabel = new System.Windows.Forms.Label();
-            this.ownerTextBox = new System.Windows.Forms.TextBox();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // firstNameTextBox
-            // 
-            this.firstNameTextBox.Location = new System.Drawing.Point(50, 60);
-            this.firstNameTextBox.Name = "firstNameTextBox";
-            this.firstNameTextBox.Size = new System.Drawing.Size(300, 20);
-            this.firstNameTextBox.TabIndex = 0;
-            // 
-            // lastNameTextBox
-            // 
-            this.lastNameTextBox.Location = new System.Drawing.Point(50, 160);
-            this.lastNameTextBox.Name = "lastNameTextBox";
-            this.lastNameTextBox.Size = new System.Drawing.Size(300, 20);
-            this.lastNameTextBox.TabIndex = 1;
             // 
             // cidTextBox
             // 
-            this.cidTextBox.Location = new System.Drawing.Point(50, 260);
+            this.cidTextBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.cidTextBox.Location = new System.Drawing.Point(3, 86);
             this.cidTextBox.Name = "cidTextBox";
-            this.cidTextBox.Size = new System.Drawing.Size(300, 20);
+            this.cidTextBox.Size = new System.Drawing.Size(278, 20);
             this.cidTextBox.TabIndex = 2;
-            // 
-            // firstNameLabel
-            // 
-            this.firstNameLabel.Location = new System.Drawing.Point(125, 20);
-            this.firstNameLabel.Name = "firstNameLabel";
-            this.firstNameLabel.Size = new System.Drawing.Size(150, 15);
-            this.firstNameLabel.TabIndex = 3;
-            this.firstNameLabel.Text = "Имя нового контактера";
-            this.firstNameLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // lastNameLabel
-            // 
-            this.lastNameLabel.Location = new System.Drawing.Point(100, 120);
-            this.lastNameLabel.Name = "lastNameLabel";
-            this.lastNameLabel.Size = new System.Drawing.Size(200, 15);
-            this.lastNameLabel.TabIndex = 4;
-            this.lastNameLabel.Text = "Фамилия нового контактера";
-            this.lastNameLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // cidLabel
             // 
-            this.cidLabel.Location = new System.Drawing.Point(100, 220);
+            this.cidLabel.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.cidLabel.Location = new System.Drawing.Point(42, 24);
             this.cidLabel.Name = "cidLabel";
             this.cidLabel.Size = new System.Drawing.Size(200, 15);
             this.cidLabel.TabIndex = 5;
-            this.cidLabel.Text = "Cid контактера";
+            this.cidLabel.Text = "Идентификатор Контактера";
             this.cidLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // okButton
             // 
-            this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.okButton.Location = new System.Drawing.Point(222, 399);
+            this.okButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.okButton.Location = new System.Drawing.Point(67, 131);
             this.okButton.Name = "okButton";
-            this.okButton.Size = new System.Drawing.Size(150, 50);
+            this.okButton.Size = new System.Drawing.Size(150, 27);
             this.okButton.TabIndex = 12;
             this.okButton.Text = "OK";
             this.okButton.UseVisualStyleBackColor = true;
@@ -109,58 +75,46 @@
             this.cancelButton.UseVisualStyleBackColor = true;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
-            // ownerLabel
+            // tableLayoutPanel1
             // 
-            this.ownerLabel.Location = new System.Drawing.Point(100, 320);
-            this.ownerLabel.Name = "ownerLabel";
-            this.ownerLabel.Size = new System.Drawing.Size(200, 15);
-            this.ownerLabel.TabIndex = 14;
-            this.ownerLabel.Text = "Соцсеть контактера";
-            this.ownerLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // ownerTextBox
-            // 
-            this.ownerTextBox.Location = new System.Drawing.Point(50, 360);
-            this.ownerTextBox.Name = "ownerTextBox";
-            this.ownerTextBox.Size = new System.Drawing.Size(300, 20);
-            this.ownerTextBox.TabIndex = 15;
+            this.tableLayoutPanel1.ColumnCount = 1;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.Controls.Add(this.cidLabel, 0, 0);
+            this.tableLayoutPanel1.Controls.Add(this.cidTextBox, 0, 1);
+            this.tableLayoutPanel1.Controls.Add(this.okButton, 0, 2);
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 3;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 40F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 40F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 20F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(284, 161);
+            this.tableLayoutPanel1.TabIndex = 14;
             // 
             // FormAddCont
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(384, 461);
-            this.Controls.Add(this.ownerTextBox);
-            this.Controls.Add(this.ownerLabel);
+            this.ClientSize = new System.Drawing.Size(284, 161);
+            this.Controls.Add(this.tableLayoutPanel1);
             this.Controls.Add(this.cancelButton);
-            this.Controls.Add(this.okButton);
-            this.Controls.Add(this.cidLabel);
-            this.Controls.Add(this.lastNameLabel);
-            this.Controls.Add(this.firstNameLabel);
-            this.Controls.Add(this.cidTextBox);
-            this.Controls.Add(this.lastNameTextBox);
-            this.Controls.Add(this.firstNameTextBox);
-            this.MaximumSize = new System.Drawing.Size(400, 500);
-            this.MinimumSize = new System.Drawing.Size(400, 500);
+            this.MaximumSize = new System.Drawing.Size(300, 200);
+            this.MinimumSize = new System.Drawing.Size(300, 200);
             this.Name = "FormAddCont";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Добавление контактера";
+            this.tableLayoutPanel1.ResumeLayout(false);
+            this.tableLayoutPanel1.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.TextBox firstNameTextBox;
-        private System.Windows.Forms.TextBox lastNameTextBox;
         private System.Windows.Forms.TextBox cidTextBox;
-        private System.Windows.Forms.Label firstNameLabel;
-        private System.Windows.Forms.Label lastNameLabel;
         private System.Windows.Forms.Label cidLabel;
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Button cancelButton;
-        private System.Windows.Forms.Label ownerLabel;
-        private System.Windows.Forms.TextBox ownerTextBox;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
     }
 }

@@ -972,7 +972,7 @@ namespace Nilsa
 
         private String ResolveID(String text)
         {
-            String shortname = "";
+            //String shortname = "";
             try
             {
                 long _id = Convert.ToInt64(text);

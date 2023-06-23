@@ -169,6 +169,7 @@
       <DependentUpon>autogenerate_version_number.tt</DependentUpon>
     </Compile>
     <Compile Include="ConfigFiles\FilesNilsaToInterfacePath.cs" />
+    <Compile Include="Data\Contacter.cs" />
     <Compile Include="Data\DBPerson.cs" />
     <Compile Include="Data\DBPersonListItem.cs" />
     <Compile Include="Data\PersoneAllData.cs" />
@@ -464,6 +465,7 @@
     <Compile Include="NilsaAndInterface\InterfaceListener.cs" />
     <Compile Include="NilsaAndInterface\OutgoingMessage.cs" />
     <Compile Include="NilsaOperatingMode.cs" />
+    <Compile Include="SelfLearning\MessageInList.cs" />
     <Compile Include="SelfLearning\SelfLearningSettingsManager.cs" />
     <Compile Include="TinderAssistent\IncomeMessage.cs" />
     <Compile Include="TinderAssistent\PersoneTinderAttributes.cs" />

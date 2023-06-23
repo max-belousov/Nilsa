@@ -260,15 +260,5 @@ namespace Nilsa.SelfLearning
 
             e.DrawFocusRectangle();
         }
-
-        private void checkBoxSelfLearning_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void checkBoxUseTeachinhMessageType_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 }
