@@ -15044,7 +15044,7 @@ namespace Nilsa
 				{
 					if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_CONTACTER)) continue;
 
-					if (localPersId == iPersUserID)
+					if (localPersId == iPersUserID && localContId == iContUserID)
 					{
 						contName = $"{resp.FIRST_NAME_CONTACTER} {contNameFamily}";
 						lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
@@ -15066,11 +15066,19 @@ namespace Nilsa
 								var data = cont.Split('|');
 								var names = data[1].Split(' ');
 								names[0] = resp.FIRST_NAME_CONTACTER;
-								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1]+ "|" + data[2];
+								var fullName = "";
+								if (names.Length > 1) fullName = names[0] + " " + names[1];
+								else fullName = names[0];
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + fullName + "|" + data[2];
 								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
 							}
 							catch (Exception e) { }
 						}
+						if (localPersId == iPersUserID)
+						{
+                            var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                            lstContactsList = new List<String>(srcFile);
+                        }
 					}
 
 					/*var mode = -1;
@@ -15106,7 +15114,7 @@ namespace Nilsa
 				{
 					if (String.IsNullOrWhiteSpace(resp.LAST_NAME_CONTACTER)) continue;
 
-					if (localPersId == iPersUserID)
+					if (localPersId == iPersUserID && localContId == iContUserID)
 					{
 						contName = $"{contNameName} {resp.LAST_NAME_CONTACTER}";
 						lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
@@ -15127,13 +15135,18 @@ namespace Nilsa
 								var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
 								var data = cont.Split('|');
 								var names = data[1].Split(' ');
-								names[1] = resp.LAST_NAME_CONTACTER;
-								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1] + "|" + data[2]; 
+                                var fullName = names[0] + " " + resp.LAST_NAME_CONTACTER;
+                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + fullName + "|" + data[2]; 
 								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
 							}
 							catch (Exception e) { }
 						}
-					}
+                        if (localPersId == iPersUserID)
+                        {
+                            var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                            lstContactsList = new List<String>(srcFile);
+                        }
+                    }
 				}
 				else if (resp.STATUS == 200 && resp.COMMAND.Contains("TEACHING_VIA_GPT"))
 				{

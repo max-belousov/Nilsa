@@ -54,7 +54,7 @@
             this.groupBox1.Location = new System.Drawing.Point(3, 3);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(10);
-            this.groupBox1.Size = new System.Drawing.Size(1178, 55);
+            this.groupBox1.Size = new System.Drawing.Size(1578, 100);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Настройки лексического самообучения с помощью нейросетей";
@@ -77,7 +77,7 @@
             this.tableLayoutPanel2.RowCount = 2;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel2.Size = new System.Drawing.Size(1158, 16);
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(1558, 61);
             this.tableLayoutPanel2.TabIndex = 6;
             // 
             // checkBox1
@@ -85,10 +85,10 @@
             this.checkBox1.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.checkBox1.AutoSize = true;
             this.checkBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.checkBox1.Location = new System.Drawing.Point(78, 0);
+            this.checkBox1.Location = new System.Drawing.Point(145, 6);
             this.checkBox1.Margin = new System.Windows.Forms.Padding(0);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(229, 8);
+            this.checkBox1.Size = new System.Drawing.Size(229, 17);
             this.checkBox1.TabIndex = 0;
             this.checkBox1.Text = "Разрешить обучение по эталонной базе";
             this.checkBox1.UseVisualStyleBackColor = true;
@@ -99,10 +99,10 @@
             this.button3.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.button3.AutoSize = true;
             this.button3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button3.Location = new System.Drawing.Point(781, 8);
+            this.button3.Location = new System.Drawing.Point(1115, 34);
             this.button3.Margin = new System.Windows.Forms.Padding(0);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(366, 8);
+            this.button3.Size = new System.Drawing.Size(366, 23);
             this.button3.TabIndex = 5;
             this.button3.Text = "Настройки добавления сообщения для обучения без аналога в базе";
             this.button3.UseVisualStyleBackColor = true;
@@ -113,10 +113,10 @@
             this.checkBox3.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.checkBox3.AutoSize = true;
             this.checkBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.checkBox3.Location = new System.Drawing.Point(848, 0);
+            this.checkBox3.Location = new System.Drawing.Point(1182, 6);
             this.checkBox3.Margin = new System.Windows.Forms.Padding(0);
             this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(232, 8);
+            this.checkBox3.Size = new System.Drawing.Size(232, 17);
             this.checkBox3.TabIndex = 2;
             this.checkBox3.Text = "Разрешить обучение без аналога в базе";
             this.checkBox3.UseVisualStyleBackColor = true;
@@ -127,10 +127,10 @@
             this.button2.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.button2.AutoSize = true;
             this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button2.Location = new System.Drawing.Point(411, 8);
+            this.button2.Location = new System.Drawing.Point(611, 34);
             this.button2.Margin = new System.Windows.Forms.Padding(0);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(334, 8);
+            this.button2.Size = new System.Drawing.Size(334, 23);
             this.button2.TabIndex = 4;
             this.button2.Text = "Настройки добавления сообщения для обучения по всей базе";
             this.button2.UseVisualStyleBackColor = true;
@@ -141,10 +141,10 @@
             this.checkBox2.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.checkBox2.AutoSize = true;
             this.checkBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.checkBox2.Location = new System.Drawing.Point(478, 0);
+            this.checkBox2.Location = new System.Drawing.Point(678, 6);
             this.checkBox2.Margin = new System.Windows.Forms.Padding(0);
             this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(200, 8);
+            this.checkBox2.Size = new System.Drawing.Size(200, 17);
             this.checkBox2.TabIndex = 1;
             this.checkBox2.Text = "Разрешить обучение по всей базе";
             this.checkBox2.UseVisualStyleBackColor = true;
@@ -155,10 +155,10 @@
             this.button1.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.button1.AutoSize = true;
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button1.Location = new System.Drawing.Point(11, 8);
+            this.button1.Location = new System.Drawing.Point(78, 34);
             this.button1.Margin = new System.Windows.Forms.Padding(0);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(363, 8);
+            this.button1.Size = new System.Drawing.Size(363, 23);
             this.button1.TabIndex = 3;
             this.button1.Text = "Настройки добавления сообщения для обучения по эталонной базе";
             this.button1.UseVisualStyleBackColor = true;
@@ -170,10 +170,10 @@
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox2.Enabled = false;
             this.groupBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.groupBox2.Location = new System.Drawing.Point(3, 64);
+            this.groupBox2.Location = new System.Drawing.Point(3, 109);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Padding = new System.Windows.Forms.Padding(10);
-            this.groupBox2.Size = new System.Drawing.Size(1178, 55);
+            this.groupBox2.Size = new System.Drawing.Size(1578, 100);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Настройки лексического самообучения методом самообучения";
@@ -184,10 +184,10 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Enabled = false;
             this.groupBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.groupBox3.Location = new System.Drawing.Point(3, 125);
+            this.groupBox3.Location = new System.Drawing.Point(3, 215);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(10);
-            this.groupBox3.Size = new System.Drawing.Size(1178, 55);
+            this.groupBox3.Size = new System.Drawing.Size(1578, 100);
             this.groupBox3.TabIndex = 2;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Настройки редактирования алгоритмов";
@@ -211,13 +211,13 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 60F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(1184, 611);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(1584, 1061);
             this.tableLayoutPanel1.TabIndex = 3;
             // 
             // button4
             // 
             this.button4.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.button4.Location = new System.Drawing.Point(1079, 564);
+            this.button4.Location = new System.Drawing.Point(1479, 991);
             this.button4.Margin = new System.Windows.Forms.Padding(3, 15, 30, 15);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(75, 32);
@@ -230,7 +230,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1184, 611);
+            this.ClientSize = new System.Drawing.Size(1584, 1061);
             this.Controls.Add(this.tableLayoutPanel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "FormMainSelfLearning";
