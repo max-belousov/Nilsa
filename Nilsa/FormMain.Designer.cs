@@ -168,6 +168,7 @@
             this.progressBarChangePersone = new System.Windows.Forms.ToolStripProgressBar();
             this.timerAnswerWaiting = new System.Windows.Forms.Timer(this.components);
             this.timerOutgoingPull = new System.Windows.Forms.Timer(this.components);
+            this.TimerReadFromInterface = new System.Windows.Forms.Timer(this.components);
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.timerCountersStart = new System.Windows.Forms.Timer(this.components);
@@ -238,8 +239,12 @@
             this.toolStripButton2 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton3 = new System.Windows.Forms.ToolStripButton();
             this.authorizeButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButtonShowOutgoingPull = new System.Windows.Forms.ToolStripButton();
             this.timerChangePersone = new System.Windows.Forms.Timer(this.components);
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.backgroundWorkerReadNewMessagesTimer = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorkerTimerWriteMessages = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorkerTimerAnswerWaiting = new System.ComponentModel.BackgroundWorker();
             this.contextMenuStripVectorKoef.SuspendLayout();
             this.contextMenuStripVectorKoefOut.SuspendLayout();
             this.tableLayoutPanelTop.SuspendLayout();
@@ -750,7 +755,7 @@
             this.tableLayoutPanelTop.ColumnCount = 3;
             this.tableLayoutPanelTop.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 380F));
             this.tableLayoutPanelTop.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanelTop.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 501F));
+            this.tableLayoutPanelTop.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 521F));
             this.tableLayoutPanelTop.Controls.Add(this.panelPerson, 2, 0);
             this.tableLayoutPanelTop.Controls.Add(this.panelCenter, 1, 0);
             this.tableLayoutPanelTop.Controls.Add(this.panelContacter, 0, 0);
@@ -773,10 +778,10 @@
             this.panelPerson.Controls.Add(this.toolStrip2);
             this.panelPerson.Controls.Add(this.tableLayoutRightBottom);
             this.panelPerson.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panelPerson.Location = new System.Drawing.Point(860, 1);
+            this.panelPerson.Location = new System.Drawing.Point(840, 1);
             this.panelPerson.Margin = new System.Windows.Forms.Padding(0);
             this.panelPerson.Name = "panelPerson";
-            this.panelPerson.Size = new System.Drawing.Size(501, 748);
+            this.panelPerson.Size = new System.Drawing.Size(521, 748);
             this.panelPerson.TabIndex = 5;
             // 
             // labelPers1Name
@@ -814,7 +819,7 @@
             this.listBoxOutMsg.Location = new System.Drawing.Point(0, 322);
             this.listBoxOutMsg.Margin = new System.Windows.Forms.Padding(0);
             this.listBoxOutMsg.Name = "listBoxOutMsg";
-            this.listBoxOutMsg.Size = new System.Drawing.Size(501, 159);
+            this.listBoxOutMsg.Size = new System.Drawing.Size(521, 159);
             this.listBoxOutMsg.TabIndex = 1;
             this.listBoxOutMsg.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.listBoxOutMsg_DrawItem);
             this.listBoxOutMsg.SelectedIndexChanged += new System.EventHandler(this.listBoxOutMsg_SelectedIndexChanged);
@@ -853,7 +858,7 @@
             this.tableLayoutPanelPerson.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
             this.tableLayoutPanelPerson.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
             this.tableLayoutPanelPerson.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
-            this.tableLayoutPanelPerson.Size = new System.Drawing.Size(501, 301);
+            this.tableLayoutPanelPerson.Size = new System.Drawing.Size(521, 301);
             this.tableLayoutPanelPerson.TabIndex = 2;
             // 
             // panel2
@@ -866,7 +871,7 @@
             this.panel2.Location = new System.Drawing.Point(3, 3);
             this.panel2.Name = "panel2";
             this.tableLayoutPanelPerson.SetRowSpan(this.panel2, 8);
-            this.panel2.Size = new System.Drawing.Size(244, 194);
+            this.panel2.Size = new System.Drawing.Size(254, 194);
             this.panel2.TabIndex = 19;
             // 
             // labelPersActivationCounter
@@ -885,7 +890,7 @@
             this.labelPersMsgCount.AutoSize = true;
             this.labelPersMsgCount.Dock = System.Windows.Forms.DockStyle.Right;
             this.labelPersMsgCount.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.labelPersMsgCount.Location = new System.Drawing.Point(228, 0);
+            this.labelPersMsgCount.Location = new System.Drawing.Point(238, 0);
             this.labelPersMsgCount.Name = "labelPersMsgCount";
             this.labelPersMsgCount.Size = new System.Drawing.Size(16, 24);
             this.labelPersMsgCount.TabIndex = 23;
@@ -898,7 +903,7 @@
             this.labelPers1FIO.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F);
             this.labelPers1FIO.Location = new System.Drawing.Point(0, 170);
             this.labelPers1FIO.Name = "labelPers1FIO";
-            this.labelPers1FIO.Size = new System.Drawing.Size(244, 24);
+            this.labelPers1FIO.Size = new System.Drawing.Size(254, 24);
             this.labelPers1FIO.TabIndex = 19;
             this.labelPers1FIO.Text = "Персонаж";
             this.labelPers1FIO.Click += new System.EventHandler(this.labelPers1FIO_Click);
@@ -912,7 +917,7 @@
             this.buttonEditPersHarValues.Location = new System.Drawing.Point(0, 0);
             this.buttonEditPersHarValues.Margin = new System.Windows.Forms.Padding(0);
             this.buttonEditPersHarValues.Name = "buttonEditPersHarValues";
-            this.buttonEditPersHarValues.Size = new System.Drawing.Size(244, 194);
+            this.buttonEditPersHarValues.Size = new System.Drawing.Size(254, 194);
             this.buttonEditPersHarValues.TabIndex = 14;
             this.buttonEditPersHarValues.Text = "...";
             this.buttonEditPersHarValues.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -939,7 +944,7 @@
             this.toolStrip2.Location = new System.Drawing.Point(0, 481);
             this.toolStrip2.Name = "toolStrip2";
             this.toolStrip2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.toolStrip2.Size = new System.Drawing.Size(501, 50);
+            this.toolStrip2.Size = new System.Drawing.Size(521, 50);
             this.toolStrip2.TabIndex = 0;
             this.toolStrip2.Text = "toolStrip2";
             // 
@@ -1082,7 +1087,7 @@
             this.panelCenter.Location = new System.Drawing.Point(382, 1);
             this.panelCenter.Margin = new System.Windows.Forms.Padding(0);
             this.panelCenter.Name = "panelCenter";
-            this.panelCenter.Size = new System.Drawing.Size(477, 748);
+            this.panelCenter.Size = new System.Drawing.Size(457, 748);
             this.panelCenter.TabIndex = 4;
             // 
             // tableLayoutMiddleBottom
@@ -1091,7 +1096,7 @@
             this.tableLayoutMiddleBottom.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutMiddleBottom.Location = new System.Drawing.Point(0, 605);
             this.tableLayoutMiddleBottom.Name = "tableLayoutMiddleBottom";
-            this.tableLayoutMiddleBottom.Size = new System.Drawing.Size(477, 143);
+            this.tableLayoutMiddleBottom.Size = new System.Drawing.Size(457, 143);
             this.tableLayoutMiddleBottom.TabIndex = 4;
             // 
             // listBoxUserMessages
@@ -1102,7 +1107,7 @@
             this.listBoxUserMessages.FormattingEnabled = true;
             this.listBoxUserMessages.Location = new System.Drawing.Point(0, 0);
             this.listBoxUserMessages.Name = "listBoxUserMessages";
-            this.listBoxUserMessages.Size = new System.Drawing.Size(477, 143);
+            this.listBoxUserMessages.Size = new System.Drawing.Size(457, 143);
             this.listBoxUserMessages.TabIndex = 3;
             this.listBoxUserMessages.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.listBoxUserMessages_DrawItem);
             this.listBoxUserMessages.MeasureItem += new System.Windows.Forms.MeasureItemEventHandler(this.listBoxUserMessages_MeasureItem);
@@ -1116,7 +1121,7 @@
             this.panelMsgHarMarkerAlgorithm.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelMsgHarMarkerAlgorithm.Location = new System.Drawing.Point(0, 301);
             this.panelMsgHarMarkerAlgorithm.Name = "panelMsgHarMarkerAlgorithm";
-            this.panelMsgHarMarkerAlgorithm.Size = new System.Drawing.Size(477, 304);
+            this.panelMsgHarMarkerAlgorithm.Size = new System.Drawing.Size(457, 304);
             this.panelMsgHarMarkerAlgorithm.TabIndex = 2;
             // 
             // tableLayoutPanelMsgHar
@@ -1128,7 +1133,7 @@
             this.tableLayoutPanelMsgHar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
             this.tableLayoutPanelMsgHar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
             this.tableLayoutPanelMsgHar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 32F));
-            this.tableLayoutPanelMsgHar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 358F));
+            this.tableLayoutPanelMsgHar.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 378F));
             this.tableLayoutPanelMsgHar.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanelMsgHar.Location = new System.Drawing.Point(106, 0);
             this.tableLayoutPanelMsgHar.Name = "tableLayoutPanelMsgHar";
@@ -1149,7 +1154,7 @@
             this.tableLayoutPanelMsgHar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 18F));
             this.tableLayoutPanelMsgHar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 18F));
             this.tableLayoutPanelMsgHar.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 18F));
-            this.tableLayoutPanelMsgHar.Size = new System.Drawing.Size(371, 304);
+            this.tableLayoutPanelMsgHar.Size = new System.Drawing.Size(351, 304);
             this.tableLayoutPanelMsgHar.TabIndex = 3;
             // 
             // toolStrip1
@@ -1341,7 +1346,7 @@
             this.tableLayoutPanelTopMessages.RowCount = 2;
             this.tableLayoutPanelTopMessages.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanelTopMessages.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 50F));
-            this.tableLayoutPanelTopMessages.Size = new System.Drawing.Size(477, 301);
+            this.tableLayoutPanelTopMessages.Size = new System.Drawing.Size(457, 301);
             this.tableLayoutPanelTopMessages.TabIndex = 1;
             // 
             // toolStrip4
@@ -1358,10 +1363,10 @@
             this.tbNewOutMessageEnter,
             this.tbInitContactDialogContacter,
             this.tbPersoneCopyMessage});
-            this.toolStrip4.Location = new System.Drawing.Point(239, 250);
+            this.toolStrip4.Location = new System.Drawing.Point(229, 250);
             this.toolStrip4.Name = "toolStrip4";
             this.toolStrip4.Padding = new System.Windows.Forms.Padding(0);
-            this.toolStrip4.Size = new System.Drawing.Size(237, 50);
+            this.toolStrip4.Size = new System.Drawing.Size(227, 50);
             this.toolStrip4.TabIndex = 24;
             this.toolStrip4.Text = "toolStrip4";
             // 
@@ -1401,7 +1406,7 @@
             this.tbSendOutMessage.Image = ((System.Drawing.Image)(resources.GetObject("tbSendOutMessage.Image")));
             this.tbSendOutMessage.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbSendOutMessage.Name = "tbSendOutMessage";
-            this.tbSendOutMessage.Size = new System.Drawing.Size(54, 47);
+            this.tbSendOutMessage.Size = new System.Drawing.Size(54, 54);
             this.tbSendOutMessage.Text = "Отправить ответ";
             this.tbSendOutMessage.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageAboveText;
             this.tbSendOutMessage.Click += new System.EventHandler(this.tbSendOutMessage_Click);
@@ -1449,10 +1454,10 @@
             // webBrowserOutEqMessageText
             // 
             this.webBrowserOutEqMessageText.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.webBrowserOutEqMessageText.Location = new System.Drawing.Point(242, 4);
+            this.webBrowserOutEqMessageText.Location = new System.Drawing.Point(232, 4);
             this.webBrowserOutEqMessageText.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowserOutEqMessageText.Name = "webBrowserOutEqMessageText";
-            this.webBrowserOutEqMessageText.Size = new System.Drawing.Size(231, 242);
+            this.webBrowserOutEqMessageText.Size = new System.Drawing.Size(221, 242);
             this.webBrowserOutEqMessageText.TabIndex = 22;
             this.webBrowserOutEqMessageText.Url = new System.Uri("about:blank", System.UriKind.Absolute);
             // 
@@ -1462,7 +1467,7 @@
             this.webBrowserInMessageText.Location = new System.Drawing.Point(4, 4);
             this.webBrowserInMessageText.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowserInMessageText.Name = "webBrowserInMessageText";
-            this.webBrowserInMessageText.Size = new System.Drawing.Size(231, 242);
+            this.webBrowserInMessageText.Size = new System.Drawing.Size(221, 242);
             this.webBrowserInMessageText.TabIndex = 19;
             this.webBrowserInMessageText.Url = new System.Uri("about:blank", System.UriKind.Absolute);
             // 
@@ -1485,7 +1490,7 @@
             this.toolStrip3.Location = new System.Drawing.Point(1, 250);
             this.toolStrip3.Name = "toolStrip3";
             this.toolStrip3.Padding = new System.Windows.Forms.Padding(0);
-            this.toolStrip3.Size = new System.Drawing.Size(237, 50);
+            this.toolStrip3.Size = new System.Drawing.Size(227, 50);
             this.toolStrip3.TabIndex = 23;
             this.toolStrip3.Text = "toolStrip3";
             // 
@@ -1526,7 +1531,7 @@
             this.tbUndoMarkerChanges.Image = ((System.Drawing.Image)(resources.GetObject("tbUndoMarkerChanges.Image")));
             this.tbUndoMarkerChanges.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.tbUndoMarkerChanges.Name = "tbUndoMarkerChanges";
-            this.tbUndoMarkerChanges.Size = new System.Drawing.Size(54, 47);
+            this.tbUndoMarkerChanges.Size = new System.Drawing.Size(54, 54);
             this.tbUndoMarkerChanges.Text = "Обработать сообщение заново";
             this.tbUndoMarkerChanges.Click += new System.EventHandler(this.tbUndoMarkerChanges_Click);
             // 
@@ -1990,6 +1995,11 @@
             this.timerOutgoingPull.Interval = 1000;
             this.timerOutgoingPull.Tick += new System.EventHandler(this.timerOutgoingPull_Tick);
             // 
+            // TimerReadFromInterface
+            // 
+            this.TimerReadFromInterface.Interval = 1000;
+            this.TimerReadFromInterface.Tick += new System.EventHandler(this.TimerReadFromInterface_Tick);
+            // 
             // timerCountersStart
             // 
             this.timerCountersStart.Interval = 1000;
@@ -2034,7 +2044,8 @@
             this.toolStripButtonCreateDialogs,
             this.toolStripButton2,
             this.toolStripButton3,
-            this.authorizeButton});
+            this.authorizeButton,
+            this.toolStripButtonShowOutgoingPull});
             this.toolStripTop.Location = new System.Drawing.Point(0, 0);
             this.toolStripTop.Name = "toolStripTop";
             this.toolStripTop.Size = new System.Drawing.Size(1362, 50);
@@ -2587,12 +2598,26 @@
             // authorizeButton
             // 
             this.authorizeButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.authorizeButton.Enabled = false;
             this.authorizeButton.Image = ((System.Drawing.Image)(resources.GetObject("authorizeButton.Image")));
             this.authorizeButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.authorizeButton.Name = "authorizeButton";
             this.authorizeButton.Size = new System.Drawing.Size(54, 47);
             this.authorizeButton.Text = "toolStripButton4";
+            this.authorizeButton.Visible = false;
             this.authorizeButton.Click += new System.EventHandler(this.authorizeButton_Click);
+            // 
+            // toolStripButtonShowOutgoingPull
+            // 
+            this.toolStripButtonShowOutgoingPull.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonShowOutgoingPull.Enabled = false;
+            this.toolStripButtonShowOutgoingPull.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButtonShowOutgoingPull.Image")));
+            this.toolStripButtonShowOutgoingPull.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonShowOutgoingPull.Name = "toolStripButtonShowOutgoingPull";
+            this.toolStripButtonShowOutgoingPull.Size = new System.Drawing.Size(54, 47);
+            this.toolStripButtonShowOutgoingPull.Text = "toolStripButton4";
+            this.toolStripButtonShowOutgoingPull.Visible = false;
+            this.toolStripButtonShowOutgoingPull.Click += new System.EventHandler(this.toolStripButtonShowOutgoingPull_Click);
             // 
             // timerChangePersone
             // 
@@ -2604,6 +2629,21 @@
             this.toolStripSeparator9.Name = "toolStripSeparator9";
             this.toolStripSeparator9.Size = new System.Drawing.Size(50, 6);
             this.toolStripSeparator9.TextDirection = System.Windows.Forms.ToolStripTextDirection.Vertical270;
+            // 
+            // backgroundWorkerReadNewMessagesTimer
+            // 
+            this.backgroundWorkerReadNewMessagesTimer.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerReadNewMessagesTimer_DoWork);
+            this.backgroundWorkerReadNewMessagesTimer.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerReadNewMessagesTimer_RunWorkerCompleted);
+            // 
+            // backgroundWorkerTimerWriteMessages
+            // 
+            this.backgroundWorkerTimerWriteMessages.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerTimerWriteMessages_DoWork);
+            this.backgroundWorkerTimerWriteMessages.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerTimerWriteMessages_RunWorkerCompleted);
+            // 
+            // backgroundWorkerTimerAnswerWaiting
+            // 
+            this.backgroundWorkerTimerAnswerWaiting.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerTimerAnswerWaiting_DoWork);
+            this.backgroundWorkerTimerAnswerWaiting.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerTimerAnswerWaiting_RunWorkerCompleted);
             // 
             // FormMain
             // 
@@ -2761,6 +2801,7 @@
         private System.Windows.Forms.ToolStripMenuItem tbContacterWorkModeBoycott;
         private System.Windows.Forms.TableLayoutPanel tableLayoutRightBottom;
         private System.Windows.Forms.Timer timerOutgoingPull;
+        private System.Windows.Forms.Timer TimerReadFromInterface;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripMenuItem tsmiExportModel;
         private System.Windows.Forms.ToolStripMenuItem tsmiImportModel;
@@ -2878,6 +2919,10 @@
         private System.Windows.Forms.ToolStripButton toolStripButton2;
         private System.Windows.Forms.ToolStripButton toolStripButton3;
         private System.Windows.Forms.ToolStripButton authorizeButton;
+        private System.Windows.Forms.ToolStripButton toolStripButtonShowOutgoingPull;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerReadNewMessagesTimer;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerTimerWriteMessages;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerTimerAnswerWaiting;
     }
 }
 

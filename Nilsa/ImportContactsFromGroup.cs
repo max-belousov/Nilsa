@@ -1413,7 +1413,7 @@ namespace Nilsa
                                         if (bShowAddToList)
                                         {
                                             mFormEditContactsDB.UpdateProgress_AddUserToVisualList(sUID, sUName, mFormEditContactsDB.UpdateProgress_GetVisualListIdx(sUID));
-                                            mFormEditContactsDB.ContactsList_AddUser(sUID, sUName);
+                                            mFormEditContactsDB.ContactsList_AddUser(sUID, sUName, "");
                                         }
                                     }
                                     else if (mFormEditGroupsDB != null)

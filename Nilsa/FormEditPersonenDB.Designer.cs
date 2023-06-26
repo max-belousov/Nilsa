@@ -475,7 +475,7 @@
             // 
             this.button7.Image = global::Nilsa.Properties.Resources._enabled_algorithms;
             this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(216, 22);
+            this.button7.Size = new System.Drawing.Size(250, 56);
             this.button7.Text = "Разрешенные алгоритмы";
             this.button7.Click += new System.EventHandler(this.button7_Click);
             // 
@@ -483,7 +483,7 @@
             // 
             this.button23.Image = global::Nilsa.Properties.Resources._set_algorithm;
             this.button23.Name = "button23";
-            this.button23.Size = new System.Drawing.Size(216, 22);
+            this.button23.Size = new System.Drawing.Size(250, 56);
             this.button23.Text = "Установить алгоритм";
             this.button23.Click += new System.EventHandler(this.button23_Click);
             // 
@@ -491,7 +491,7 @@
             // 
             this.button20.Image = global::Nilsa.Properties.Resources._update_algorithm;
             this.button20.Name = "button20";
-            this.button20.Size = new System.Drawing.Size(216, 22);
+            this.button20.Size = new System.Drawing.Size(250, 56);
             this.button20.Text = "Обновить алгоритм";
             this.button20.Click += new System.EventHandler(this.button20_Click);
             // 

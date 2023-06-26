@@ -24,8 +24,9 @@ namespace Nilsa.TinderAssistent
         public string LAST_NAME_CONTACTER { get; set; }
         public string CONTACTER { get; set; }
         public string COMMAND { get; set; }
+        public string ORIGINAL_MESSAGE { get; set; }
         public IncomeMessage[] NEW_MESSAGES { get; set; }
-        public UnreadMessage[] UNREAD_MESSAGES { get; set;  }
+        public UnreadMessage[] MESSAGES { get; set;  }
 
         public override string ToString()
         {
@@ -96,6 +97,11 @@ namespace Nilsa.TinderAssistent
                 builder.Append("CONTACTER: ").AppendLine(CONTACTER);
             }
 
+            if (!string.IsNullOrEmpty(ORIGINAL_MESSAGE))
+            {
+                builder.Append("ORIGINAL_MESSAGE: ").AppendLine(ORIGINAL_MESSAGE);
+            }
+
             if (!string.IsNullOrEmpty(COMMAND))
             {
                 builder.Append("COMMAND: ").AppendLine(COMMAND);
@@ -111,11 +117,11 @@ namespace Nilsa.TinderAssistent
                 }
             }
 
-            if (UNREAD_MESSAGES != null && UNREAD_MESSAGES.Length > 0)
+            if (MESSAGES != null && MESSAGES.Length > 0)
             {
-                builder.Append("UNREAD_MESSAGES:");
+                builder.Append("MESSAGES:");
                 builder.AppendLine();
-                foreach (var item in UNREAD_MESSAGES)
+                foreach (var item in MESSAGES)
                 {
                     builder.AppendLine(item.ToString());
                 }

@@ -21,7 +21,7 @@ using System.Windows.Forms;
 using VkNet;
 using VkNet.Enums;
 using VkNet.Enums.Filters;
-using CefSharp;
+//using CefSharp;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Nilsa.Data;
@@ -34,7 +34,8 @@ using VkNet.Model;
 using Nilsa.TinderAssistent;
 using Nilsa.ConfigFiles;
 using Nilsa.NilsaAndInterface;
-using SourceGrid;
+using Nilsa.SelfLearning;
+//using SourceGrid;
 
 namespace Nilsa
 {
@@ -58,14 +59,14 @@ namespace Nilsa
 		public string userNameFamily;
 		public string userNameName;
 		public string dbUserName = "";
-		public string photoURL = "";
+		//public string photoURL = "";
 		public string photoPersURL = "";
 		public string photoContURL = "";
 		public bool needAutorize = false;
 		int userSelectUserIdx;
 		private bool needActivation = true;
 		private bool tbStartServiceIsClickedNow = false;
-        public Image contactPicture = null;
+		public Image contactPicture = null;
 		private long contactPictureID = -1;
 		public Image personPicture = null;
 		private long personPictureID = -1;
@@ -77,6 +78,12 @@ namespace Nilsa
 		public List<TinderResponse> responseInterface = new List<TinderResponse>();
 		public TheSystemContacter theSystemContacter;
 		private bool needSelectNextMessage = true;
+		private bool isTimerReadNewMessagesFinished = false;
+		private Process _process;
+		private bool temporaryStopSplitToSentencse = true;
+		private string chatgptMessage;
+		private string originalMessage;
+
 
 		const bool externalCommandProcess = false; //!!!
 		bool externalActivatedProcess = false; //!!!
@@ -103,8 +110,8 @@ namespace Nilsa
 		private bool _autorizeSuccess = false;
 		private List<UnreadMessage> contReceivedMessagesList;
 
-        //Label[] lblContHarNames;
-        PersoneLabel[] lblContHarValues;
+		//Label[] lblContHarNames;
+		PersoneLabel[] lblContHarValues;
 		public String[,] sContHar;
 		public int iContHarCount = 16;
 		public int iContHarAttrCount = 4;
@@ -134,6 +141,7 @@ namespace Nilsa
 		public int[] iCompareVectorsKoefOut;
 		public String[] sMsgHarFilter;
 		public static int iMsgHarCount = 16;
+		public  int iMsgHarCountNonStatic = 16;
 		public int iMsgHarAttrCount = 4;
 
 		MessagesLabel[] lblMsgHarNames;
@@ -142,10 +150,10 @@ namespace Nilsa
 		NoPaddingButton[] lblEQOutHarNames;
 		Label[] lblEQOutHarValues;
 		Button[] lblMsgHarCompare;
-        private int checkMessageIgnor; //проврека игнорирования
+		private int checkMessageIgnor; //проврека игнорирования
 		private bool needAnswer = false; //для обработки каждого сообщения отдельно
 
-        public AlgorithmsDBRecord adbrCurrent;
+		public AlgorithmsDBRecord adbrCurrent;
 		public Dictionary<String, String>[] adbrCurrentDictPairs;
 		public Dictionary<String, int> adbrCurrentAllowedAdditionalThemes;
 
@@ -392,32 +400,32 @@ namespace Nilsa
 		/// </summary>
 		/// <param name="resourceFileName"></param>
 		/// <exception cref="Exception"></exception>
-        public string CopyFromResourcesToImages(string resourceFileName)
-        {
-            string resourcePath = "Nilsa.Resources." + resourceFileName;
-            string outputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
-            string outputFile = Path.Combine(outputPath, resourceFileName);
+		public string CopyFromResourcesToImages(string resourceFileName)
+		{
+			string resourcePath = "Nilsa.Resources." + resourceFileName;
+			string outputPath = Path.Combine(Application.StartupPath , "Images");
+			string outputFile = Path.Combine(outputPath, resourceFileName);
 
 			if (File.Exists(outputFile)) return outputFile;
 			// Создание папки, если она не существует
-            Directory.CreateDirectory(outputPath);
+			Directory.CreateDirectory(outputPath);
 
-            // Получение ресурса по имени
-            using (Stream resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourcePath))
-            {
-                if (resourceStream == null)
-                {
-                    throw new Exception("Resource not found: " + resourceFileName);
-                }
+			// Получение ресурса по имени
+			using (Stream resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourcePath))
+			{
+				if (resourceStream == null)
+				{
+					throw new Exception("Resource not found: " + resourceFileName);
+				}
 
-                // Сохранение ресурса на диск
-                using (FileStream fileStream = new FileStream(outputFile, FileMode.Create))
-                {
-                    resourceStream.CopyTo(fileStream);
-                }
-            }
+				// Сохранение ресурса на диск
+				using (FileStream fileStream = new FileStream(outputFile, FileMode.Create))
+				{
+					resourceStream.CopyTo(fileStream);
+				}
+			}
 			return outputFile;
-        }
+		}
 
 		/// <summary>
 		/// Метод устанавливает системного контактера и проверяет на наличие его в БД
@@ -428,7 +436,7 @@ namespace Nilsa
 			var photoPath = CopyFromResourcesToImages("0.png");
 			var dataTheSystem = $"0|The System|{photoPath}";
 
-            var localContList = new List<String>();
+			var localContList = new List<String>();
 			if (File.Exists(Path.Combine(sDataPath, fileName)))
 			{
 				try
@@ -439,12 +447,12 @@ namespace Nilsa
 				catch (Exception e) { MessageBox.Show(e.Message); }
 			}
 
-            if (localContList.Count <= 0) localContList.Add(dataTheSystem);
-            else if (!localContList[0].Contains("0|The System")) localContList.Insert(0, dataTheSystem);
+			if (localContList.Count <= 0) localContList.Add(dataTheSystem);
+			else if (!localContList[0].Contains("0|The System")) localContList.Insert(0, dataTheSystem);
 
-            theSystemContacter = new TheSystemContacter("The", "System", 0, photoPath);
+			theSystemContacter = new TheSystemContacter("The", "System", 0, photoPath);
 			File.WriteAllLines(Path.Combine(sDataPath, fileName), localContList);
-        }
+		}
 
 		public FormMain()
 		{
@@ -1123,6 +1131,7 @@ namespace Nilsa
 		}
 
 		private void ButtonEditPersHarValues_Paint(object sender, PaintEventArgs e)
+		
 		{
 			float w = buttonEditPersHarValues.ClientSize.Width;
 			float h = buttonEditPersHarValues.ClientSize.Height;
@@ -1804,61 +1813,61 @@ namespace Nilsa
 		}
 
 
-		private FilesNilsaToInterfacePath SetPathConfig()
-		{
-			var path = new FilesNilsaToInterfacePath();
-			var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
-			//var configPath = @"Data\FilesNilsaToInterfacePath";
+		//private FilesNilsaToInterfacePath SetPathConfig()
+		//{
+		//	var path = new FilesNilsaToInterfacePath();
+		//	var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
+		//	//var configPath = @"Data\FilesNilsaToInterfacePath";
 
-			try
-			{
-				if (File.Exists(configPath))
-				{
-					var config = File.ReadAllText(configPath);
-					path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
-				}
-			}
-			catch (Exception e) { MessageBox.Show(e.Message); }
-			return path;
-		}
+		//	try
+		//	{
+		//		if (File.Exists(configPath))
+		//		{
+		//			var config = File.ReadAllText(configPath);
+		//			path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+		//		}
+		//	}
+		//	catch (Exception e) { MessageBox.Show(e.Message); }
+		//	return path;
+		//}
 
-		private void NilsaWriteToRequestFile(TinderRequest tinderRequest)
-		{
-			var settings = new JsonSerializerSettings
-			{
-				DefaultValueHandling = DefaultValueHandling.Ignore,
+		//private void NilsaWriteToRequestFile(TinderRequest tinderRequest)
+		//{
+		//	var settings = new JsonSerializerSettings
+		//	{
+		//		DefaultValueHandling = DefaultValueHandling.Ignore,
 
-			};
-			var path = SetPathConfig();
-			var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
-			try
-			{
-				string requestPath = Path.Combine(path.PathNilsa, path.FileData);
+		//	};
+		//	var path = SetPathConfig();
+		//	var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
+		//	try
+		//	{
+		//		string requestPath = Path.Combine(path.PathNilsa, path.FileData);
 
-				// Write the request to file
+		//		// Write the request to file
 
-				File.WriteAllText(requestPath, request, Encoding.UTF8);
-				File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
+		//		File.WriteAllText(requestPath, request, Encoding.UTF8);
+		//		File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
 
-			}
-			catch (Exception) { }
-		}
+		//	}
+		//	catch (Exception) { }
+		//}
 
-		private void NilsaWriteToRequestFile(string tinderRequest)
-		{
-			var path = SetPathConfig();
-			try
-			{
-				string requestPath = Path.Combine(path.PathNilsa, path.FileData);
+		//private void NilsaWriteToRequestFile(string tinderRequest)
+		//{
+		//	var path = SetPathConfig();
+		//	try
+		//	{
+		//		string requestPath = Path.Combine(path.PathNilsa, path.FileData);
 
-				// Write the request to file
+		//		// Write the request to file
 
-				File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
-				File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
+		//		File.WriteAllText(requestPath, tinderRequest, Encoding.UTF8);
+		//		File.Create(Path.Combine(path.PathNilsa, path.FileFlag));
 
-			}
-			catch (Exception) { }
-		}
+		//	}
+		//	catch (Exception) { }
+		//}
 
 		private int getLicenseType()
 		{
@@ -2005,7 +2014,7 @@ namespace Nilsa
 			if (!showBrowserCommand)
 				toolStripTop.BackColor = Color.FromArgb(192, 0, 0);
 
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		public void HideFormWait()
@@ -2016,7 +2025,7 @@ namespace Nilsa
 
 			if (!showBrowserCommand)
 				toolStripTop.BackColor = SystemColors.Control;
-			Application.DoEvents();
+			//Application.DoEvents();
 
 			//if (fwait.Visible)
 			//    fwait.Hide();
@@ -2028,7 +2037,7 @@ namespace Nilsa
 			showBrowserCommand = true;
 			if (!showFormWait)
 				toolStripTop.BackColor = Color.FromArgb(192, 0, 0);
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		public void HideBrowserCommand()
@@ -2037,7 +2046,7 @@ namespace Nilsa
 
 			if (!showFormWait)
 				toolStripTop.BackColor = SystemColors.Control;
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		public void Shuffle(List<string> list)
@@ -2232,6 +2241,10 @@ namespace Nilsa
 		{
 
 
+			dbUserName = "";
+			userNameName = "";
+			userNameFamily = "";
+			photoPersURL = "";
 			ShowFormWait();
 			SocialNetwork = 3;
 			//ShowBrowserCommand();
@@ -2341,7 +2354,7 @@ namespace Nilsa
 
 			Wall_LoadPostToMonitoring();
 			SetTheSystemContacter();
-            ContactsList_Load();
+			ContactsList_Load();
 			/*
 			 * Disable API
 			if (SocialNetwork == 0 && externalActivatedProcess)
@@ -2452,7 +2465,7 @@ namespace Nilsa
 			//    lstReceivedMessages.Insert(0, "0|" + iPersUserID.ToString() + "|" + dt.ToShortDateString() + "|" + dt.ToShortTimeString() + "|" + "PERSONE_CHANGED");
 			//}
 
-            if (SocialNetwork == 0 && reinitDialogsWhenFree)
+			if (SocialNetwork == 0 && reinitDialogsWhenFree)
 			{
 				if (iContactsGroupsMode == 0) // Contacts
 				{
@@ -2466,38 +2479,18 @@ namespace Nilsa
 				}
 			}
 
-
 			timerChangePersoneOn();
 			SelectNextReceivedMessage(false);
-
-            if (!_firstStart && needActivation)
-            {
-                for (int i = 0; i < lstReceivedMessages.Count; i++)
-                {
-                    if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE")))
-                    {
-                        lstReceivedMessages.RemoveAt(i);
-                        i--;
-                    }
-                }
-				timerWriteMessagesOff();
-                timerWriteCycle = 2;
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
-                SelectNextReceivedMessage(false);
-				timerWriteMessagesOn();
-                needActivation = false;
-            }
-
-            bSetupDone = true;
+			bSetupDone = true;
 			onAfterPersonenListChanged();
 			if (SocialNetwork == 0)
 				setBtnB4(iPersUserID.ToString());
 			StopService();
 			HideFormWait();
-            //HideBrowserCommand();
-            //if(tbStartServiceIsClickedNow) StartService();
+			//HideBrowserCommand();
+			//if(tbStartServiceIsClickedNow) StartService();
 
-        }
+		}
 
 		public void ExceptionToLogList(String sMethod, String sErrorsParameters, Exception e)
 		{
@@ -2956,7 +2949,7 @@ namespace Nilsa
 					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
 					lstOutgoingMessages = new List<String>();
 				}
-				timerPhysicalSendStart();
+				//timerPhysicalSendStart();
 			}
 		}
 
@@ -3032,22 +3025,22 @@ namespace Nilsa
 
 		private void SaveReceivedMessagesPull()
 		{
-			MoveActualContMesToReceivedPull();//дописать добавление из локального списка контактера в общий список
-			if ((lstReceivedMessages.Count > 0) && (/*userSelectUserIdx*/iPersUserID >= 0))
+			//MoveActualContMesToReceivedPull();//дописать добавление из локального списка контактера в общий список
+			if (lstReceivedMessages != null && (lstReceivedMessages.Count > 0) && (/*userSelectUserIdx*/iPersUserID >= 0))
 				FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"), lstReceivedMessages, Encoding.UTF8);
 			else
 				File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
 
 			if (iContactsGroupsMode == 0)
 			{
-				if ((lstReceivedMessagesGroups.Count > 0) && (iPersUserID >= 0))
+				if (lstReceivedMessagesGroups != null && (lstReceivedMessagesGroups.Count > 0) && (iPersUserID >= 0))
 					FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_groups" + ".txt"), lstReceivedMessagesGroups, Encoding.UTF8);
 				else
 					File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_groups" + ".txt"));
 			}
 			else
 			{
-				if ((lstReceivedMessagesContacter.Count > 0) && (iPersUserID >= 0))
+				if (lstReceivedMessagesContacter != null && (lstReceivedMessagesContacter.Count > 0) && (iPersUserID >= 0))
 					FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_contacter" + ".txt"), lstReceivedMessagesGroups, Encoding.UTF8);
 				else
 					File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + iPersUserID.ToString() + "_contacter" + ".txt"));
@@ -3278,20 +3271,20 @@ namespace Nilsa
 		{
 			long contId = -1;
 			if (!File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + persId.ToString() + ".txt"))) return contId;
-            var srcFileConts = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + persId.ToString() + ".txt"));
-            var localContacters = new List<String>(srcFileConts);
-            foreach (var cont in localContacters)
+			var srcFileConts = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + persId.ToString() + ".txt"));
+			var localContacters = new List<String>(srcFileConts);
+			foreach (var cont in localContacters)
 			{
-                List<String> listCurrentCharacteristics = new List<String>();
-                var stringContId = cont.Substring(0, cont.IndexOf("|"));
+				List<String> listCurrentCharacteristics = new List<String>();
+				var stringContId = cont.Substring(0, cont.IndexOf("|"));
 				if (stringContId.Equals("0")) continue;
-                if (File.Exists(Path.Combine(sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + persId.ToString() + "_" + stringContId + ".txt")))
+				if (File.Exists(Path.Combine(sDataPath, "cont_" + FormMain.getSocialNetworkPrefix() + persId.ToString() + "_" + stringContId + ".txt")))
 				{
-                    try
-                    {
-                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + persId.ToString() + "_" + stringContId + ".txt"));
-                        listCurrentCharacteristics = new List<String>(srcFile);
-                    }
+					try
+					{
+						var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + persId.ToString() + "_" + stringContId + ".txt"));
+						listCurrentCharacteristics = new List<String>(srcFile);
+					}
 					catch (Exception) { }
 					if (listCurrentCharacteristics.Count <= 0) continue;
 					if ( listCurrentCharacteristics[parametrId - 1].Equals($"{parametrId}|{parametrValue}") )
@@ -3299,8 +3292,8 @@ namespace Nilsa
 						contId = Convert.ToInt64(stringContId);
 						break;
 					}
-                }
-            }
+				}
+			}
 			return contId;
 		}
 
@@ -3541,63 +3534,63 @@ namespace Nilsa
 			return sUName;
 		}
 
-        //public long FindFreeIndex(List<string> list)
-        //{
-        //    long index = 0;
-        //    foreach (string item in list)
-        //    {
-        //        int separatorIndex = item.IndexOf('|');
-        //        if (separatorIndex > 0)
-        //        {
-        //            long itemIndex;
-        //            if (long.TryParse(item.Substring(0, separatorIndex), out itemIndex))
-        //            {
-        //                if (itemIndex == index)
-        //                {
-        //                    index++;
-        //                }
-        //                else
-        //                {
-        //                    return index;
-        //                }
-        //            }
-        //        }
-        //    }
-        //    return index;
-        //}
+		//public long FindFreeIndex(List<string> list)
+		//{
+		//    long index = 0;
+		//    foreach (string item in list)
+		//    {
+		//        int separatorIndex = item.IndexOf('|');
+		//        if (separatorIndex > 0)
+		//        {
+		//            long itemIndex;
+		//            if (long.TryParse(item.Substring(0, separatorIndex), out itemIndex))
+		//            {
+		//                if (itemIndex == index)
+		//                {
+		//                    index++;
+		//                }
+		//                else
+		//                {
+		//                    return index;
+		//                }
+		//            }
+		//        }
+		//    }
+		//    return index;
+		//}
 
-        public long FindFreeIndex(List<string> list)
-        {
-            HashSet<long> usedIndexes = new HashSet<long>();
+		public long FindFreeIndex(List<string> list)
+		{
+			HashSet<long> usedIndexes = new HashSet<long>();
 
-            foreach (string item in list)
-            {
-                long index = long.Parse(item.Substring(0, item.IndexOf("|")));
+			foreach (string item in list)
+			{
+				long index = long.Parse(item.Substring(0, item.IndexOf("|")));
 
-                usedIndexes.Add(index);
-            }
+				usedIndexes.Add(index);
+			}
 
-            long freeIndex = 0;
+			long freeIndex = 0;
 
-            while (usedIndexes.Contains(freeIndex))
-            {
-                freeIndex++;
-            }
+			while (usedIndexes.Contains(freeIndex))
+			{
+				freeIndex++;
+			}
 
-            return freeIndex;
-        }
+			return freeIndex;
+		}
 
-        private void ContactsList_AddUser(String sUD, String sUName)
+		private void ContactsList_AddUser(String sUD, String sUName)
 		{
 			int iuserIdx = ContactsList_GetUserIdx(sUD, lstContactsList);
 			String userRec = sUD + "|" + sUName + "|" + photoContURL;
 			if (iuserIdx >= 0)
 				lstContactsList[iuserIdx] = userRec;
-			else
+			/*else
 			{
 				userRec = sUD + "|" + UpdateContactUserHarFromVK(sUD, sUName);
 				lstContactsList.Add(userRec);
-			}
+			}*/
 
 			FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
 			ContactsList_Load();
@@ -3838,7 +3831,7 @@ namespace Nilsa
 					timerDefaultChangePersoneCycle = timersValues[7];
 					if (timerChangePersoneCycle <= 0)
 						timerChangePersoneCycle = 1;
-					timerChangePersone_Tick(null, null);
+					//timerChangePersone_Tick(null, null);
 				}
 			}
 			else if (lstPersoneChange.Count > 0)// && SocialNetwork == 0)
@@ -3847,7 +3840,7 @@ namespace Nilsa
 				{
 					timerDefaultChangePersoneCycle = timersValues[7];
 					timerChangePersoneCycle = timerDefaultChangePersoneCycle + 1;
-					timerChangePersone_Tick(null, null);
+					//timerChangePersone_Tick(null, null);
 				}
 			}
 
@@ -3865,10 +3858,10 @@ namespace Nilsa
 			//TimerPhysicalSendCycle = DefaultTimerPhysicalSendCycle;
 		}
 
-		private void SaveAlgorithmSettings()
+		private void SaveAlgorithmSettings(int algid)
 		{
 			List<String> lstTS = new List<String>();
-			lstTS.Add(adbrCurrent.ID.ToString());
+			lstTS.Add(algid.ToString());
 
 			FileWriteAllLines(Path.Combine(sDataPath, "_algotithm_settings_" + getSocialNetworkPrefix() + iPersUserID.ToString() + ".txt"), lstTS, Encoding.UTF8);
 		}
@@ -4158,7 +4151,7 @@ namespace Nilsa
 				//                }
 				//            }
 
-				SaveAlgorithmSettings();
+				SaveAlgorithmSettings(algid);
 				setlabelAlgorithmNameText(adbrCurrent.Name);
 
 			}
@@ -4651,8 +4644,8 @@ namespace Nilsa
 						}
 					}
 
-					if (bNeedSend)
-						timerPhysicalSendStart();
+					//if (bNeedSend)
+					//	timerPhysicalSendStart();
 
 					if (iContUserID == lgid)
 						return true;
@@ -4879,8 +4872,8 @@ namespace Nilsa
 			//if (bStatusService)
 			//    StartService();
 
-			if (bNeedSend)
-				timerPhysicalSendStart();
+			//if (bNeedSend)
+			//	timerPhysicalSendStart();
 
 			return true;
 		}
@@ -4955,8 +4948,498 @@ namespace Nilsa
 			}
 			return true;
 		}
+        #region SelectNextReceivedMessageAsync
+  //      private async Task SelectNextReceivedMessageAsync(bool bDelete = true, bool bBoycottCurrent = false)
+		//{
+		//	bool localBoycottCurrent = bBoycottCurrent;
+		//	await Task.Run(() =>
+		//	{
+		//		long iLastContacterID = -1;
+		//		long iLastGroupAnswerID = -1;
+		//		long iLastGroupAnswerPostID = -1;
+		//		long iLastGroupAnswerCommentID = -1;
 
-		private void SelectNextReceivedMessage(Boolean bDelete = true, bool bBoycootCurrent = false)
+		//		//timerWriteMessages.Enabled = false;
+		//		//timerSkipMessage.Enabled = false;
+
+		//		//Set_pbSkipMessage_Default();
+		//		timerWriteMessagesOff();
+
+		//		tbUndoMarkerChanges.Enabled = false;
+		//		if (bDelete)
+		//		{
+		//			if (lstReceivedMessages.Count > 0)
+		//				lstReceivedMessages.RemoveAt(0);
+
+		//			if (lstReceivedMessages.Count == 0)
+		//				ReadNewReceivedMessages(localBoycottCurrent);
+		//		}
+		//		else
+		//			ReadNewReceivedMessages(localBoycottCurrent);
+
+		//		if (iContUserID != -1)
+		//		{
+		//			iLastContacterID = iContUserID;
+		//			iLastGroupAnswerID = iGroupAnswerID;
+		//			iLastGroupAnswerPostID = iGroupAnswerPostID;
+		//			iLastGroupAnswerCommentID = iGroupAnswerCommentID;
+		//		}
+		//		else
+		//		{
+		//			if (SocialNetwork == 1)
+		//			{
+		//				if (iPersUserID == 0)
+		//					iLastContacterID = 1;
+		//			}
+		//		}
+
+		//		iContUserID = -1;
+		//		iGroupAnswerID = -1;
+		//		iGroupAnswerPostID = -1;
+		//		iGroupAnswerCommentID = -1;
+		//		//labelCont1.Text = "";
+		//		//cbCont1.SelectedIndex = -1;
+		//		if (needResetName)
+		//		{
+		//			contName = contNameFamily = contNameName = "";
+		//			labelCont1Family.Text = "";
+		//			labelCont1Name.Text = "";
+		//			labelCont1FIO.Text = $"{theSystemContacter.FirstName} {theSystemContacter.LastName}";
+		//			sGroupAdditinalUsers = "";
+		//			toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+		//			buttonEditContHarValues.BackgroundImage = Image.FromFile(theSystemContacter.PhotoPath);
+		//		}
+		//		needResetName = true;
+
+		//		for (int i = 0; i < iContHarCount; i++)
+		//		{
+		//			lblContHarValues[i].Text = "";
+		//			//toolTipMessage.SetToolTip(lblContHarNames[i], lblContHarNames[i].Text);
+		//			toolTipMessage.SetToolTip(lblContHarValues[i], "");
+		//		}
+		//		iInMsgID = -1;
+		//		//labelInMsgHarDateValue.Text = "";
+		//		//labelInMsgHarTimeValue.Text = "";
+		//		Set_labelInMsgHarTitleValue_Text("");
+		//		try
+		//		{
+		//			comboBoxCompareLexicalLevel.SelectedIndex = (adbrCurrent.ID >= 0 ? adbrCurrent.CompareLexicalLevel : CompareLexicalLevel);
+		//		}
+		//		catch
+		//		{
+
+		//		}
+
+
+		//		listBoxInMsg.Items.Clear();
+		//		listBoxOutMsg.Items.Clear();
+		//		//buttonEditInMsgHar.Enabled = false;
+		//		//buttonNewOutMsgHar.Enabled = false;
+		//		//buttonEditInEqMsgHar.Enabled = true;
+		//		//buttonEditOutEqMsgHar.Enabled = true;
+		//		tbSkipMessage.Enabled = false;
+		//		tbDeleteMessage.Enabled = false;
+		//		tbSendOutMessage.Enabled = false;
+		//		Set_labelInEqMsgHarTitleValue_Text("");
+		//		CompareVetors_RestoreDefaultValues();
+
+		//		clearlblEQInHarValues();
+		//		Set_labelOutEqMsgHarTitleValue_Text("");
+
+		//		clearlblEQOutHarValues();
+		//		sCurrentEQInMessageRecord = "";
+		//		sCurrentEQOutMessageRecord = "";
+		//		sCurrentEQOutMessageRecordOut = "";
+
+		//		//? Зачистка подобного входящего и возможного исходящего сообщения
+		//		labelPersMsgCount.Text = lstReceivedMessages.Count.ToString();
+		//		if (lstReceivedMessages.Count > 0)
+		//		{
+		//			String value = lstReceivedMessages[0];
+		//			iInMsgID = Convert.ToInt64(value.Substring(0, value.IndexOf("|")));
+		//			value = value.Substring(value.IndexOf("|") + 1);
+		//			if (iInMsgID > 0)
+		//				iContUserID = Convert.ToInt64(value.Substring(0, value.IndexOf("|")));
+		//			else
+		//			{
+		//				string strUsrId = value.Substring(0, value.IndexOf("|"));
+		//				if (strUsrId.IndexOf('/') > 0)
+		//				{
+		//					//Convert.ToString(_ownerId)+"/"+ Convert.ToString(_postId) + "/"+ Convert.ToString(msg.Id) + "/" + Convert.ToString(msg.FromId) + "|";
+		//					iGroupAnswerID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+		//					strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+		//					iGroupAnswerPostID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+		//					strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+		//					iGroupAnswerCommentID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+		//					strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+		//					iContUserID = Convert.ToInt64(strUsrId);
+		//				}
+		//				//else if (strUsrId.Equals("330643598")) iContUserID = iLastContacterID;
+		//				else iContUserID = Convert.ToInt64(strUsrId);
+		//			}
+		//			cntE1++;
+		//			cntE3++;
+		//			cntE7++;
+		//			cntE9++;
+		//			SaveProgramCountersE1E2E3();
+		//			UpdateProgramCountersInfoE1E2E3();
+
+		//			cntE4++;
+		//			cntE6++;
+		//			SaveProgramCountersE4E5E6();
+		//			UpdateProgramCountersInfoE4E5E6();
+
+		//			if (contC9 != iContUserID)
+		//			{
+		//				contC9 = iContUserID;
+		//				cntC9 = 0;
+		//				UpdateProgramCountersInfoC8C9();
+		//			}
+
+		//			sendPrevUserMessage();
+		//			LoadContactParamersValues();
+		//			LoadAlgorithmSettingsContacter();
+
+		//			if (adbrCurrent.Name.ToLower().Equals("boycott"))
+		//			{
+		//				SelectNextReceivedMessage(true, true);
+		//				return;
+		//			}
+
+		//			if (SocialNetwork == 0)
+		//			{
+		//				if (iInMsgID > 0)
+		//					api_Messages_MarkAsRead(iInMsgID);
+		//			}
+
+		//			if (adbrCurrent.PlayReceiveMsg)
+		//			{
+		//				Stream str = Properties.Resources._2;
+		//				SoundPlayer snd = new SoundPlayer(str);
+		//				snd.Play();
+		//			}
+
+		//			//if (iContUserID == 330305148)
+		//			//{
+		//			//	SelectNextReceivedMessage();
+		//			//	return;
+		//			//}
+
+		//			if (ResendToOperators())
+		//			{
+		//				SelectNextReceivedMessage();
+		//				return;
+		//			}
+
+		//			value = value.Substring(value.IndexOf("|") + 1);
+		//			String sDate = value.Substring(0, value.IndexOf("|"));
+		//			value = value.Substring(value.IndexOf("|") + 1);
+		//			String sTime = value.Substring(0, value.IndexOf("|"));
+		//			value = value.Substring(value.IndexOf("|") + 1);
+
+		//			if (doOperatorsCommand(value))
+		//			{
+		//				SelectNextReceivedMessage();
+		//				return;
+		//			}
+
+		//			if (ResendFromOperators(value))
+		//			{
+		//				SelectNextReceivedMessage();
+		//				return;
+		//			}
+
+		//			/*if (iContUserID != iPersUserID)
+		//			{
+		//				if (iContUserID >= 0 && iContUserID != 330643598)
+		//				{
+		//					if (ContactsList_GetUserIdx(iContUserID.ToString(), lstContactsList) < 0)
+		//					{
+		//						if (adbrCurrent.bIgnoreMessagesFromNotContacter)
+		//						{
+		//							SelectNextReceivedMessage();
+		//							return;
+		//						}
+		//						else
+		//						{
+		//							if (iContactsGroupsMode == 0)
+		//								ContactsList_AddUser(iContUserID.ToString(), "");
+		//						}
+		//					}
+		//				}
+		//			}*/
+
+		//			if (adbrCurrent.MergeInMessages)
+		//			{
+		//				value = mergeContacterMessageToTop(value);
+		//			}
+
+		//			LoadLastMessage();
+
+		//			if (value.Contains("<ADD_PERS_LIST>"))
+		//			{
+		//				sGroupAdditinalUsers = "<ADD_PERS_LIST>" + getTagValue(value, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>") + "</ADD_PERS_LIST>";
+		//				value = removeTagValue(value, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+		//			}
+
+		//			if (value.StartsWith("PERSONE_CHANGED"))
+		//			{
+		//				SelectNextReceivedMessage();
+		//				return;
+		//			}
+		//			/*if (value.StartsWith("READ_NEW_MESSAGES"))
+		//			{
+		//				tbSendOutMessageAction();
+		//				return;
+		//			}*/
+		//			//if (value.StartsWith("READ_NEW_MESSAGES"))
+		//			//{
+		//			//    SelectNextReceivedMessage();
+		//			//    return;
+		//			//}
+		//			if (value.StartsWith("INIT_DIALOG|"))
+		//			{
+		//				SaveInitDialogFlag();
+		//				Set_labelInMsgHarTitleValue_Text("INIT_DIALOG");
+		//				cntD1++;
+		//				cntD7++;
+		//				SaveProgramCountersD1D2D3();
+		//				UpdateProgramCountersInfoD1D2D3();
+
+		//				cntD4++;
+		//				SaveProgramCountersD4D5D6();
+		//				UpdateProgramCountersInfoD4D5D6();
+		//			}
+		//			else if (value.StartsWith("INIT_GROUP_DIALOG|"))
+		//			{
+		//				SaveInitDialogFlag();
+		//				Set_labelInMsgHarTitleValue_Text("INIT_GROUP_DIALOG");
+		//				cntD1++;
+		//				cntD7++;
+		//				SaveProgramCountersD1D2D3();
+		//				UpdateProgramCountersInfoD1D2D3();
+
+		//				cntD4++;
+		//				SaveProgramCountersD4D5D6();
+		//				UpdateProgramCountersInfoD4D5D6();
+		//			}
+		//			else
+		//			{
+		//				if (CheckInitDialogFlag())
+		//				{
+		//					if (!value.StartsWith("ERROR_SEND_MESSAGE"))
+		//					{
+		//						cntD2++;
+		//						cntD8++;
+		//						SaveProgramCountersD1D2D3();
+		//						UpdateProgramCountersInfoD1D2D3();
+
+		//						cntD5++;
+		//						SaveProgramCountersD4D5D6();
+		//						UpdateProgramCountersInfoD4D5D6();
+		//					}
+		//				}
+		//				else if (value.StartsWith("DIALOG_DONE"))
+		//				{
+		//					cntD3++;
+		//					cntD9++;
+		//					SaveProgramCountersD1D2D3();
+		//					UpdateProgramCountersInfoD1D2D3();
+
+		//					cntD6++;
+		//					SaveProgramCountersD4D5D6();
+		//					UpdateProgramCountersInfoD4D5D6();
+		//				}
+
+		//				if (adbrCurrent.SplitTextIntoSentences && temporaryStopSplitToSentencse)
+		//				{
+		//					String msgSentenceCurrent = SplitTextIntoSentences(value);
+		//					String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
+		//					value = msgSentenceCurrent.Trim();
+		//					if (msgSentenceEnd.Length > 0)
+		//					{
+		//						String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + value;
+		//						lstReceivedMessages[0] = sCurRec;
+		//						String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + msgSentenceEnd;
+		//						lstReceivedMessages.Add(sEndRec);
+		//					}
+		//				}
+
+		//				value = SetMessageFields(value);
+		//				Set_labelInMsgHarTitleValue_Text(NilsaUtils.StringToText(value));
+		//			}
+
+		//			if (comboBoxCompareLexicalLevel != null)
+		//				comboBoxCompareLexicalLevel.SelectedIndex = (adbrCurrent.ID >= 0 ? adbrCurrent.CompareLexicalLevel : CompareLexicalLevel);
+		//			//buttonEditInMsgHar.Enabled = true;
+		//			//buttonNewOutMsgHar.Enabled = true;
+
+		//			LoadContactParamersValues();
+		//			SetContactParametersValues();
+		//			UpdateContactParametersValues_Algorithm();
+		//			//buttonEditContHarValues.Enabled = true;
+
+		//			lstUndoMarkerChangesContHarValues = new List<string>();
+		//			foreach (string _str in lstContHarValues)
+		//				lstUndoMarkerChangesContHarValues.Add(_str);
+		//			iUndoMarkerChangesContHarValuesContID = iContUserID;
+		//			iUndoMarkerChangesAlgorithm = adbrCurrent.ID;
+		//			sUndoMarkerCurrentEQInMessageRecord = "";
+		//			tbUndoMarkerChanges.Enabled = true;
+
+		//			tbSkipMessage.Enabled = true;
+		//			tbDeleteMessage.Enabled = true;
+
+		//			// 2019-04-13
+		//			ReadAllUserMessages(iPersUserID, iContUserID);
+		//			if (value.StartsWith("INIT_DIALOG|"))
+		//			{
+		//				//ReadAndMarkAsReadedNewReceivedMessages(iContUserID);
+		//				int iMsgPos = 1;
+		//				while (iMsgPos < lstReceivedMessages.Count)
+		//				{
+		//					string _smv = lstReceivedMessages[iMsgPos];
+		//					_smv = _smv.Substring(_smv.IndexOf("|") + 1);
+		//					long _imuid = Convert.ToInt64(_smv.Substring(0, _smv.IndexOf("|")));
+		//					if (_imuid == iContUserID)
+		//						lstReceivedMessages.RemoveAt(iMsgPos);
+		//					else
+		//						iMsgPos++;
+		//				}
+
+		//				value = value.Substring(value.IndexOf("|") + 1);
+		//				listBoxInMsg.Items.Clear();
+		//				clearlblEQInHarValues();
+		//				Set_labelOutEqMsgHarTitleValue_Text(value.Substring(0, value.IndexOf("|")));
+		//				value = value.Substring(value.IndexOf("|") + 1);
+		//				if (value.Length > 0)
+		//				{
+		//					lstEQOutMessagesList.Clear();
+		//					lstEQOutMessagesList.Add(value);
+		//					listBoxOutMsg.Items.Clear();
+		//					listBoxOutMsg.Items.Add("100% " + GetMessageTextWithMarker(value.Substring(value.IndexOf("|@!") + 3)));
+		//					listBoxOutMsg.SelectedIndex = 0;
+		//				}
+		//			}
+		//			else if (value.StartsWith("INIT_GROUP_DIALOG|"))
+		//			{
+		//				// 2019-04-13
+		//				//ReadAndMarkAsReadedNewReceivedMessages(iContUserID);
+		//				int iMsgPos = 1;
+		//				while (iMsgPos < lstReceivedMessages.Count)
+		//				{
+		//					string _smv = lstReceivedMessages[iMsgPos];
+		//					_smv = _smv.Substring(_smv.IndexOf("|") + 1);
+		//					long _imuid = -1;
+		//					try
+		//					{
+		//						_imuid = Convert.ToInt64(_smv.Substring(0, _smv.IndexOf("|")));
+		//					}
+		//					catch (Exception e)
+		//					{
+
+		//					}
+		//					if (_imuid == iContUserID)
+		//						lstReceivedMessages.RemoveAt(iMsgPos);
+		//					else
+		//						iMsgPos++;
+		//				}
+
+		//				value = value.Substring(value.IndexOf("|") + 1);
+		//				listBoxInMsg.Items.Clear();
+		//				clearlblEQInHarValues();
+		//				Set_labelOutEqMsgHarTitleValue_Text(value.Substring(0, value.IndexOf("|")));
+		//				value = value.Substring(value.IndexOf("|") + 1);
+		//				if (value.Length > 0)
+		//				{
+		//					lstEQOutMessagesList.Clear();
+		//					lstEQOutMessagesList.Add(value);
+		//					listBoxOutMsg.Items.Clear();
+		//					listBoxOutMsg.Items.Add("100% " + GetMessageTextWithMarker(value.Substring(value.IndexOf("|@!") + 3)));
+		//					listBoxOutMsg.SelectedIndex = 0;
+		//				}
+		//			}
+		//			else if (value.Equals("INIT_PERSONE_DIALOG")/*labelInMsgHarTitleValue_Text.Equals("INIT_PERSONE_DIALOG")*/)
+		//			{
+		//				Set_labelOutEqMsgHarTitleValue_Text("EXECUTE...");
+		//				lstEQOutMessagesList.Clear();
+		//				listBoxOutMsg.Items.Clear();
+		//				listBoxInMsg.Items.Clear();
+		//				INIT_PERSONE_DIALOG = true;
+		//				btnInitContactsDialog_Click(null, null);
+		//				INIT_PERSONE_DIALOG = false;
+		//				SelectNextReceivedMessage();
+		//				//return;
+		//				//---
+
+		//			}
+		//			else if (value.Equals("INIT_PERSONE_GROUPS_DIALOG")/*labelInMsgHarTitleValue_Text.Equals("INIT_PERSONE_DIALOG")*/)
+		//			{
+		//				Set_labelOutEqMsgHarTitleValue_Text("EXECUTE...");
+		//				lstEQOutMessagesList.Clear();
+		//				listBoxOutMsg.Items.Clear();
+		//				listBoxInMsg.Items.Clear();
+		//				INIT_PERSONE_DIALOG = true;
+		//				btnInitGroupsDialog_Click(null, null);
+		//				// InitContactsDialog_Click(null, null);
+		//				INIT_PERSONE_DIALOG = false;
+		//				SelectNextReceivedMessage();
+		//				//return;
+		//				//---
+
+		//			}
+		//			else if (value.Equals("CLEAR_PERSONE_DIALOGS"))
+		//			{
+		//				Set_labelOutEqMsgHarTitleValue_Text("EXECUTE...");
+		//				lstEQOutMessagesList.Clear();
+		//				while (lstReceivedMessages.Count > 1)
+		//					lstReceivedMessages.RemoveAt(1);
+		//				ReadAndMarkAsReadedNewReceivedMessages();
+		//				SelectNextReceivedMessage();
+		//			}
+		//			else
+		//				SetEQInMessageList(labelInMsgHarTitleValue_Text);
+		//		}
+		//		else
+		//		{
+		//			sendPrevUserMessage();
+		//			if (iLastContacterID != -1)
+		//			{
+		//				iContUserID = iLastContacterID;
+		//				iGroupAnswerID = iLastGroupAnswerID;
+		//				iGroupAnswerPostID = iLastGroupAnswerPostID;
+		//				iGroupAnswerCommentID = iLastGroupAnswerCommentID;
+
+		//				if (contC9 != iContUserID)
+		//				{
+		//					contC9 = iContUserID;
+		//					cntC9 = 0;
+		//					UpdateProgramCountersInfoC8C9();
+		//				}
+		//				ContactsList_Load();
+		//				LoadContactParamersValues();
+		//				SetContactParametersValues();
+		//				LoadAlgorithmSettingsContacter();
+		//				UpdateContactParametersValues_Algorithm();
+
+		//				//LoadContactParametersDescription();
+
+		//				OnSelectOtherContacter(false);
+		//			}
+		//			else
+		//				listBoxUserMessages.Items.Clear();
+		//		}
+		//		tbNewOutMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+		//		tbNewInMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+		//		tbInitContactDialogContacter.Enabled = iPersUserID >= 0 && (iContUserID >= 0 || iContUserID < -1);
+		//		tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
+		//		//UpdatePersoneParametersValues_Friends();
+		//		UpdatePersoneParametersValues_Algorithm();
+		//	});
+		//}
+		#endregion
+
+        private void SelectNextReceivedMessage(bool bDelete = true, bool bBoycootCurrent = false)
 		{
 			long iLastContacterID = -1;
 			long iLastGroupAnswerID = -1;
@@ -5123,11 +5606,11 @@ namespace Nilsa
 					snd.Play();
 				}
 
-				if (iContUserID == 330305148)
-				{
-					SelectNextReceivedMessage();
-					return;
-				}
+				//if (iContUserID == 330305148)
+				//{
+				//	SelectNextReceivedMessage();
+				//	return;
+				//}
 
 				if (ResendToOperators())
 				{
@@ -5153,7 +5636,7 @@ namespace Nilsa
 					return;
 				}
 
-				if (iContUserID != iPersUserID)
+				/*if (iContUserID != iPersUserID)
 				{
 					if (iContUserID >= 0 && iContUserID != 330643598)
 					{
@@ -5171,11 +5654,11 @@ namespace Nilsa
 							}
 						}
 					}
-				}
+				}*/
 
 				if (adbrCurrent.MergeInMessages)
 				{
-					//value = mergeContacterMessageToTop(value);
+					value = mergeContacterMessageToTop(value);
 				}
 
 				LoadLastMessage();
@@ -5191,12 +5674,17 @@ namespace Nilsa
 					SelectNextReceivedMessage();
 					return;
 				}
-                //if (value.StartsWith("READ_NEW_MESSAGES"))
-                //{
-                //    SelectNextReceivedMessage();
-                //    return;
-                //}
-                if (value.StartsWith("INIT_DIALOG|"))
+				/*if (value.StartsWith("READ_NEW_MESSAGES"))
+				{
+					tbSendOutMessageAction();
+					return;
+				}*/
+				//if (value.StartsWith("READ_NEW_MESSAGES"))
+				//{
+				//    SelectNextReceivedMessage();
+				//    return;
+				//}
+				if (value.StartsWith("INIT_DIALOG|"))
 				{
 					SaveInitDialogFlag();
 					Set_labelInMsgHarTitleValue_Text("INIT_DIALOG");
@@ -5250,18 +5738,18 @@ namespace Nilsa
 						UpdateProgramCountersInfoD4D5D6();
 					}
 
-					if (adbrCurrent.SplitTextIntoSentences)
+					if (adbrCurrent.SplitTextIntoSentences && temporaryStopSplitToSentencse)
 					{
-						//String msgSentenceCurrent = SplitTextIntoSentences(value);
-						//String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
-						//value = msgSentenceCurrent.Trim();
-						//if (msgSentenceEnd.Length > 0)
-						//{
-						//	String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + value;
-						//	lstReceivedMessages[0] = sCurRec;
-						//	String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + msgSentenceEnd;
-						//	lstReceivedMessages.Add(sEndRec);
-						//}
+						String msgSentenceCurrent = SplitTextIntoSentences(value);
+						String msgSentenceEnd = value.Substring(msgSentenceCurrent.Length).Trim();
+						value = msgSentenceCurrent.Trim();
+						if (msgSentenceEnd.Length > 0)
+						{
+							String sCurRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + value;
+							lstReceivedMessages[0] = sCurRec;
+							String sEndRec = iInMsgID.ToString() + "|" + getContUserIDWithGroupID() + "|" + sDate + "|" + sTime + "|" + msgSentenceEnd;
+							lstReceivedMessages.Add(sEndRec);
+						}
 					}
 
 					value = SetMessageFields(value);
@@ -5434,9 +5922,26 @@ namespace Nilsa
 			tbDeleteContacterMessages.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			//UpdatePersoneParametersValues_Friends();
 			UpdatePersoneParametersValues_Algorithm();
+			if (lblEQOutHarValues[11].Text.ToUpper().Equals("READ_NEW_MESSAGE_NO_TIMER"))
+			{
+				//timerWriteMessages.Enabled = false;
+				lstReceivedMessages.RemoveAt(0);
+				listBoxOutMsg.Items.Clear();
+				listBoxInMsg.Items.Clear();
+				lstOutgoingMessages_Insert(iContUserID.ToString(), contName, labelOutEqMsgHarTitleValue_Text);
+				Set_labelOutEqMsgHarTitleValue_Text("");
+				Set_labelInMsgHarTitleValue_Text("");
+				//labelInEqMsgHarTitleValue_Text = "";
+				//labelInMsgHarTitleValue_Text = "";
+				timerWriteMessagesOff();
+				timerAnswerWaiting.Enabled = true;
+				SelectNextReceivedMessage(false);
+
+				//MessageBox.Show("READ_NEW_MESSAGE_NO_TIMER");
+			}
 		}
 
-        int iUndoMarkerChangesAlgorithm;
+		int iUndoMarkerChangesAlgorithm;
 		List<String> lstUndoMarkerChangesContHarValues = null;
 		long iUndoMarkerChangesContHarValuesContID = -1;
 
@@ -5589,7 +6094,7 @@ namespace Nilsa
 			labelPers1FIO.Text = userName;
 			toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
 
-            if (userNameName == "" || userNameFamily == "" || photoPersURL == "")
+			if (userNameName == "" || userNameFamily == "" || photoPersURL == "")
 			{
 				if (dbUserName == "")
 				{
@@ -5605,104 +6110,54 @@ namespace Nilsa
 						}
 					}
 				}
-				var data = dbUserName.Split('|');
-				userID = data[0];
-				userNameName = data[1];
-				userNameFamily = data[2];
-                userName = userNameName + " " + userNameFamily;
-                photoPersURL = data[3];
-				labelPers1Name.Text = userNameName;
-				labelPers1Family.Text = userNameFamily;
-				labelPers1FIO.Text = userName;
-				toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-
+				if (!String.IsNullOrWhiteSpace(dbUserName))
+				{
+                    var data = dbUserName.Split('|');
+                    userID = data[0];
+                    userNameName = data[1];
+                    userNameFamily = data[2];
+                    userName = userNameName + " " + userNameFamily;
+                    photoPersURL = data[3];
+                    labelPers1Name.Text = userNameName;
+                    labelPers1Family.Text = userNameFamily;
+                    labelPers1FIO.Text = userName;
+                    toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
+                }
 			}
 
 			if(photoPersURL != "" )
 			{
-				try
+				if (File.Exists(photoPersURL))
 				{
-                    //подставляем фотку
-                    //photoPersURL = localphotoPersURL;
-                    if (photoPersURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
-                    {
-                        //подставляем фотку
-                        var request = WebRequest.Create(photoPersURL);
-                        using (var response = request.GetResponse())
-                        using (var stream = response.GetResponseStream())
-                        {
-                            var bitmapPicture = Bitmap.FromStream(stream);
-                            buttonEditPersHarValues.BackgroundImage = bitmapPicture;
-                        }
-                    }
-                    else 
-                    {
-                        buttonEditPersHarValues.BackgroundImage = Image.FromFile(photoPersURL);
-                    }
-                }
-				catch (Exception e)
-				{
-					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+					try
+					{
+						//подставляем фотку
+						buttonEditPersHarValues.BackgroundImage = Image.FromFile(photoPersURL);
+						//photoPersURL = localphotoPersURL;
+						//if (photoPersURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+						//{
+						//    //подставляем фотку
+						//    var request = WebRequest.Create(photoPersURL);
+						//    using (var response = request.GetResponse())
+						//    using (var stream = response.GetResponseStream())
+						//    {
+						//        var bitmapPicture = Bitmap.FromStream(stream);
+						//        buttonEditPersHarValues.BackgroundImage = bitmapPicture;
+						//    }
+						//}
+						//else 
+						//{
+						//    buttonEditPersHarValues.BackgroundImage = Image.FromFile(photoPersURL);
+						//}
+					}
+					catch (Exception e)
+					{
+						ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+					}
 				}
 			}
-
-			//Image bitmapPicture = null;
-   //         buttonEditPersHarValues.BackgroundImage = null;
-			//bool bRead = false;
-			////прописать получение адреса фото
-			//if (photoURL.Length > 0)
-			//{
-			//	var request = WebRequest.Create(photoURL);
-
-			//	using (var response = request.GetResponse())
-			//	using (var stream = response.GetResponseStream())
-			//	{
-			//		bitmapPicture = Bitmap.FromStream(stream);
-			//		bRead = true;
-   //                 buttonEditPersHarValues.BackgroundImage = bitmapPicture;
-			//		personPicture = bitmapPicture;
-			//		personPictureID = iPersUserID;
-			//	}
-			//}
-			//if (!bRead)
-			//{
-			//	personPicture = null;
-			//	personPictureID = -1;
-			//}
-
-			//FormWebBrowser.Persone usrAdr = null;
-			//if (fwbVKontakte != null)
-			//{
-			//    if (fwbVKontakteFirstShow)
-			//    {
-			//        if (fwbVKontakte.personeAtrributes != null)
-			//            usrAdr = fwbVKontakte.personeAtrributes;
-			//    }
-			//}
-
-			//if (usrAdr != null)
-			//    if (usrAdr.id != fwbVKontakte.loggedPersoneID)
-			//        usrAdr = null;
-			//if (usrAdr == null)
-			//    usrAdr = loadPersoneAttributes(fwbVKontakte.loggedPersoneID);
-
-			//labelPers1Name.Text = usrAdr.FirstName;
-			//labelPers1Family.Text = usrAdr.LastName;
-			//labelPers1FIO.Text = usrAdr.FirstName + " " + usrAdr.LastName;
-			//toolTipMessage.SetToolTip(labelPers1FIO, labelPers1FIO.Text);
-
-
-
-			//contName = usrAdr.FirstName + " " + usrAdr.LastName;
-
-			/*
-			if (cbPers1.Items.Contains(userName))
-				cbPers1.SelectedIndex = cbPers1.Items.IndexOf(userName);
-			 */
-
-			LoadPersoneParametersDescription();
-			//UpdatePersoneParametersValues_Friends();
-			//UpdatePersoneParametersValues_Algorithm();
+            else buttonEditPersHarValues.BackgroundImage = null;
+            LoadPersoneParametersDescription();
 		}
 
 		private void SetUserPictureFromID(long userid, Button button, bool bPerson)
@@ -5743,10 +6198,10 @@ namespace Nilsa
 							//var result = JsonConvert.DeserializeObject<ResponseFromInterface>(stringJSON); //раскоментить при удалении встроенного браузера
 							//string photoURL = result.PhotoUrl;                                             //раскоментить при удалении встроенного браузера
 							fwbVKontakte.WaitResult();
-							photoURL = fwbVKontakte.photoURL;
-							if (userid == iPersUserID) photoPersURL = photoURL;
-							else photoContURL = photoURL;
-							File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "photoURL: " + photoURL + "\n", Encoding.UTF8);
+							//photoURL = fwbVKontakte.photoURL;
+							//if (userid == iPersUserID) photoPersURL = photoURL;
+							//else photoContURL = photoURL;
+							//File.AppendAllText(Path.Combine(Application.StartupPath, "_call_to_browser.txt"), "photoURL: " + photoURL + "\n", Encoding.UTF8);
 
 							HideBrowserCommand();
 						}
@@ -5755,7 +6210,7 @@ namespace Nilsa
 						bool bRead = false;
 						try
 						{
-							if (photoURL.Length > 0)
+							/*if (photoURL.Length > 0)
 							{
 								var request = WebRequest.Create(photoURL);
 
@@ -5778,7 +6233,7 @@ namespace Nilsa
 										//pathContacterImageFromGroup();
 									}
 								}
-							}
+							}*/
 
 							//if (!bRead)
 							//{
@@ -5795,7 +6250,7 @@ namespace Nilsa
 							//	}
 							//}
 						}
-						catch (Exception){ }
+						catch (Exception) { }
 
 					}
 					/*
@@ -5897,6 +6352,62 @@ namespace Nilsa
 					}
 					else
 						contactPicture = bitmapPicture;
+				}
+				else if (SocialNetwork == 3)
+				{
+					if (bPerson)
+					{
+						if (photoPersURL != "")
+						{
+							if (File.Exists(photoPersURL))
+							{
+								try
+								{
+									//подставляем фотку
+									button.BackgroundImage = Image.FromFile(photoPersURL);
+									//photoPersURL = localphotoPersURL;
+									//if (photoPersURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+									//{
+									//    //подставляем фотку
+									//    var request = WebRequest.Create(photoPersURL);
+									//    using (var response = request.GetResponse())
+									//    using (var stream = response.GetResponseStream())
+									//    {
+									//        var bitmapPicture = Bitmap.FromStream(stream);
+									//        buttonEditPersHarValues.BackgroundImage = bitmapPicture;
+									//    }
+									//}
+									//else 
+									//{
+									//    buttonEditPersHarValues.BackgroundImage = Image.FromFile(photoPersURL);
+									//}
+								}
+								catch (Exception e)
+								{
+									ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+								}
+							}
+						}
+						else button.BackgroundImage = null;
+					}
+					else
+					{
+						if (photoContURL != "")
+						{
+							if (File.Exists(photoContURL))
+							{
+								try
+								{
+									button.BackgroundImage = Image.FromFile(photoContURL);
+								}
+								catch (Exception e)
+								{
+									ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+								}
+							}
+						}
+
+					}
 				}
 			}
 			/*
@@ -6220,16 +6731,16 @@ namespace Nilsa
 								contName = data[1];
 								photoContURL = data[2];
 								var names = contName.Split(' ');
-                                if (names.Length == 2)
-                                {
-                                    contNameName = names[0];
-                                    contNameFamily = names[1];
-                                }
-                                else if (names.Length == 1)
-                                {
-                                    contNameName = names[0];
-                                    contNameFamily = "";
-                                }
+								if (names.Length == 2)
+								{
+									contNameName = names[0];
+									contNameFamily = names[1];
+								}
+								else if (names.Length == 1)
+								{
+									contNameName = names[0];
+									contNameFamily = "";
+								}
 								labelCont1Family.Text = contNameFamily;
 								labelCont1Name.Text = contNameName;
 								labelCont1FIO.Text = contName;
@@ -6241,13 +6752,14 @@ namespace Nilsa
 								}
 								else
 								{
-									var request = WebRequest.Create(photoContURL);
+									buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
+									/*var request = WebRequest.Create(photoContURL);
 									using (var response = request.GetResponse())
 									using (var stream = response.GetResponseStream())
 									{
 										var bitmapPicture = Bitmap.FromStream(stream);
 										buttonEditContHarValues.BackgroundImage = bitmapPicture;
-									}
+									}*/
 								}
 							}
 							catch (Exception e)
@@ -6354,14 +6866,14 @@ namespace Nilsa
 							var names = contName.Split(' ');
 							if (names.Length == 2)
 							{
-                                contNameName = names[0];
-                                contNameFamily = names[1];
-                            }
+								contNameName = names[0];
+								contNameFamily = names[1];
+							}
 							else if (names.Length == 1)
 							{
-                                contNameName = names[0];
-                                contNameFamily = "";
-                            }
+								contNameName = names[0];
+								contNameFamily = "";
+							}
 							labelCont1Family.Text = contNameFamily;
 							labelCont1Name.Text = contNameName;
 							labelCont1FIO.Text = contName;
@@ -6373,13 +6885,15 @@ namespace Nilsa
 							}
 							else
 							{
+								SetPhoto(false, photoContURL);
+								/*
 								var request = WebRequest.Create(photoContURL);
 								using (var response = request.GetResponse())
 								using (var stream = response.GetResponseStream())
 								{
 									var bitmapPicture = Bitmap.FromStream(stream);
 									buttonEditContHarValues.BackgroundImage = bitmapPicture;
-								}
+								}*/
 							}
 						}
 						catch (Exception e)
@@ -6566,30 +7080,34 @@ namespace Nilsa
 		private void SetPhoto(bool photoOwner, string photoPath)
 		{
 			var button = buttonEditContHarValues;
-            if (photoOwner) button = buttonEditPersHarValues;
-            try
-            {
-                if (photoPath.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
-                {
-                    //подставляем фотку
-                    var request = WebRequest.Create(photoPath);
-                    using (var response = request.GetResponse())
-                    using (var stream = response.GetResponseStream())
-                    {
-                        var bitmapPicture = Bitmap.FromStream(stream);
-                        button.BackgroundImage = bitmapPicture;
-                    }
-                }
-                else if (photoPath != "")
-                {
-                    button.BackgroundImage = Image.FromFile(photoPath);
-                }
-            }
-            catch (Exception e)
-            {
-                ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-            }
-        }
+			if (photoOwner) button = buttonEditPersHarValues;
+			if (File.Exists(photoPath))
+			{
+				try
+				{
+					button.BackgroundImage = Image.FromFile(photoPath);
+					//if (photoPath.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+					//{
+					//    //подставляем фотку
+					//    var request = WebRequest.Create(photoPath);
+					//    using (var response = request.GetResponse())
+					//    using (var stream = response.GetResponseStream())
+					//    {
+					//        var bitmapPicture = Bitmap.FromStream(stream);
+					//        button.BackgroundImage = bitmapPicture;
+					//    }
+					//}
+					//else if (photoPath != "")
+					//{
+					//    button.BackgroundImage = Image.FromFile(photoPath);
+					//}
+				}
+				catch (Exception e)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+				}
+			}
+		}
 
 		private void LoadContactParamersValues()
 		{
@@ -6747,6 +7265,7 @@ namespace Nilsa
 		//---
 		public String GetPersoneParametersValue(String sPersHarID)
 		{
+			if (lstPersHarValues == null) return "";
 			for (int i = 0; i < lstPersHarValues.Count; i++)
 			{
 				if (lstPersHarValues[i].IndexOf("|") >= 0)
@@ -7203,7 +7722,7 @@ namespace Nilsa
 					
 					if (formEditPersoneDb.bNeedPersoneChange)
 					{
-						timerAnswerWaitingOff();
+						//timerAnswerWaitingOff();
 
 						initPersonenLists(formEditPersoneDb);
 
@@ -7233,7 +7752,7 @@ namespace Nilsa
 							userID = "";
 							clearPersonenLists();
 
-							timerAnswerWaitingOff();
+							//timerAnswerWaitingOff();
 							//toolStripMenuItemClearInMsgPullPersonen.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
 							onAfterPersonenListChanged();
 							bShowAutorizeForm = false;
@@ -7465,10 +7984,11 @@ namespace Nilsa
 								userNameFamily = "";
 								userName = "";
 								dbUserName = "";
+								photoPersURL = "";
 								SetPersoneParametersValues();
-                                SetStandardCaption();
-                                return true;
-                            }
+								SetStandardCaption();
+								return true;
+							}
 						}
 						catch (Exception e)
 						{
@@ -7548,7 +8068,7 @@ namespace Nilsa
 
 					if (formEditPersoneDb.bNeedPersoneChange)
 					{
-						timerAnswerWaitingOff();
+						//timerAnswerWaitingOff();
 
 						initPersonenLists(formEditPersoneDb);
 
@@ -7577,7 +8097,7 @@ namespace Nilsa
 							userID = "";
 							clearPersonenLists();
 
-							timerAnswerWaitingOff();
+							//timerAnswerWaitingOff();
 							onAfterPersonenListChanged();
 							bShowAutorizeForm = false;
 							OnSocialNetworkChanged();
@@ -7672,8 +8192,13 @@ namespace Nilsa
 								//persId = null;
 								iPersUserID = 1;// Convert.ToInt64(persId);
 							}
-							//iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
-							userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
+							userNameName = "";
+							userNameFamily = "";
+							photoPersURL = "";
+							dbUserName = "";
+                            SetPersoneParametersValues();
+                            //iPersUserID = Convert.ToInt64(NILSA_GetFieldFromStringRec(PersoneData, 0));
+                            /*userName = NILSA_GetFieldFromStringRec(PersoneData, 1);
 							if (userName.IndexOf(" ") > 0)
 							{
 								userNameName = userName.Substring(0, userName.IndexOf(" ")); ;
@@ -7683,9 +8208,9 @@ namespace Nilsa
 							{
 								userNameName = userName;
 								userNameFamily = "";
-							}
-							SetStandardCaption();
-							SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
+							}*/
+                            SetStandardCaption();
+							//SetUserPictureFromID(iPersUserID, buttonEditPersHarValues, true);
 							return true;
 						}
 					}
@@ -8470,11 +8995,11 @@ namespace Nilsa
 		private void TinderLoadUserDB()
 		{
 			listTinderUserDB = new List<String>();
-			if (File.Exists(Path.Combine(Application.StartupPath, "tinder_userdb.txt")))
+			if (File.Exists(Path.Combine(sDataPath, "_personenti.txt")))
 			{
 				try
 				{
-					var srcFile = File.ReadAllLines(Path.Combine(Application.StartupPath, "tinder_userdb.txt"));
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_personenti.txt"));
 					listTinderUserDB = new List<String>(srcFile);
 				}
 				catch (Exception e)
@@ -8737,6 +9262,7 @@ namespace Nilsa
 		}
         /// <summary>
         /// Добавляет сообщение в историю переписки, если inboundMessage = true - сообщение контактера, иначе персонажа
+		/// Синхронная версия метода
         /// </summary>
         /// <param name="_iPersUserID"></param>
         /// <param name="_iContUserID"></param>
@@ -8744,15 +9270,45 @@ namespace Nilsa
         /// <param name="_date"></param>
         /// <param name="_time"></param>
         /// <param name="_text"></param>
-        private void addToHistory(long _iPersUserID, long _iContUserID, bool inboundMessage, String _date, String _time, String _text)
-		{
-			File.AppendAllText(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt"), (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine);
-		}
+        private void addToHistory(long _iPersUserID, long _iContUserID, bool inboundMessage, string _date, string _time, string _text)
+        {
+            _text = _text.Replace("\r\n", " ");
+            _text = _text.Replace("\n", " ");
+            _text = _text.Replace("\r", " ");
 
-		//---
-		private void ReadNewReceivedMessages(bool bBoycootCurrent = false)
+            string filePath = Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt");
+            string entry = (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine;
+            File.AppendAllText(filePath, entry);
+        }
+
+        /// <summary>
+        /// Добавляет сообщение в историю переписки, если inboundMessage = true - сообщение контактера, иначе персонажа
+		/// Асинхронная версия метода
+        /// </summary>
+        /// <param name="_iPersUserID"></param>
+        /// <param name="_iContUserID"></param>
+        /// <param name="inboundMessage"></param>
+        /// <param name="_date"></param>
+        /// <param name="_time"></param>
+        /// <param name="_text"></param>
+        private async Task addToHistoryAsync(long _iPersUserID, long _iContUserID, bool inboundMessage, string _date, string _time, string _text)
+        {
+            _text = _text.Replace("\r\n", " ");
+            _text = _text.Replace("\n", " ");
+            _text = _text.Replace("\r", " ");
+
+            await Task.Run(() =>
+            {
+                string filePath = Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + _iPersUserID.ToString() + "_" + Convert.ToString(_iContUserID) + ".txt");
+                string entry = (inboundMessage ? "0" : "1") + "|" + _date + "|" + _time + "|" + _text + Environment.NewLine;
+                File.AppendAllText(filePath, entry);
+            });
+        }
+
+        //---
+        private void ReadNewReceivedMessages(bool bBoycootCurrent = false)
 		{
-			timerReadMessagesOff();
+			//timerReadMessagesOff();
 
 			// получаем id пользователей из группы, макс. кол-во записей = 1000
 			/*
@@ -8802,7 +9358,7 @@ namespace Nilsa
 											if (!bBoycootCurrent || msg.UserId.Value != iContUserID)
 											{
 												lstMsgToAdd.Add(msg.Date.Value.ToString("yyyy.MM.dd.HH:mm:ss") + "|" + value);
-												addToHistory(iPersUserID, msg.UserId.Value, true, msg.Date.Value.ToShortDateString(), msg.Date.Value.ToShortTimeString(), NilsaUtils.TextToString(msg.Body));
+												//addToHistory(iPersUserID, msg.UserId.Value, true, msg.Date.Value.ToShortDateString(), msg.Date.Value.ToShortTimeString(), NilsaUtils.TextToString(msg.Body));
 											}
 										}
 									}
@@ -8893,8 +9449,8 @@ namespace Nilsa
 
 			if (bServiceStart)
 			{
-				if (lstReceivedMessages.Count == 0)
-					timerReadMessagesOn();
+				//if (lstReceivedMessages.Count == 0)
+				//	timerReadMessagesOn();
 			}
 		}
 
@@ -8945,6 +9501,45 @@ namespace Nilsa
 			startTimers();
 
 			return messages;
+		}
+
+		private void getMessageHistory(long localUserID, long localContID)
+		{
+			List<String> lstHistory = new List<String>();
+			listBoxUserMessages.Items.Clear();
+			if (File.Exists(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt")))
+			{
+				try
+				{
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt"));
+					lstHistory = new List<String>(srcFile);
+				}
+				catch (Exception e)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+				}
+			}
+
+			clearTrashList(lstHistory);
+			foreach (String str in lstHistory)
+			{
+				String value = str;
+				String inboundStr = value.Substring(0, value.IndexOf("|"));
+				value = value.Substring(value.IndexOf("|") + 1);
+				String dateStr = value.Substring(0, value.IndexOf(" "));
+				value = value.Substring(value.IndexOf("|") + 1);
+				String timeStr = value.Substring(0, value.IndexOf("."));
+				value = value.Substring(value.IndexOf("|") + 1);
+				String bodyStr = value;
+				bool inboundMessage = inboundStr.Equals("0");
+
+				value = "0|";
+				value = value + dateStr + "|";
+				value = value + timeStr + "|";
+				value += NilsaUtils.TextToString(bodyStr);
+
+				listBoxUserMessages.Items.Add((inboundMessage ? "<- " : "-> ") + dateStr + " " + timeStr + " - " + bodyStr);
+			}
 		}
 
 		private void ReadAllUserMessages(long localUserID, long localContID)
@@ -9105,7 +9700,9 @@ namespace Nilsa
 				}
 				else if (SocialNetwork == 3)
 				{
-					List<String> lstHistory = new List<String>();
+					getMessageHistory(localUserID, localContID);
+
+                    /*List<String> lstHistory = new List<String>();
 					listBoxUserMessages.Items.Clear();
 					if (File.Exists(Path.Combine(sDataPath, "chat_" + getSocialNetworkPrefix() + localUserID.ToString() + "_" + Convert.ToString(localContID) + ".txt")))
 					{
@@ -9123,6 +9720,7 @@ namespace Nilsa
 					clearTrashList(lstHistory);
 					foreach (String str in lstHistory)
 					{
+						if (String.IsNullOrWhiteSpace(str)) continue;
 						String value = str;
 						String inboundStr = value.Substring(0, value.IndexOf("|"));
 						value = value.Substring(value.IndexOf("|") + 1);
@@ -9136,11 +9734,11 @@ namespace Nilsa
 						value = "0|";
 						value = value + dateStr + "|";
 						value = value + timeStr + "|";
-						value = value + NilsaUtils.TextToString(bodyStr);
+						value += NilsaUtils.TextToString(bodyStr);
 
 						listBoxUserMessages.Items.Add((inboundMessage ? "<- " : "-> ") + dateStr + " " + timeStr + " - " + bodyStr);
 						lstUserMessages.Add(value);
-					}
+					}*/
 				}
 				if (listBoxUserMessages.Items.Count > 0)
 				{
@@ -9706,11 +10304,18 @@ namespace Nilsa
 			}
 		}
 
+		private string SetMarkerValues(string value)
+		{
+			value = value.Replace("#CHATGPT MESSAGE#", chatgptMessage);
+            value = value.Replace("#ORIGINAL MESSAGE#", originalMessage);
+            return value;
+		}
+
 		private String ChangeMessageParametersValues(String sMsgRecord, int iHarIdx, String sHarValue)
 		{
 			String value = sMsgRecord;
 			String retval = value.Substring(0, value.IndexOf("|") + 1);
-
+			sHarValue = SetMarkerValues(sHarValue);
 			for (int i = 0; i < iMsgHarCount; i++)
 			{
 				value = value.Substring(value.IndexOf("|") + 1);
@@ -9909,7 +10514,7 @@ namespace Nilsa
 							if (lstContHarValues.Count > 0)
 							{
 								String oldrec = lstContHarValues[adbrCurrent.iMarkerContHarID[sMarker - 1] - 1];
-								lstContHarValues[adbrCurrent.iMarkerContHarID[sMarker - 1] - 1] = oldrec.Substring(0, oldrec.IndexOf("|") + 1) + adbrCurrent.sMarkerContHarValues[sMarker - 1];
+								lstContHarValues[adbrCurrent.iMarkerContHarID[sMarker - 1] - 1] = oldrec.Substring(0, oldrec.IndexOf("|") + 1) + SetMarkerValues(adbrCurrent.sMarkerContHarValues[sMarker - 1]);
 								SaveContactParamersValues();
 								LoadContactParametersDescription();
 							}
@@ -10050,7 +10655,7 @@ namespace Nilsa
 			for (int i = 0; i < iMsgHarCount; i++)
 			{
 				value = value.Substring(value.IndexOf("|") + 1);
-				String s = value.Substring(0, value.IndexOf("|"));
+				var s = value.Substring(0, value.IndexOf("|"));
 				sMsgHar[i, 3] = s; // Значение атрибутов
 			}
 			value = value.Substring(value.IndexOf("|") + 3); // Текст
@@ -10076,7 +10681,7 @@ namespace Nilsa
 						if (lstContHarValues.Count > 0)
 						{
 							String oldrec = lstContHarValues[adbrCurrent.iMarkerContHarID[sMarker - 1] - 1];
-							lstContHarValues[adbrCurrent.iMarkerContHarID[sMarker - 1] - 1] = oldrec.Substring(0, oldrec.IndexOf("|") + 1) + adbrCurrent.sMarkerContHarValues[sMarker - 1];
+							lstContHarValues[adbrCurrent.iMarkerContHarID[sMarker - 1] - 1] = oldrec.Substring(0, oldrec.IndexOf("|") + 1) + SetMarkerValues(adbrCurrent.sMarkerContHarValues[sMarker - 1]);
 							SaveContactParamersValues();
 							LoadContactParametersDescription();
 						}
@@ -10659,7 +11264,107 @@ namespace Nilsa
 			}
 		}
 
-		private String highlightKeywords(String text, String[] words)
+		private List<MessageInList> FindMessageInDatabase(String sRQ)
+		{
+            var messagesList = new List<String>();
+
+            sRQ = compareLexicalNewAlgorithm ? TextSearchFilterNew_Filter(GetMessageTextWOMarker(sRQ).ToLower()) : TextSearchFilter(GetMessageTextWOMarker(sRQ).ToLower());
+
+            if (sRQ.Length > 0)
+            {
+                double dCompareLexicalLevel = comboBoxCompareLexicalLevel.SelectedIndex/* * 10*/;
+                String[] RQV = compareLexicalNewAlgorithm ? null : sRQ.Split(' ');
+                int RQVwc = compareLexicalNewAlgorithm ? TextSearchNew_WordCount(sRQ) : RQV.Length;
+
+                String[] sLastMessageVector = getLastMessageVector();
+                bool bLastMessageVector = false;
+                for (int ilmv = 0; ilmv < sLastMessageVector.Length; ilmv++)
+                {
+                    if (sLastMessageVector[ilmv].Length > 0)
+                    {
+                        bLastMessageVector = true;
+                        break;
+                    }
+                }
+
+                foreach (String EQ in lstEQInMessagesDB)
+                {
+                    String sEQ = compareLexicalNewAlgorithm ? TextSearchFilterNew_Filter(EQ.Substring(EQ.IndexOf("|@!") + 3).ToLower()) : TextSearchFilter(GetMessageTextWOMarker(EQ.Substring(EQ.IndexOf("|@!") + 3)).ToLower());
+                    if (sEQ.Length > 0)
+                    {
+                        double dW = 0;
+                        if (compareLexicalNewAlgorithm)
+                        {
+                            double dWeqv = 0;
+                            String[] EQV = makeEQInTextVariants(sEQ);// sEQ.Split('~');
+
+                            foreach (String EQW in EQV)
+                            {
+                                if (TextSearchFilterNew_FindWord(sRQ, EQW))
+                                    dWeqv += TextSearchNew_WordCount(EQW);
+                            }
+                            dW = Math.Round(dWeqv * 100 / RQVwc);
+                        }
+                        else
+                        {
+                            double dWrqv = 0;
+                            double dWeqv = 0;
+                            String[] EQV = sEQ.Split(' ');
+                            int EQVwc = EQV.Length;
+
+                            foreach (String RQW in RQV)
+                                foreach (String EQW in EQV)
+                                    if (RQW == EQW) { dWrqv += 1; break; }
+
+                            foreach (String EQW in EQV)
+                                foreach (String RQW in RQV)
+                                    if (RQW == EQW) { dWeqv += 1; break; }
+
+                            dW = Math.Round((dWrqv * dWeqv * 100.0) / (EQVwc * RQVwc));
+                        }
+                        if (dW > 0)
+                        {
+                            double dW1 = 100.0;
+                            dWtheme = 100;
+                            double dWthemeMax = getThemeKoefToLexicalVectorCompare();
+
+                            if (bLastMessageVector) dW1 = Compare2Vector(sLastMessageVector, EQ, false);
+                            if (adbrCurrent.UseSetKoefWithLexicalCompare)
+                                dW *= dWtheme / 100;
+                            String value = ((int)dW).ToString("000").Substring(0, 3);
+
+                            //dW = dW * dW1 / 100.0;
+                            //---
+                            dW = 2 * dWtheme * dW * dW1 / (100.0 * dWthemeMax);
+
+                            //---
+                            if (dW > dCompareLexicalLevel)
+                            {
+                                String EQText = EQ.Substring(EQ.IndexOf("|") + 1);
+                                EQText = EQText.Substring(0, EQText.IndexOf("|@!"));
+                                String[] OQV = EQText.ToLower().Split('|');
+
+                                value = ((int)dW).ToString("000").Substring(0, 3) + value + FormatMsgID(OQV[MSG_ID_COLUMN]) + "|" + EQ.Substring(EQ.IndexOf("|") + 1);
+                                messagesList.Add(value);
+                            }
+                        }
+                    }
+                }
+            }
+            messagesList = messagesList.OrderByDescending(i => i).ToList();
+			var messages = new List<MessageInList>();
+			for (var i = 0; i < messagesList.Count; i++)
+			{
+				var msg = new MessageInList();
+				msg.ParseMessageFields(messagesList[i]);
+                msg.ZEROS = "000000";
+                messages.Add(msg);
+			}
+			return messages;
+        }
+
+
+        private String highlightKeywords(String text, String[] words)
 		{
 			String result = " " + text.ToLower();
 			String search = " " + text.ToLower() + " ";
@@ -11319,6 +12024,55 @@ namespace Nilsa
 			StartAnswerTimer();
 		}
 
+		private void AddEQInMessageParametersValuesHiddenForm(String sText)
+		{
+			// manual set timers
+			//StopAnswerTimer();
+			FormEditMsgValues fe = new FormEditMsgValues(this);
+			fe.Visible = false;
+			fe.Text += " " + "Сообщения Контактера";
+			fe.sPersHar = new String[iMsgHarCount, iMsgHarAttrCount + 1];
+			for (int i = 0; i < iMsgHarCount; i++)
+			{
+				for (int j = 0; j < iMsgHarAttrCount; j++)
+					fe.sPersHar[i, j] = sMsgHar[i, j];
+				fe.sPersHar[i, iMsgHarAttrCount] = sMsgHar[i, 3];//(i > 0 ? "" : sMsgHar[i, 3]);
+			}
+			fe.sPersHar[MSG_ID_COLUMN, iMsgHarAttrCount] = (iMsgINMaxID + 1).ToString();
+
+			fe.iPersHarAttrCount = iMsgHarAttrCount;
+			fe.iPersHarCount = iMsgHarCount;
+			fe.textBox1.Text = NilsaUtils.StringToText(sText);
+			fe.comboBox2.SelectedIndex = 0;
+			fe.Setup();
+
+			//fe.ShowDialog();
+			fe.DialogResult = DialogResult.OK;
+
+			String sMsgNewRec = "000000|";
+			for (int i = 0; i < iMsgHarCount; i++)
+			{
+				sMsgHar[i, 3] = fe.sPersHar[i, iMsgHarAttrCount].Trim();
+				sMsgNewRec = sMsgNewRec + fe.sPersHar[i, iMsgHarAttrCount] + "|";
+			}
+
+			sMsgNewRec = sMsgNewRec + "@!" + NilsaUtils.TextToString(fe.textBox1.Text) + (fe.comboBox2.SelectedIndex > 0 ? ("|!*#0" + Convert.ToString(fe.comboBox2.SelectedIndex)) : "");
+
+			if (!hashsetEQInMessagesDB.Contains(sMsgNewRec))
+			{
+				lstEQInMessagesDB.Add(sMsgNewRec);
+				hashsetEQInMessagesDB.Add(sMsgNewRec);
+				SaveEQInMessageDB();
+				iMsgINMaxID++;
+				NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+			}
+			UndoMarkerChanges();
+			SetEQInMessageList(labelInMsgHarTitleValue_Text);
+
+			//StartAnswerTimer();
+		}
+
+
 		private void EditEQInMessageParametersValues(String sMessage, String sMarker)
 		{
 			// manual set timers
@@ -11555,8 +12309,8 @@ namespace Nilsa
 				lstReceivedMessages.Add(lstReceivedMessages[0]);
 
 			SelectNextReceivedMessage();
-			if (!timerAnswerWaiting.Enabled)
-				timerAnswerWaitingOn();
+			/*if (!timerAnswerWaiting.Enabled)
+				timerAnswerWaitingOn();*/
 		}
 
 		public String SetMessageFields(String message)
@@ -11568,9 +12322,9 @@ namespace Nilsa
 			retval = retval.Replace("#firstname#", labelCont1Name.Text);
 			retval = retval.Replace("#lastname#", labelCont1Family.Text);
 			retval = retval.Replace("#name#", (labelCont1Name.Text + " " + labelCont1Family.Text).Trim());
-            retval = retval.Replace("#CONTACTER_MESSAGE#", labelInMsgHarTitleValue_Text);
+			retval = retval.Replace("#CONTACTER_MESSAGE#", labelInMsgHarTitleValue_Text);
 
-            retval = retval.Replace("#firstname_persone#", labelPers1Name.Text);
+			retval = retval.Replace("#firstname_persone#", labelPers1Name.Text);
 			retval = retval.Replace("#lastname_persone#", labelPers1Family.Text);
 			retval = retval.Replace("#name_persone#", (labelPers1Name.Text + " " + labelPers1Family.Text).Trim());
 
@@ -11593,8 +12347,11 @@ namespace Nilsa
 		{
 			//mFormMain.lstOutgoingMessages.Add("*#|" + comboBox1.SelectedIndex.ToString() + "|" + uid + "|" + uname + "|" + SetMessageFields(text.Trim(), uname));
 			if (_iGroupAnswerID < 0)
-				lstOutgoingMessages.Insert(0, "*#|" + channel + "|" + uid + "|" + uname + "|" + SetMessageFields(NilsaUtils.TextToString(text.Trim())));
-			else
+			{
+                lstOutgoingMessages.Insert(0, "*#|" + channel + "|" + uid + "|" + uname + "|" + SetMessageFields(NilsaUtils.TextToString(text.Trim())));
+                //addToHistory(iPersUserID, Convert.ToInt64(uid), true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), SetMessageFields(NilsaUtils.TextToString(text.Trim())));
+            }
+            else
 				lstOutgoingMessages.Insert(0, "*#|4|" + Convert.ToString(_iGroupAnswerID) + "/" + Convert.ToString(_iGroupAnswerPostID) + "/" + Convert.ToString(_iGroupAnswerCommentID) + "/" + uid + "|" + uname + "|" + SetMessageFields(NilsaUtils.TextToString(text.Trim())));
 
 		}
@@ -11623,7 +12380,7 @@ namespace Nilsa
 					sCurUserPrevGroupAnswerID = "-1";
 					sCurUserPrevGroupAnswerPostID = "-1";
 					sCurUserPrevGroupAnswerCommentID = "-1";
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
 				}
 			}
 		}
@@ -11905,23 +12662,23 @@ namespace Nilsa
 					userID = lstPersoneChange[i + 1];
 					break;
 				}
-                else if (lstPersoneChange[i] == userID && i == (lstPersoneChange.Count - 1))
-                {
-                    userID = lstPersoneChange[0];
-                    break;
-                }
-            }
-            var localLogin = PersonenList_GetUserField(userID, 2);
-            var localPassword = PersonenList_GetUserField(userID, 3);
-            Setup(localLogin, localPassword, userID);
+				else if (lstPersoneChange[i] == userID && i == (lstPersoneChange.Count - 1))
+				{
+					userID = lstPersoneChange[0];
+					break;
+				}
+			}
+			var localLogin = PersonenList_GetUserField(userID, 2);
+			var localPassword = PersonenList_GetUserField(userID, 3);
+			Setup(localLogin, localPassword, userID);
 		}
 
 		private void tbSendOutMessage_Click(object sender, EventArgs e)
 		{
-			tbSendOutMessageAction();
+			SendOutMessageAction();
 		}
 
-		private void tbSendOutMessageAction()
+		private void SendOutMessageAction()
 		{
 			if (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0)
 			{
@@ -11993,17 +12750,13 @@ namespace Nilsa
 					ApplyEQOutMessageMarker();
 					SaveLastMessage();
 					// todo: команды: update_cont_photo; update_cont_name; update_pers_friendscount;update_cont_friendscount
-					if ((cmd_line.StartsWith("like_")) || (cmd_line.StartsWith("authorize_vk"))  || (cmd_line.StartsWith("join_community")) || 
-						(cmd_line.StartsWith("remove_delayed_messages")) || (cmd_line.StartsWith("command1_operator")) || 
-						(cmd_line.StartsWith("save_contacter")) || (cmd_line.StartsWith("load_contacter")) || (cmd_line.StartsWith("command2_operator")) || 
-						(cmd_line.StartsWith("command3_operator")) || (cmd_line.StartsWith("repost_ava")) || (cmd_line.StartsWith("send_operator")) || 
-						(cmd_line.StartsWith("info_operator")) || (cmd_line.StartsWith("resend_operator")) || (cmd_line.StartsWith("leave_community")) || 
-						(cmd_line.StartsWith("repost_wall")) || (cmd_line.StartsWith("repost_group")) || (cmd_line.StartsWith("like_wall")) || 
-						(cmd_line.StartsWith("like_group")) || (cmd_line.StartsWith("friends_add")) || (cmd_line.StartsWith("friends_delete")) || (cmd_line.StartsWith("next_person"))
-                        /*(cmd_line.StartsWith("update_pers_photo")) || (cmd_line.StartsWith("update_pers_name")) || (cmd_line.StartsWith("update_cont_name")) || 
-						(cmd_line.StartsWith("update_cont_photo")) || (cmd_line.StartsWith("update_pers_friendscount")) || (cmd_line.StartsWith("update_cont_friendscount")) || 
-						(cmd_line.StartsWith("loadpersonetinder")) || (cmd_line.StartsWith("phoneauthorization")) || (cmd_line.StartsWith("authorizetinder")) ||
-						(cmd_line.StartsWith("emailauthorization")) || (cmd_line.StartsWith("checkauthorization"))*/)
+					if (cmd_line.StartsWith("like_") || cmd_line.StartsWith("authorize_vk")  || cmd_line.StartsWith("join_community") || 
+						cmd_line.StartsWith("remove_delayed_messages") || cmd_line.StartsWith("command1_operator") || 
+						cmd_line.StartsWith("save_contacter") || cmd_line.StartsWith("load_contacter") || cmd_line.StartsWith("command2_operator") || 
+						cmd_line.StartsWith("command3_operator") || cmd_line.StartsWith("repost_ava") || cmd_line.StartsWith("send_operator") || 
+						cmd_line.StartsWith("info_operator") || cmd_line.StartsWith("resend_operator") || cmd_line.StartsWith("leave_community") || 
+						cmd_line.StartsWith("repost_wall") || cmd_line.StartsWith("repost_group") || cmd_line.StartsWith("like_wall") || 
+						cmd_line.StartsWith("like_group") || cmd_line.StartsWith("friends_add") || cmd_line.StartsWith("friends_delete") || cmd_line.StartsWith("next_person"))
 					{
 						if (cmd_line.StartsWith("remove_delayed_messages")) // Done!
 						{
@@ -12018,26 +12771,28 @@ namespace Nilsa
 							if (bStatusService)
 								StartService();
 						}
-                        else if (cmd_line.StartsWith("next_person"))
-                        {
-                            bool bStatusService = !tbStartService.Enabled;
-                            //StopService();
-                            ChangeSocialNetwork(3);
+						else if (cmd_line.StartsWith("next_person"))
+						{
+							bool bStatusService = !tbStartService.Enabled;
+							//StopService();
+							ChangeSocialNetwork(3);
 							lstReceivedMessages.RemoveAt(0);
 							needActivation = true;
-							if (lstPersoneChange.Count <= 1)
+							SaveReceivedMessagesPull();
+							SaveOutgoingMessagesPull();
+							if (lstPersoneChange.Count <= 0)
 							{
 								StopService();
 								Setup(userLogin, userPassword, userID);
 								StartService();
 							}
 							else
-                            {
-                                onChangePersoneByTimer(true, true);
-                            }
-                            //SetNextPersonInRotation();
-                        }
-                        else if (cmd_line.StartsWith("authorize_vk")) 
+							{
+								onChangePersoneByTimer(true, true);
+							}
+							//SetNextPersonInRotation();
+						}
+						else if (cmd_line.StartsWith("authorize_vk")) 
 						{
 							bool bStatusService = !tbStartService.Enabled;
 							StopService();
@@ -13435,7 +14190,7 @@ namespace Nilsa
 
 				if (lstOutgoingMessagesParts.Count > 0)
 				{
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
 
 					//Random rnd = new Random();
 					//TimerPhysicalSendCycle = rnd.Next(1, DefaultTimerPhysicalSendCycle);
@@ -13459,398 +14214,1745 @@ namespace Nilsa
 				}
 				else
 				{
-					timerPhysicalSendStart();
-					//отправляем текст сообщения с подстановкой характеристик персонажа и контактера
-
-					if (checkMessageIgnor == 0)
-					{
-                        var emptyInMes = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
-                        var emptyOuyMes = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
-                        webBrowserInMessageText.DocumentText = emptyInMes;
-                        webBrowserOutEqMessageText.DocumentText = emptyOuyMes;
-						if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-						needSelectNextMessage = true;
-                        //return; //не оптарвляем сообщение, если стоит игнор
-                    }
-					else
-					{
-                        _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
-                        //stop timers add red line
-                        //stopTimers();
-                        ShowBrowserCommand();
-                        //добавляем в историю сообщения от The System и ответов персонажа
-                        if (iContUserID == theSystemContacter.ContID)
-                        {
-                            var outMsg = SetMessageFields(labelOutEqMsgHarTitleValue_Text);
-                            outMsg = outMsg.Replace("\r\n", " ");
-                            outMsg = outMsg.Replace("<br>", "");
-
-                            var inMsg = SetMessageFields(labelInMsgHarTitleValue_Text);
-                            inMsg = inMsg.Replace("\r\n", " ");
-                            inMsg = inMsg.Replace("<br>", "");
-
-                            addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), inMsg);
-                            addToHistory(iPersUserID, iContUserID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), outMsg);
-                            ReadAllUserMessages(iPersUserID, iContUserID);
-                        }
-						//убираем отправленное из списка ВОЗМОЖНО НУЖНО УБИРАТЬ ТОЛЬКО ЕСЛИ ОТВЕТ ОТ ИНТЕРФЕЙСА УСПЕШНЫЙ
-                        if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-
-                        //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
-                        var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
-                        var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
-                        webBrowserInMessageText.DocumentText = emptyInMessage;
-                        webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
-
-                        timerAnswerWaitingOn();
-                        //Получение и распаковка ответа от интерфейса
-                        var response = _interfaceListener.NilsaReadFromResponseFile();
-                        responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(response);
-                        needSelectNextMessage = true;
-                        ResponseFindRightAction(responseInterface);
-                        HideBrowserCommand();
-                    }
-                    
-					if (needSelectNextMessage) SelectNextReceivedMessage(false);
-                }
-
-                //timerAnswerWaitingOn();
+                    //timerPhysicalSendStart();
+                    addToHistory(iPersUserID, iContUserID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), labelInMsgHarTitleValue_Text/*labelOutEqMsgHarTitleValue_Text*/);
+                    SelectNextReceivedMessage();
+				}
+				//timerAnswerWaitingOn();
 			}
 		}
+
+
+		private async void timerOutgoingPull_Tick(object sender, EventArgs e)
+		{
+			var path = _interfaceListener.SetPathConfig();
+			if (!File.Exists(Path.Combine(path.PathNilsa, path.FileFlag)) && lstOutgoingMessages.Count > 0)
+			{
+				var lastIndex = lstOutgoingMessages.Count - 1;
+				var msg = lstOutgoingMessages[lastIndex];
+				lstOutgoingMessages.RemoveAt(lastIndex);
+				var msgParts = OutgoingMsgParser(msg);
+				await _interfaceListener.NilsaWriteToRequestFile($"{msgParts.Message}\nId: {iPersUserID}");
+				if (msgParts.Message.Length > 0)
+				{
+					cntE1++;
+					cntE2++;
+					cntE7++;
+					cntE8++;
+					SaveProgramCountersE1E2E3();
+					UpdateProgramCountersInfoE1E2E3();
+
+					cntE4++;
+					cntE5++;
+					SaveProgramCountersE4E5E6();
+					UpdateProgramCountersInfoE4E5E6();
+				}
+				await addToHistoryAsync(iPersUserID, theSystemContacter.ContID, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), msgParts.Message);
+				SaveOutgoingMessagesPull();
+				ReadAllUserMessages(iPersUserID, msgParts.ContacterId);
+				await _interfaceListener.NilsaCreateFlag();
+			}
+
+			#region убрано в задача 75 03.06.2023
+			// убрано в задача 75 timerPhysicalSendStop();
+
+			//if (lstOutgoingMessages.Count > 0)
+			//{
+			//	bool bErrorParsing = false;
+			//	String srec = lstOutgoingMessages[0];
+			//	lstOutgoingMessages.RemoveAt(0);
+			//	long contid = 0;
+			//	long _iGroupAnswerID = -1;
+			//	long _iGroupAnswerPostID = -1;
+			//	long _iGroupAnswerCommentID = -1;
+			//	String message = "";
+			//	long channel = 0; // 0 - ЛС, 1 - стена
+			//	string name = "";
+			//	try
+			//	{
+			//		if (srec.StartsWith("*#|"))
+			//		{
+			//			message = srec.Substring(srec.IndexOf("|") + 1);
+			//			channel = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
+			//			message = message.Substring(message.IndexOf("|") + 1);
+			//			if (channel == 4)
+			//			{
+			//				string strUsrId = message.Substring(0, message.IndexOf("|"));
+			//				//Convert.ToString(_ownerId)+"/"+ Convert.ToString(_postId) + "/"+ Convert.ToString(msg.Id) + "/" + Convert.ToString(msg.FromId) + "|";
+			//				_iGroupAnswerID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+			//				strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+			//				_iGroupAnswerPostID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+			//				strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+			//				_iGroupAnswerCommentID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
+			//				strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
+			//				contid = Convert.ToInt64(strUsrId);
+
+			//			}
+			//			else
+			//				contid = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
+
+			//			message = message.Substring(message.IndexOf("|") + 1);
+			//			name = message.Substring(message.IndexOf("|") + 1);
+			//			message = message.Substring(message.IndexOf("|") + 1);
+
+			//			if (contid < 0 && channel == 0)
+			//			{
+			//				contid = -contid;
+			//				channel = 3;
+			//			}
+
+			//		}
+			//		else
+			//		{
+			//			contid = Convert.ToInt64(srec.Substring(0, srec.IndexOf("|")));
+			//			message = srec.Substring(srec.IndexOf("|") + 1);
+			//			message = message.Substring(message.IndexOf("|") + 1);
+			//		}
+			//	}
+			//	catch (Exception exp)
+			//	{
+			//		bErrorParsing = true;
+			//		ExceptionToLogList("timerOutgoingPull_Tick Parsing srec error", contid.ToString() + ", " + srec, exp);
+			//	}
+			//	finally { }
+
+			//	if (!bErrorParsing)
+			//	{
+			//		/*
+			//		bool bNotDelayed = true;
+			//		if (message.IndexOf("time_delay:") >= 0)
+			//		{
+			//			bNotDelayed = false;
+			//			String timeDelay = message.Substring(message.IndexOf("time_delay:") + 11).Trim();
+
+			//			int iDelayType = 1;
+			//			if (timeDelay.EndsWith("min"))
+			//			{
+			//				iDelayType = 0;
+			//				timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("min")).Trim();
+			//			}
+			//			else if (timeDelay.EndsWith("hour"))
+			//			{
+			//				iDelayType = 1;
+			//				timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("hour")).Trim();
+			//			}
+			//			else if (timeDelay.EndsWith("day"))
+			//			{
+			//				iDelayType = 2;
+			//				timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("day")).Trim();
+			//			}
+
+			//			int iDelay = -1;
+			//			try
+			//			{
+			//				iDelay = Convert.ToInt32(timeDelay);
+			//			}
+			//			catch
+			//			{
+			//				iDelay = -1;
+			//			}
+
+			//			if (iDelay >= 0)
+			//			{
+			//				String text = srec.Substring(0, srec.IndexOf("time_delay:"));
+			//				DateTime dtDelay = DateTime.Now;
+			//				if (iDelayType == 0)
+			//					dtDelay = dtDelay.AddMinutes((double)iDelay);
+			//				else if (iDelayType == 1)
+			//					dtDelay = dtDelay.AddHours((double)iDelay);
+			//				else if (iDelayType == 2)
+			//					dtDelay = dtDelay.AddDays((double)iDelay);
+
+			//				lstOutgoingMessagesDelayed.Add(dtDelay.ToBinary().ToString() + "|" + text);
+			//				SaveOutgoingDelayedMessagesPull();
+			//			}
+			//		}
+			//		*/
+
+			//		if (((message.Length > 0) || (channel == 2))/* && bNotDelayed*/)
+			//		{
+			//			cntE1++;
+			//			cntE2++;
+			//			cntE7++;
+			//			cntE8++;
+			//			SaveProgramCountersE1E2E3();
+			//			UpdateProgramCountersInfoE1E2E3();
+
+			//			cntE4++;
+			//			cntE5++;
+			//			SaveProgramCountersE4E5E6();
+			//			UpdateProgramCountersInfoE4E5E6();
+
+			//			if (SocialNetwork == 0)
+			//			{
+			//				try
+			//				{
+			//					if (channel == 0)
+			//					{
+			//						string attachlist = null;
+			//						if (message.IndexOf("attach:") >= 0)
+			//						{
+			//							attachlist = message.Substring(message.IndexOf("attach:") + 7);
+			//							if (attachlist.Length == 0)
+			//								attachlist = null;
+			//						}
+
+			//						if (attachlist == null)
+			//						{
+			//							apiMessagesSend(contid, false, message);
+			//						}
+			//						else
+			//							apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, null, null, attachlist);
+			//					}
+			//					else if (channel == 1)
+			//					{
+			//						/*
+			//						string attachlist = null;
+			//						if (message.IndexOf("wallattach:") >= 0)
+			//						{
+			//							attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
+			//							if (attachlist.Length == 0)
+			//								attachlist = null;
+			//						}
+
+			//						if (attachlist == null)
+			//						{
+			//							//api.Messages.Send(contid, false, message);
+			//							api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message));
+			//						}
+			//						else
+			//							api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, null, null, attachlist);
+			//							*/
+			//					}
+			//					else if (channel == 2)
+			//					{
+			//						//api.Friends.Add(contid, message);
+			//						apiFriendsAdd(contid, false, message);
+			//					}
+			//					else if (channel == 3)
+			//					{
+			//						/*
+			//						string attachlist = null;
+			//						List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+			//						string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+			//						if (msgrealtext.IndexOf("attach:") >= 0)
+			//						{
+			//							attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+			//							if (attachlist.Length == 0)
+			//								attachlist = null;
+			//						}
+
+			//						long postId = -1;
+			//						if (attachlist == null)
+			//						{
+			//							postId = api.Wall.Post(-contid, false, false, msgrealtext);
+			//						}
+			//						else
+			//							postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
+
+			//						if (postId >= 0)
+			//						{
+			//							Wall_AddPostToMonitoring(contid, postId);
+
+			//							if (listAdditionalPersonen.Count > 0)
+			//							{
+			//								DBPersonListItem personListItem = listAdditionalPersonen[0];
+			//								listAdditionalPersonen.RemoveAt(0);
+			//								putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
+
+			//								if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+			//									Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
+			//							}
+			//						}
+			//						*/
+			//					}
+			//					else if (channel == 4)
+			//					{
+			//						/*
+			//						string attachlist = null;
+			//						List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+			//						string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+			//						if (msgrealtext.IndexOf("attach:") >= 0)
+			//						{
+			//							attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+			//							if (attachlist.Length == 0)
+			//								attachlist = null;
+			//						}
+
+			//						long postId = -1;
+			//						if (attachlist == null)
+			//						{
+			//							if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+			//								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext);
+			//							else
+			//								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID);
+			//						}
+			//						else
+			//						{
+			//							if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+			//								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
+			//							else
+			//								postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist);
+			//						}
+
+			//						if (postId >= 0)
+			//						{
+			//							if (listAdditionalPersonen.Count > 0)
+			//							{
+			//								DBPersonListItem personListItem = listAdditionalPersonen[0];
+			//								listAdditionalPersonen.RemoveAt(0);
+			//								putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
+
+			//								if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+			//									Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
+			//							}
+			//						}
+			//						*/
+			//					}
+			//				}
+			//				/*
+			//				catch (VkNet.Exception.CaptchaNeededException ex)
+			//				{
+			//					bool bStatusService = !tbStartService.Enabled;
+			//					tbStopService_Click(null, null);
+
+			//					long? captcha_sid = ex.Sid;
+			//					string captcha_key = null;
+			//					Uri imguri = ex.Img;
+			//					bool bCycle = true;
+			//					do
+			//					{
+			//						var form = new FormCaptcha(this, imguri, captcha_sid);
+			//						DialogResult dr = DialogResult.Cancel;
+			//						try
+			//						{
+			//							dr = form.ShowDialog();
+			//						}
+			//						catch
+			//						{
+			//							dr = DialogResult.Cancel;
+			//						}
+			//						if (dr == DialogResult.OK)
+			//						{
+			//							captcha_key = form.CaptchaKey.Text;
+			//							//---
+			//							try
+			//							{
+			//								if (channel == 0)
+			//								{
+			//									string attachlist = null;
+			//									if (message.IndexOf("attach:") >= 0)
+			//									{
+			//										attachlist = message.Substring(message.IndexOf("attach:") + 7);
+			//										if (attachlist.Length == 0)
+			//											attachlist = null;
+			//									}
+
+			//									if (attachlist == null)
+			//									{
+			//										apiMessagesSend(contid, false, message, "", null, null, false, null, null, null, captcha_sid, captcha_key);
+			//									}
+			//									else
+			//										apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, captcha_sid, captcha_key, attachlist);
+			//								}
+			//								else if (channel == 1)
+			//								{
+			//									//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
+			//									//bCycle = false;
+			//									string attachlist = null;
+			//									if (message.IndexOf("wallattach:") >= 0)
+			//									{
+			//										attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
+			//										if (attachlist.Length == 0)
+			//											attachlist = null;
+			//									}
+
+			//									if (attachlist == null)
+			//									{
+			//										//api.Messages.Send(contid, false, message);
+			//										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
+			//									}
+			//									else
+			//										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key, attachlist);
+			//								}
+			//								else if (channel == 2)
+			//								{
+			//									api.Friends.Add(contid, message, captcha_sid, captcha_key);
+			//								}
+			//								else if (channel == 3)
+			//								{
+			//									string attachlist = null;
+			//									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+			//									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+			//									if (msgrealtext.IndexOf("attach:") >= 0)
+			//									{
+			//										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+			//										if (attachlist.Length == 0)
+			//											attachlist = null;
+			//									}
+
+			//									long postId = -1;
+			//									if (attachlist == null)
+			//									{
+			//										postId = api.Wall.Post(-contid, false, false, msgrealtext, null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
+			//									}
+			//									else
+			//										postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, null, false, null, null, null, null, null, captcha_sid, captcha_key);
+
+			//									if (postId >= 0)
+			//									{
+			//										Wall_AddPostToMonitoring(contid, postId);
+
+			//										if (listAdditionalPersonen.Count > 0)
+			//										{
+			//											DBPersonListItem personListItem = listAdditionalPersonen[0];
+			//											listAdditionalPersonen.RemoveAt(0);
+			//											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
+
+			//											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+			//												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
+			//										}
+			//									}
+
+			//								}
+			//								else if (channel == 4)
+			//								{
+			//									string attachlist = null;
+			//									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
+			//									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
+			//									if (msgrealtext.IndexOf("attach:") >= 0)
+			//									{
+			//										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
+			//										if (attachlist.Length == 0)
+			//											attachlist = null;
+			//									}
+
+			//									if (attachlist == null)
+			//									{
+			//										api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
+			//									}
+			//									else
+			//										api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
+
+			//									long postId = -1;
+			//									if (attachlist == null)
+			//									{
+			//										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+			//											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, null, null, captcha_sid, captcha_key);
+			//										else
+			//											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
+			//									}
+			//									else
+			//									{
+			//										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
+			//											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, captcha_sid, captcha_key);
+			//										else
+			//											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
+			//									}
+
+			//									if (postId >= 0)
+			//									{
+			//										if (listAdditionalPersonen.Count > 0)
+			//										{
+			//											DBPersonListItem personListItem = listAdditionalPersonen[0];
+			//											listAdditionalPersonen.RemoveAt(0);
+			//											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
+
+			//											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
+			//												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
+			//										}
+			//									}
+
+			//								}
+			//								bCycle = false;
+			//							}
+			//							catch (VkNet.Exception.CaptchaNeededException ex1)
+			//							{
+			//								captcha_sid = ex1.Sid;
+			//								imguri = ex1.Img;
+			//							}
+			//							catch (VkNet.Exception.AccessTokenInvalidException atiexp)
+			//							{
+			//								ReAutorize(userLogin, userPassword);
+			//								lstOutgoingMessages.Add(srec);
+			//								bCycle = false;
+			//							}
+			//							catch (System.Net.WebException)
+			//							{
+			//								ReAutorize(userLogin, userPassword);
+			//								lstOutgoingMessages.Add(srec);
+			//								bCycle = false;
+			//							}
+			//							catch (VkNet.Exception.VkApiException vkexpapi)
+			//							{
+			//								if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
+			//								{
+			//									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+			//									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+			//								}
+			//								else if (vkexpapi as VkNet.Exception.PostLimitException != null)
+			//								{
+			//									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+			//									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+			//								}
+			//								else if (vkexpapi.Message != null)
+			//								{
+			//									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+			//									if (vkexpapi.Message.IndexOf("Flood control") < 0)
+			//									{
+			//										GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+			//									}
+			//									if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
+			//									{
+			//										ReAutorize(userLogin, userPassword);
+			//										lstOutgoingMessages.Add(srec);
+			//									}
+			//								}
+			//								else
+			//								{
+			//									ReAutorize(userLogin, userPassword);
+			//									lstOutgoingMessages.Add(srec);
+			//								}
+			//								bCycle = false;
+			//							}
+			//							catch (Exception exp)
+			//							{
+			//								//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
+			//								ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
+			//							}
+			//							//---
+			//						}
+			//						else
+			//						{
+			//							GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
+			//							//ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, "VkNet.Exception.CaptchaNeededException");
+			//							bCycle = false;
+			//						}
+			//					}
+			//					while (bCycle);
+
+			//					if (bStatusService)
+			//						StartService();
+			//				}
+			//				catch (VkNet.Exception.AccessTokenInvalidException atiexp)
+			//				{
+			//					ReAutorize(userLogin, userPassword);
+			//					lstOutgoingMessages.Add(srec);
+			//				}
+			//				catch (System.Net.WebException)
+			//				{
+			//					ReAutorize(userLogin, userPassword);
+			//					lstOutgoingMessages.Add(srec);
+			//				}
+			//				catch (VkNet.Exception.VkApiException vkexpapi)
+			//				{
+			//					if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
+			//					{
+			//						GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+			//						ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+			//					}
+			//					else if (vkexpapi as VkNet.Exception.PostLimitException != null)
+			//					{
+			//						GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+			//						ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+			//					}
+			//					else if (vkexpapi.Message != null)
+			//					{
+			//						ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
+			//						if (vkexpapi.Message.IndexOf("Flood control") < 0)
+			//						{
+			//							GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
+			//						}
+			//						if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
+			//						{
+			//							ReAutorize(userLogin, userPassword);
+			//							lstOutgoingMessages.Add(srec);
+			//						}
+			//					}
+			//					else
+			//					{
+			//						ReAutorize(userLogin, userPassword);
+			//						lstOutgoingMessages.Add(srec);
+			//					}
+
+			//				}
+			//				*/
+			//				catch (Exception exp)
+			//				{
+			//					//lstOutgoingMessages.Add(srec);
+			//					GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
+			//					ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
+			//				}
+			//				finally { }
+
+			//				// 2019-04-13
+			//				if ((channel == 0 || channel == 4) && contid == iContUserID && iContUserID != -1)
+			//					ReadAllUserMessages(iPersUserID,iContUserID);
+			//			}
+			//			else if (SocialNetwork == 1)
+			//			{
+			//				NILSA_SendMessage(iPersUserID, contid, message);
+			//			}
+			//		}
+			//	}
+			//	//--
+			//}
+
+			//if (!tbStartService.Enabled && lstOutgoingMessages.Count > 0)
+			//{
+			//	timerPhysicalSendStart();
+			//}
+			#endregion
+		}
+
+		private void CheckIfActiveInMsgEmpty()
+		{
+			if (lstReceivedMessages.Count > 0 && String.IsNullOrWhiteSpace(labelInEqMsgHarTitleValue_Text))
+			{
+				SelectNextReceivedMessage(false);
+			}
+		}
+
+		private async void TimerReadFromInterface_Tick(object sender, EventArgs e)
+		{
+			var path = _interfaceListener.SetPathConfig();
+			if (File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)))
+			{
+				try
+				{
+					//isTimerReadNewMessagesFinished = false;
+					var response = _interfaceListener.NilsaReadFromResponseFile();
+					responseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(await response);
+					needSelectNextMessage = true;
+					ResponseFindRightAction2(responseInterface);
+
+					//StopService();
+					//StartService();
+					await _interfaceListener.NilsaDeleteFlag();
+					SelectNextReceivedMessage(false);
+				}
+				catch (Exception exp)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", exp);
+				}
+			}
+			//else if (!timerReadMessages.Enabled && !timerAnswerWaiting.Enabled && !timerAnswerWaiting.Enabled) CheckIfActiveInMsgEmpty();
+		}
+
+
 		/// <summary>
 		/// Обработка ответа от интерфейса. Подбор нужного действия
 		/// </summary>
 		/// <param name="responseInterface"></param>
-		private void ResponseFindRightAction(List<TinderResponse> responseInterface)
+		private void ResponseFindRightAction2(List<TinderResponse> responseInterface)
 		{
-            foreach (var resp in responseInterface)
-            {
-                var localPersId = resp.ID;
-                var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+			foreach (var resp in responseInterface)
+			{
+				var localPersId = resp.ID;
+				var localContId = iContUserID; //если в ответе от интерфейса будет пусто
 
-                if (resp.CONTACTER != null)
-                {
-                    localContId = GetContactIdByParametrValue(6, resp.CONTACTER,localPersId);
+				if (resp.CONTACTER != null)
+				{
+					localContId = GetContactIdByParametrValue(6, resp.CONTACTER, localPersId);
+				}
 
-                }
+				if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+				{
+					resp.TEXT = resp.TEXT.Replace("\r\n", " ");
+					resp.TEXT = resp.TEXT.Replace("\n", " ");
 
-                if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
-                {
-                    addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-                    if (iPersUserID == localPersId) ReadAllUserMessages(localPersId, localContId);
-                }
-                else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
-                {
-                    foreach (var newmessage in resp.DATA)
-                    {
-                        if (newmessage.UNREAD_COUNT == 0 || newmessage.MESSAGES == null) continue;
-                        timerAnswerWaitingOff();//testing
-                        localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER, localPersId);
-                        //реализация добавления контактера в БД по настройке алгоритма
-                        if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
-                        {
-                            localContId = FindFreeIndex(lstContactsList);
-                            var userRec = $"{localContId}||";
-                            lstContactsList.Add(userRec);
-                            FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
-                            ContactsList_Load();
-                            //загрузка характеристик конкретного алгоритма
-                            var lstContHarAlgValues = new List<String>();
-                            if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
-                            {
-                                var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
-                                lstContHarAlgValues = new List<String>(srcFile);
-                            }
+					addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT.Replace("\n", " "));
+					if (iPersUserID == localPersId) getMessageHistory(localPersId, localContId);
 
-                            for (int i = 0; i < lstContHarAlgValues.Count; i++)
-                            {
-                                lstContHarAlgValues[i] = $"{i + 1}|{lstContHarAlgValues[i]}";
-                            }
+					if (resp.MESSAGES != null)
+					{
+						foreach (var msg in resp.MESSAGES)
+						{
+							if (String.IsNullOrWhiteSpace(msg.TEXT) || localContId <= 0) continue;
 
-                            lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
-                            File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
+							msg.TEXT = msg.TEXT.Replace("\r\n", " ");
+							msg.TEXT = msg.TEXT.Replace("\n", " ");
+
+							if (iPersUserID != localPersId)
+							{
+								SaveAnswerIfPersoneChanged2(localPersId, msg.TEXT, localContId);
+								continue;
+							}
+
+							lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msg.TEXT);
+						}
+					}
+				}
+				else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
+				{
+					foreach (var newmessage in resp.DATA)
+					{
+						localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER, localPersId);
+						if (newmessage.MESSAGES == null) continue;
+						
+						//реализация добавления контактера в БД по настройке алгоритма
+						if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter)
+						{
+							localContId = FindFreeIndex(lstContactsList);
+							var userRec = $"{localContId}||";
+							lstContactsList.Add(userRec);
+							FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+							ContactsList_Load();
+							//загрузка характеристик конкретного алгоритма
+							var lstContHarAlgValues = new List<String>();
+							if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
+							{
+								var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
+								lstContHarAlgValues = new List<String>(srcFile);
+							}
+
+							for (int i = 0; i < lstContHarAlgValues.Count; i++)
+							{
+								lstContHarAlgValues[i] = $"{i + 1}|{lstContHarAlgValues[i]}";
+							}
+
+							lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
+							File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
+						}
+						else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
+						
+						foreach (var msg in newmessage.MESSAGES)
+						{
+							if (String.IsNullOrWhiteSpace(msg.TEXT) || localContId <= 0) continue;
+
+							msg.TEXT = msg.TEXT.Replace("\r\n", " ");
+							msg.TEXT = msg.TEXT.Replace("\n", " ");
+
+							if (iPersUserID != localPersId)
+							{
+								SaveAnswerIfPersoneChanged2(localPersId, msg.TEXT, localContId);
+								continue;
+							}
+							lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msg.TEXT);
+						}
+					}
+				}
+				else if (resp.STATUS == 200 && resp.PATH != null)
+				{
+					if (String.IsNullOrWhiteSpace(resp.PATH)) continue;
+					var folderPath = Path.Combine(Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.FullName, "Interface");
+					var localUrl = Path.Combine(folderPath, resp.PATH);
+					switch (resp.MESSAGE)
+					{
+						case "PERSON GET PHOTO SUCCESS":
+							if (iPersUserID == localPersId)
+							{
+								photoPersURL = localUrl;
+								SetPhoto(true, photoPersURL);
+								SavePersoneParamersValues();
+							}
+							else
+							{
+								if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+								{
+									var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+									var data = pers.Split('|');
+									var localName = data[1];
+									var localSurName = data[2];
+									File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + localSurName + "|" + localUrl, Encoding.UTF8);
+								}
+							}
+							break;
+						case "CONTACTER GET PHOTO SUCCESS":
+							if (iPersUserID == localPersId)
+							{
+								photoContURL = localUrl;
+								SetPhoto(false, photoContURL);
+								try
+								{
+									lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+									File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+								}
+								catch (Exception e)
+								{
+									MessageBox.Show($"Ошибка {e.Message}");
+								}
+							}
+							else
+							{
+								List<string> localContacters;
+								if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+								{
+									try
+									{
+										var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+										localContacters = new List<String>(srcFile);
+										var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+										var data = cont.Split('|');
+										localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + data[1] + "|" + localUrl;
+										File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+									}
+									catch (Exception e) { }
+								}
+							}
+							break;
+					}
+				}
+				else if (resp.STATUS == 200 && resp.FIRST_NAME_PERSONE != null) //получение имени или фамилии персонажа
+				{
+					if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_PERSONE)) continue;
+
+					if (localPersId == iPersUserID)
+					{
+						userNameName = resp.FIRST_NAME_PERSONE;
+						File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+							userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+						dbUserName = "";
+						userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+						SetPersoneParametersValues();
+						PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+					}
+					else
+					{
+						if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+						{
+							var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+							var data = pers.Split('|');
+							//var localName = data[1];
+							var localSurName = data[2];
+							var photo = data[3];
+							File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + resp.FIRST_NAME_PERSONE + "|" + localSurName + "|" + photo, Encoding.UTF8);
+						}
+					}
+				}
+				else if (resp.STATUS == 200 && resp.LAST_NAME_PERSONE != null)
+				{
+					if (String.IsNullOrWhiteSpace(resp.LAST_NAME_PERSONE)) continue;
+
+					if (localPersId == iPersUserID)
+					{
+						userNameFamily = resp.LAST_NAME_PERSONE;
+						File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+							userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+						dbUserName = "";
+						userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+						SetPersoneParametersValues();
+						PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+					}
+					else
+					{
+						if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+						{
+							var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+							var data = pers.Split('|');
+							var localName = data[1];
+							//var localSurName = data[2];
+							var photo = data[3];
+							File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + resp.LAST_NAME_PERSONE + "|" + photo, Encoding.UTF8);
+						}
+					}
+				}
+				else if (resp.STATUS == 200 && resp.FIRST_NAME_CONTACTER != null) //получение имени или фамилии контактера
+				{
+					if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_CONTACTER)) continue;
+
+					if (localPersId == iPersUserID && localContId == iContUserID)
+					{
+						contName = $"{resp.FIRST_NAME_CONTACTER} {contNameFamily}";
+						lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+						SaveContactParamersValues();
+						contNameName = "";
+						contNameFamily = "";
+						SetContactNamesAndPhoto();
+					}
+					else
+					{
+						List<string> localContacters;
+						if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+						{
+							try
+							{
+								var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+								localContacters = new List<String>(srcFile);
+								var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+								var data = cont.Split('|');
+								var names = data[1].Split(' ');
+								names[0] = resp.FIRST_NAME_CONTACTER;
+								var fullName = "";
+								if (names.Length > 1) fullName = names[0] + " " + names[1];
+								else fullName = names[0];
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + fullName + "|" + data[2];
+								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+							}
+							catch (Exception e) { }
+						}
+						if (localPersId == iPersUserID)
+						{
+                            var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                            lstContactsList = new List<String>(srcFile);
                         }
-                        else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
+					}
 
-                        contReceivedMessagesList = new List<UnreadMessage>();
-                        while (newmessage.UNREAD_COUNT > 0)
-                        {
-                            if (newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT == null) continue;
-                            newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
-                            contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
-                            newmessage.UNREAD_COUNT--;
-                        }
-                        SendMessage(localPersId, localContId, contReceivedMessagesList);
-                    }
-                    //timerAnswerWaitingOn();//testing
-                }
-                else if (resp.STATUS == 200 && resp.UNREAD_MESSAGES != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
-                {
-                    //for (int i = resp.UNREAD_MESSAGES.Count() - 1; i >= 0; i--)
-                    //{
-                    //	if (resp.UNREAD_MESSAGES[i].TYPE_STATUS == "text")
-                    //	{
-                    //		addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.UNREAD_MESSAGES[i].TEXT);
-                    //		lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.UNREAD_MESSAGES[i].TEXT);
-                    //		SelectNextReceivedMessage(false);
-                    //		//lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
-                    //	}
-                    //}
-                }
-                else if (resp.STATUS == 200 && resp.PATH != null)
-                {
-                    if (String.IsNullOrWhiteSpace(resp.PATH)) continue;
-                    switch (resp.MESSAGE)
-                    {
-                        case "PERSON GET PHOTO SUCCESS":
-                            if (iPersUserID == localPersId)
-                            {
-                                photoPersURL = resp.PATH;
-                                SetPhoto(true, photoPersURL);
-                                SavePersoneParamersValues();
-                            }
-                            else
-                            {
-                                if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
-                                {
-                                    var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
-                                    var data = pers.Split('|');
-                                    var localName = data[1];
-                                    var localSurName = data[2];
-                                    File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + localSurName + "|" + photoPersURL, Encoding.UTF8);
-                                }
-                            }
-                            break;
-                        case "CONTACTER GET PHOTO SUCCESS":
-                            if (iPersUserID == localPersId)
-                            {
-                                photoContURL = resp.PATH;
-                                SetPhoto(false, photoContURL);
-                                try
-                                {
-                                    lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
-                                    File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
-                                }
-                                catch (Exception e)
-                                {
-                                    MessageBox.Show($"Ошибка {e.Message}");
-                                }
-                            }
-                            else
-                            {
-                                List<string> localContacters;
-                                if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
-                                {
-                                    try
-                                    {
-                                        var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
-                                        localContacters = new List<String>(srcFile);
-                                        var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
-                                        var data = cont.Split('|');
-                                        localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + data[1] + "|" + resp.PATH;
-                                        File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
-                                    }
-                                    catch (Exception e) { }
-                                }
-                            }
-                            break;
-                    }
-                }
-                else if (resp.STATUS == 200 && resp.FIRST_NAME_PERSONE != null) //получение имени или фамилии персонажа
-                {
-                    if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_PERSONE)) continue;
+					/*var mode = -1;
+					if (resp.FIRST_NAME_CONTACTER != null) mode = 0;
+					else if (resp.LAST_NAME_CONTACTER != null) mode = 1;
+					else mode = 3;
 
-                    if (localPersId == iPersUserID)
-                    {
-                        userNameName = resp.FIRST_NAME_PERSONE;
-                        File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
-                            userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
-                        dbUserName = "";
-                        userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
-                        SetPersoneParametersValues();
-                        PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
-                    }
-                    else
-                    {
-                        if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+					switch (mode)
+					{
+						case 0:
+							if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+							else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+							break;
+						case 1:
+							if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+							else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+							break;
+						case 2:
+							if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+							else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+							if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+							else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+							break;
+					}
+
+					lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+					SaveContactParamersValues();
+					contNameName = "";
+					contNameFamily = "";
+					SetContactNamesAndPhoto();*/
+				}
+				else if (resp.STATUS == 200 && resp.LAST_NAME_CONTACTER != null)
+				{
+					if (String.IsNullOrWhiteSpace(resp.LAST_NAME_CONTACTER)) continue;
+
+					if (localPersId == iPersUserID && localContId == iContUserID)
+					{
+						contName = $"{contNameName} {resp.LAST_NAME_CONTACTER}";
+						lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+						SaveContactParamersValues();
+						contNameName = "";
+						contNameFamily = "";
+						SetContactNamesAndPhoto();
+					}
+					else
+					{
+						List<string> localContacters;
+						if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+						{
+							try
+							{
+								var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+								localContacters = new List<String>(srcFile);
+								var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+								var data = cont.Split('|');
+								var names = data[1].Split(' ');
+                                var fullName = names[0] + " " + resp.LAST_NAME_CONTACTER;
+                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + fullName + "|" + data[2]; 
+								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+							}
+							catch (Exception e) { }
+						}
+                        if (localPersId == iPersUserID)
                         {
-                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
-                            var data = pers.Split('|');
-                            //var localName = data[1];
-                            var localSurName = data[2];
-                            var photo = data[3];
-                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + resp.FIRST_NAME_PERSONE + "|" + localSurName + "|" + photo, Encoding.UTF8);
+                            var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+                            lstContactsList = new List<String>(srcFile);
                         }
                     }
-                }
-                else if (resp.STATUS == 200 && resp.LAST_NAME_PERSONE != null)
-                {
-                    if (String.IsNullOrWhiteSpace(resp.LAST_NAME_PERSONE)) continue;
+				}
+				else if (resp.STATUS == 200 && resp.COMMAND.Contains("TEACHING_VIA_GPT"))
+				{
+					if (String.IsNullOrWhiteSpace(resp.ORIGINAL_MESSAGE)) continue;
 
-                    if (localPersId == iPersUserID)
-                    {
-                        userNameFamily = resp.LAST_NAME_PERSONE;
-                        File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
-                            userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
-                        dbUserName = "";
-                        userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
-                        SetPersoneParametersValues();
-                        PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
-                    }
-                    else
-                    {
-                        if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+					var addedToDB = false;
+
+					localPersId = resp.ID;
+                    localContId = GetContactIdByParametrValue(6, resp.CONTACTER, localPersId);
+                    TimerReadFromInterface.Enabled = false;
+
+                    var selfLearningSettings = new SelfLearningSettingsManager(adbrCurrent.ID);
+
+                    resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\r\n", " ");
+                    resp.ORIGINAL_MESSAGE = resp.ORIGINAL_MESSAGE.Replace("\n", " ");
+					originalMessage = resp.ORIGINAL_MESSAGE;
+
+                    resp.TEXT = resp.TEXT.Replace("\r\n", " ");
+                    resp.TEXT = resp.TEXT.Replace("\n", " ");
+					chatgptMessage = resp.TEXT;
+
+					if (selfLearningSettings.ReferenceBase && !addedToDB)
+					{
+                        //загрузка характеристик сообщения из самообучения
+                        var lstMsgHarAlgValues = new List<String>();
+                        if (File.Exists(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_etalonBase{Convert.ToString(adbrCurrent.ID)}.values")))
                         {
-                            var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
-                            var data = pers.Split('|');
-                            var localName = data[1];
-                            //var localSurName = data[2];
-                            var photo = data[3];
-                            File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + resp.LAST_NAME_PERSONE + "|" + photo, Encoding.UTF8);
+                            var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_etalonBase{Convert.ToString(adbrCurrent.ID)}.values"));
+                            lstMsgHarAlgValues = new List<String>(srcFile);
                         }
-                    }
-                }
-                else if (resp.STATUS == 200 && resp.FIRST_NAME_CONTACTER != null) //получение имени или фамилии контактера
-                {
-                    if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_CONTACTER)) continue;
-
-                    if (localPersId == iPersUserID)
-                    {
-                        contName = $"{resp.FIRST_NAME_CONTACTER} {contNameFamily}";
-                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
-                        SaveContactParamersValues();
-                        contNameName = "";
-                        contNameFamily = "";
-                        SetContactNamesAndPhoto();
-                    }
-                    else
-                    {
-                        List<string> localContacters;
-                        if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+                        else
                         {
-                            try
+                            for (int i = 0; i < iMsgHarAttrCount; i++)
                             {
-                                var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
-                                localContacters = new List<String>(srcFile);
-                                var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
-                                var data = cont.Split('|');
-                                var names = data[1].Split(' ');
-                                names[0] = resp.FIRST_NAME_CONTACTER;
-                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
-                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                                lstMsgHarAlgValues.Add("");
                             }
-                            catch (Exception e) { }
                         }
-                    }
+                        //подстановка их в класс для обработки
+                        var selfLearningMsgSettings = new MessageInList();
+                        selfLearningMsgSettings.FillPropertiesFromList(lstMsgHarAlgValues);
+                        //_______________________________________________________________________________________________________________________________________________________________________
+						//поиск GPT релевантного сообщения
+                        var msgListGPT = FindMessageInDatabase(resp.TEXT);
+                        msgListGPT.RemoveAll(m => m.TYPE_MSG != "TEACHING");
+						var msgGPT = new MessageInList();
+						if (msgListGPT.Count > 0) msgGPT = msgListGPT[0];
+						//поиск релевантного оригинальному сообщению
+                        var msgListOrig = FindMessageInDatabase(resp.ORIGINAL_MESSAGE);
+                        msgListOrig.RemoveAll(m => m.TYPE_MSG != "TEACHING");
+                        var msgOrig = new MessageInList();
+                        if (msgListOrig.Count > 0) msgOrig = msgListOrig[0];
 
-                    /*var mode = -1;
-                    if (resp.FIRST_NAME_CONTACTER != null) mode = 0;
-                    else if (resp.LAST_NAME_CONTACTER != null) mode = 1;
-                    else mode = 3;
+						if (!String.IsNullOrWhiteSpace(msgGPT.TEXT))
+						{
+                            selfLearningMsgSettings = SelfLearningReplaceMsgHars(selfLearningMsgSettings, resp.ORIGINAL_MESSAGE, resp.TEXT, msgOrig, msgGPT);
 
-                    switch (mode)
-                    {
-                        case 0:
-                            if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
-                            else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
-                            break;
-                        case 1:
-                            if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
-                            else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
-                            break;
-                        case 2:
-                            if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
-                            else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
-                            if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
-                            else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
-                            break;
-                    }
-
-                    lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
-                    SaveContactParamersValues();
-                    contNameName = "";
-                    contNameFamily = "";
-                    SetContactNamesAndPhoto();*/
-                }
-                else if (resp.STATUS == 200 && resp.LAST_NAME_CONTACTER != null)
-                {
-                    if (String.IsNullOrWhiteSpace(resp.LAST_NAME_CONTACTER)) continue;
-
-                    if (localPersId == iPersUserID)
-                    {
-                        contName = $"{contNameName} {resp.LAST_NAME_CONTACTER}";
-                        lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
-                        SaveContactParamersValues();
-                        contNameName = "";
-                        contNameFamily = "";
-                        SetContactNamesAndPhoto();
-                    }
-                    else
-                    {
-                        List<string> localContacters;
-                        if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
-                        {
-                            try
+                            if (!hashsetEQInMessagesDB.Contains(selfLearningMsgSettings.ToString()))
                             {
-                                var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
-                                localContacters = new List<String>(srcFile);
-                                var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
-                                var data = cont.Split('|');
-                                var names = data[1].Split(' ');
-                                names[1] = resp.LAST_NAME_CONTACTER;
-                                localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + $"|{names[0]} {names[1]}|" + data[2];
-                                File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+                                lstEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                                hashsetEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                                SaveEQInMessageDB();
+                                iMsgINMaxID++;
+                                NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+								addedToDB = true;
                             }
-                            catch (Exception e) { }
                         }
                     }
+                    if (selfLearningSettings.AllBase && !addedToDB)
+					{
+                        //загрузка характеристик сообщения из самообучения
+						var lstMsgHarAlgValues = new List<String>();
+                        if (File.Exists(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_allBase{Convert.ToString(adbrCurrent.ID)}.values")))
+                        {
+                            var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_allBase{Convert.ToString(adbrCurrent.ID)}.values"));
+                            lstMsgHarAlgValues = new List<String>(srcFile);
+                        }
+                        else
+                        {
+                            for (int i = 0; i < iMsgHarAttrCount; i++)
+                            {
+                                lstMsgHarAlgValues.Add("");
+                            }
+                        }
+						//подстановка их в класс для обработки
+                        var selfLearningMsgSettings = new MessageInList();
+                        selfLearningMsgSettings.FillPropertiesFromList(lstMsgHarAlgValues);
+                        //_______________________________________________________________________________________________________________________________________________________________________
+
+
+                        //поиск GPT релевантного сообщения
+                        var msgListGPT = FindMessageInDatabase(resp.TEXT);
+                        var msgGPT = new MessageInList();
+                        if (msgListGPT.Count > 0) msgGPT = msgListGPT[0];
+                        //поиск релевантного оригинальному сообщению
+                        var msgListOrig = FindMessageInDatabase(resp.ORIGINAL_MESSAGE);
+                        var msgOrig = new MessageInList();
+                        if (msgListOrig.Count > 0) msgOrig = msgListOrig[0];
+
+                        if (!String.IsNullOrWhiteSpace(msgGPT.TEXT))
+                        {
+                            selfLearningMsgSettings = SelfLearningReplaceMsgHars(selfLearningMsgSettings, resp.ORIGINAL_MESSAGE, resp.TEXT, msgOrig, msgGPT);
+
+                            if (!hashsetEQInMessagesDB.Contains(selfLearningMsgSettings.ToString()))
+                            {
+                                lstEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                                hashsetEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                                SaveEQInMessageDB();
+                                iMsgINMaxID++;
+                                NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+                                addedToDB = true;
+                            }
+                        }
+
+                        /*
+                        //распознать объяснение и сохранить характеристики
+                        temporaryStopSplitToSentencse = false;
+                        //поиск характеристик распознанного сообщения
+                        //lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.TEXT);
+						SetEQInMessageList(resp.TEXT);
+                        //SelectNextReceivedMessage(false);
+                        temporaryStopSplitToSentencse = true;
+                        //generation and adding message to database
+                        var sMsgSrcRec = "";
+                        //найден иной вариант, пока закомментим
+                        //if (listBoxInMsg.SelectedIndex >= 0 && sCurrentEQInMessageRecord.Length > 0)
+                        //                  {
+                        //                      string selectedMessage = listBoxInMsg.SelectedItem.ToString();
+                        //                      sMsgSrcRec = GetMessageCharacteristics(selectedMessage);
+                        //                  }
+                        if (sCurrentEQInMessageRecord.Length > 0)
+                        {
+							sMsgSrcRec = sCurrentEQInMessageRecord;
+                        }
+                        //todo добавить else и логику что делать, если нет сообщения, в зависимости от настроек самообучения
+                        var messageGPTInList = new MessageInList();
+                        messageGPTInList.ParseMessageFields(sMsgSrcRec);
+                        //lstReceivedMessages.RemoveAt(0);
+
+                        //загрузка характеристик оригинального сообщения
+
+                        temporaryStopSplitToSentencse = false;
+						//поиск характеристик распознанного сообщения
+						//lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.ORIGINAL_MESSAGE);
+						//SelectNextReceivedMessage(false);
+						SetEQInMessageList(resp.ORIGINAL_MESSAGE);
+                        temporaryStopSplitToSentencse = true;
+                        //generation and adding message to database
+                        var sOrigMsgSrcRec = "";
+                        //if (listBoxInMsg.SelectedIndex >= 0)
+                        //{
+                        //    string selectedMessage = listBoxInMsg.SelectedItem.ToString();
+                        //    sOrigMsgSrcRec = GetMessageCharacteristics(selectedMessage);
+                        //}
+                        if (sCurrentEQInMessageRecord.Length > 0)
+                        {
+                            sOrigMsgSrcRec = sCurrentEQInMessageRecord;
+                        }
+                        var messageOrigInList = new MessageInList();
+                        messageOrigInList.ParseMessageFields(sOrigMsgSrcRec);
+                        //lstReceivedMessages.RemoveAt(0);
+
+						//------------------------------------------------------------------------------------------------------------------
+						// подстановка характеристик и сохранение в БД
+						selfLearningMsgSettings = SelfLearningReplaceMsgHars(selfLearningMsgSettings, messageOrigInList, messageGPTInList, resp.ORIGINAL_MESSAGE);
+
+                        if (!hashsetEQInMessagesDB.Contains(selfLearningMsgSettings.ToString()))
+                        {
+                            lstEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                            hashsetEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                            SaveEQInMessageDB();
+                            iMsgINMaxID++;
+                            NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+                            addedToDB = true;
+                        }*/
+
+                    }
+					if (selfLearningSettings.NoBase && !addedToDB)
+					{
+                        //загрузка характеристик сообщения из самообучения
+                        var lstMsgHarAlgValues = new List<String>();
+                        if (File.Exists(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_noBase{Convert.ToString(adbrCurrent.ID)}.values")))
+                        {
+                            var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, $"_msg_selflearning_har_noBase{Convert.ToString(adbrCurrent.ID)}.values"));
+                            lstMsgHarAlgValues = new List<String>(srcFile);
+                        }
+                        else
+                        {
+                            for (int i = 0; i < iMsgHarAttrCount; i++)
+                            {
+                                lstMsgHarAlgValues.Add("");
+                            }
+                        }
+                        //подстановка их в класс для обработки
+                        var selfLearningMsgSettings = new MessageInList();
+                        selfLearningMsgSettings.FillPropertiesFromList(lstMsgHarAlgValues);
+						selfLearningMsgSettings = SelfLearningReplaceMsgHars(selfLearningMsgSettings, resp.ORIGINAL_MESSAGE, resp.TEXT);
+
+                        if (!hashsetEQInMessagesDB.Contains(selfLearningMsgSettings.ToString()))
+                        {
+                            lstEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                            hashsetEQInMessagesDB.Add(selfLearningMsgSettings.ToString());
+                            SaveEQInMessageDB();
+                            iMsgINMaxID++;
+                            NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+                            addedToDB = true;
+                        }
+                    }
+
+
+					//отправка далее обычного сообщения в пул
+					if (iPersUserID != localPersId)
+					{
+						SaveAnswerIfPersoneChanged2(localPersId, resp.TEXT, localContId);
+						continue;
+					}
+					lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.TEXT);
+					TimerReadFromInterface.Enabled = true;
+				}
+				else if (resp.STATUS == 200 && resp.COMMAND.Contains("EXPLANATION_VIA_GPT"))
+				{
+                    if (String.IsNullOrWhiteSpace(resp.TEXT) || localContId <= 0) continue;
+
+                    resp.TEXT = resp.TEXT.Replace("\r\n", " ");
+                    resp.TEXT = resp.TEXT.Replace("\n", " ");
+
+                    if (iPersUserID != localPersId)
+                    {
+                        SaveAnswerIfPersoneChanged2(localPersId, resp.TEXT, localContId);
+                        continue;
+                    }
+
+                    lstReceivedMessages.Add($"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.TEXT);
                 }
 
                 else
-                {
-                    if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
-                    var message = resp.ToString();
-                    message = message.Replace("\r\n", " ");
-                    message = message.Replace("\n", " ");
-                    if (iPersUserID == localPersId)
-                    {
-                        lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
-                        needSelectNextMessage = false;
-                        SelectNextReceivedMessage(false);
-                    }
-                    else { SaveAnswerIfPersoneChanged(localPersId, message); }
-                }
-                //timerWriteMessages.Enabled = true;
+				{
+					if (iPersUserID != localPersId) continue;
+					if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
+					var message = resp.ToString();
+					message = message.Replace("\r\n", " ");
+					message = message.Replace("\n", " ");
+					if (iPersUserID == localPersId)
+					{
+						lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
+					}
+				}
+			}
+		}
+        /// <summary>
+        /// Метод заменяет характеристики по правилам и возвращает обновленное сообщение
+        /// </summary>
+        /// <param name="selfLearning"></param>
+        /// <param name="messageOrigIn"></param>
+        /// <param name="messageGPT"></param>
+        public MessageInList SelfLearningReplaceMsgHars(MessageInList selfLearning, string originText, string chatGptText, MessageInList messageOrigin = null, MessageInList messageGPT = null)
+        {
+            if (selfLearning != null && messageOrigin != null && messageGPT != null)
+            {
+                // Замена значений из messageOrigInList
+                selfLearning.SET = selfLearning.SET.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.SET);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.TITLE);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.STADIA_OBSHENIA);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.NUMBER_IN_DIALOG);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.VARIANT);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.SUBVARIANT);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.CONT_TO_PERS);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.PERS_TO_CONT);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.ROLE_GROUP);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.INTERESTS);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.ROLE_COMUNICATION);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.TYPE_MSG);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.SEX_PERS);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.SEX_CONT);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.IGNORE);
+                selfLearning.ID = selfLearning.ID.Replace("#LAST CONTACTER MESSAGE#", messageOrigin.ID);
+
+                // Замена значений из messageOrigInList
+                selfLearning.SET = selfLearning.SET.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.ID = selfLearning.ID.Replace("#ORIGINAL MESSAGE#", originText);
+
+                // Замена значений из messageInList
+                selfLearning.SET = selfLearning.SET.Replace("#SOURCE MESSAGE#", messageGPT.SET);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#SOURCE MESSAGE#", messageGPT.TITLE);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#SOURCE MESSAGE#", messageGPT.STADIA_OBSHENIA);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#SOURCE MESSAGE#", messageGPT.NUMBER_IN_DIALOG);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#SOURCE MESSAGE#", messageGPT.VARIANT);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#SOURCE MESSAGE#", messageGPT.SUBVARIANT);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#SOURCE MESSAGE#", messageGPT.CONT_TO_PERS);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#SOURCE MESSAGE#", messageGPT.PERS_TO_CONT);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#SOURCE MESSAGE#", messageGPT.ROLE_GROUP);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#SOURCE MESSAGE#", messageGPT.INTERESTS);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#SOURCE MESSAGE#", messageGPT.ROLE_COMUNICATION);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#SOURCE MESSAGE#", messageGPT.TYPE_MSG);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#SOURCE MESSAGE#", messageGPT.SEX_PERS);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#SOURCE MESSAGE#", messageGPT.SEX_CONT);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#SOURCE MESSAGE#", messageGPT.IGNORE);
+                selfLearning.ID = selfLearning.ID.Replace("#SOURCE MESSAGE#", messageGPT.ID);
+
+                // Замена значений из messageInList
+                selfLearning.SET = selfLearning.SET.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.ID = selfLearning.ID.Replace("#CHATGPT MESSAGE#", chatGptText);
+
+                // Замена значения TEXT из messageOrigInList
+                selfLearning.TEXT = originText;
             }
+			if (selfLearning != null && messageGPT != null)
+			{
+                // Замена значений из messageOrigInList
+                selfLearning.SET = selfLearning.SET.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#ORIGINAL MESSAGE#", originText);
+                selfLearning.ID = selfLearning.ID.Replace("#ORIGINAL MESSAGE#", originText);
+
+                // Замена значений из messageInList
+                selfLearning.SET = selfLearning.SET.Replace("#SOURCE MESSAGE#", messageGPT.SET);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#SOURCE MESSAGE#", messageGPT.TITLE);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#SOURCE MESSAGE#", messageGPT.STADIA_OBSHENIA);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#SOURCE MESSAGE#", messageGPT.NUMBER_IN_DIALOG);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#SOURCE MESSAGE#", messageGPT.VARIANT);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#SOURCE MESSAGE#", messageGPT.SUBVARIANT);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#SOURCE MESSAGE#", messageGPT.CONT_TO_PERS);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#SOURCE MESSAGE#", messageGPT.PERS_TO_CONT);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#SOURCE MESSAGE#", messageGPT.ROLE_GROUP);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#SOURCE MESSAGE#", messageGPT.INTERESTS);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#SOURCE MESSAGE#", messageGPT.ROLE_COMUNICATION);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#SOURCE MESSAGE#", messageGPT.TYPE_MSG);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#SOURCE MESSAGE#", messageGPT.SEX_PERS);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#SOURCE MESSAGE#", messageGPT.SEX_CONT);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#SOURCE MESSAGE#", messageGPT.IGNORE);
+                selfLearning.ID = selfLearning.ID.Replace("#SOURCE MESSAGE#", messageGPT.ID);
+
+                // Замена значений из messageInList
+                selfLearning.SET = selfLearning.SET.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.TITLE = selfLearning.TITLE.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.VARIANT = selfLearning.VARIANT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.IGNORE = selfLearning.IGNORE.Replace("#CHATGPT MESSAGE#", chatGptText);
+                selfLearning.ID = selfLearning.ID.Replace("#CHATGPT MESSAGE#", chatGptText);
+
+                // Замена значения TEXT из messageOrigInList
+                selfLearning.TEXT = originText;
+            }
+			else if (selfLearning != null)
+			{
+				// Замена значений из messageOrigInList
+				selfLearning.SET = selfLearning.SET.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.TITLE = selfLearning.TITLE.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.VARIANT = selfLearning.VARIANT.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.IGNORE = selfLearning.IGNORE.Replace("#ORIGINAL MESSAGE#", originText);
+				selfLearning.ID = selfLearning.ID.Replace("#ORIGINAL MESSAGE#", originText);
+
+				// Замена значений из messageInList
+				selfLearning.SET = selfLearning.SET.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.TITLE = selfLearning.TITLE.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.STADIA_OBSHENIA = selfLearning.STADIA_OBSHENIA.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.NUMBER_IN_DIALOG = selfLearning.NUMBER_IN_DIALOG.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.VARIANT = selfLearning.VARIANT.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.SUBVARIANT = selfLearning.SUBVARIANT.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.CONT_TO_PERS = selfLearning.CONT_TO_PERS.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.PERS_TO_CONT = selfLearning.PERS_TO_CONT.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.ROLE_GROUP = selfLearning.ROLE_GROUP.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.INTERESTS = selfLearning.INTERESTS.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.ROLE_COMUNICATION = selfLearning.ROLE_COMUNICATION.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.TYPE_MSG = selfLearning.TYPE_MSG.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.SEX_PERS = selfLearning.SEX_PERS.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.SEX_CONT = selfLearning.SEX_CONT.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.IGNORE = selfLearning.IGNORE.Replace("#CHATGPT MESSAGE#", chatGptText);
+				selfLearning.ID = selfLearning.ID.Replace("#CHATGPT MESSAGE#", chatGptText);
+
+				// Замена значения TEXT из messageOrigInList
+				selfLearning.TEXT = originText;
+			}
+            return selfLearning;
         }
+
+
 
 
         /// <summary>
-        /// позволяет добавить ответ от интерфейса нужному персонажу, даже если он поменялся
+        /// Обработка ответа от интерфейса. Подбор нужного действия
         /// </summary>
-        private void SaveAnswerIfPersoneChanged(long persId, string message)
+        /// <param name="responseInterface"></param>
+        private void ResponseFindRightAction(List<TinderResponse> responseInterface)
+		{
+			foreach (var resp in responseInterface)
+			{
+				var localPersId = resp.ID;
+				var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+
+				if (resp.CONTACTER != null)
+				{
+					localContId = GetContactIdByParametrValue(6, resp.CONTACTER,localPersId);
+				}
+
+				if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+				{
+					//addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+					if (iPersUserID == localPersId) getMessageHistory(localPersId, localContId);
+				}
+				else if (resp.STATUS == 200 && resp.DATA != null) // проверка есть ли новые сообщения у персонажа
+				{
+					foreach (var newmessage in resp.DATA)
+					{
+						if (newmessage.UNREAD_COUNT == 0 || newmessage.MESSAGES == null) continue;
+						//timerAnswerWaitingOff();//testing
+						localContId = GetContactIdByParametrValue(6, newmessage.CONTACTER, localPersId);
+						//реализация добавления контактера в БД по настройке алгоритма
+						if (localContId == -1 && !adbrCurrent.bIgnoreMessagesFromNotContacter && newmessage.UNREAD_COUNT > 0)
+						{
+							localContId = FindFreeIndex(lstContactsList);
+							var userRec = $"{localContId}||";
+							lstContactsList.Add(userRec);
+							FileWriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+							ContactsList_Load();
+							//загрузка характеристик конкретного алгоритма
+							var lstContHarAlgValues = new List<String>();
+							if (File.Exists(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values")))
+							{
+								var srcFile = File.ReadAllLines(Path.Combine(FormMain.sDataPath, "FormEditPersHarValues_" + Convert.ToString(2) + "_" + Convert.ToString(adbrCurrent.ID) + ".values"));
+								lstContHarAlgValues = new List<String>(srcFile);
+							}
+
+							for (int i = 0; i < lstContHarAlgValues.Count; i++)
+							{
+								lstContHarAlgValues[i] = $"{i + 1}|{lstContHarAlgValues[i]}";
+							}
+
+							lstContHarAlgValues[5] = $"6|{newmessage.CONTACTER}";
+							File.WriteAllLines(Path.Combine(sDataPath, "cont_" + getSocialNetworkPrefix() + localPersId.ToString() + "_" + localContId + ".txt"), lstContHarAlgValues, Encoding.UTF8);
+						}
+						else if (localContId == -1 && adbrCurrent.bIgnoreMessagesFromNotContacter) continue; //если в бд нет, и не принимаем от неконтактера, то дальше
+
+						contReceivedMessagesList = new List<UnreadMessage>();
+						while (newmessage.UNREAD_COUNT > 0)
+						{
+							if (newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT == null) continue;
+							newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT = newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1].TEXT.Replace("\n", " ");
+							contReceivedMessagesList.Add(newmessage.MESSAGES[newmessage.UNREAD_COUNT - 1]);
+							newmessage.UNREAD_COUNT--;
+						}
+						SendMessage(localPersId, localContId, contReceivedMessagesList);
+					}
+					//timerAnswerWaitingOn();//testing
+				}
+				else if (resp.STATUS == 200 && resp.MESSAGES != null) // получение непрочитанных сообщений, если 0, то интерфейс вернет всю историю
+				{
+					//for (int i = resp.UNREAD_MESSAGES.Count() - 1; i >= 0; i--)
+					//{
+					//	if (resp.UNREAD_MESSAGES[i].TYPE_STATUS == "text")
+					//	{
+					//		addToHistory(localPersId, localContId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.UNREAD_MESSAGES[i].TEXT);
+					//		lstReceivedMessages.Insert(0, $"0|{localContId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + resp.UNREAD_MESSAGES[i].TEXT);
+					//		SelectNextReceivedMessage(false);
+					//		//lstReceivedMessages.RemoveAt(lstReceivedMessages.Count - 1);
+					//	}
+					//}
+				}
+				else if (resp.STATUS == 200 && resp.PATH != null)
+				{
+					if (String.IsNullOrWhiteSpace(resp.PATH)) continue;
+					switch (resp.MESSAGE)
+					{
+						case "PERSON GET PHOTO SUCCESS":
+							if (iPersUserID == localPersId)
+							{
+								photoPersURL = resp.PATH;
+								SetPhoto(true, photoPersURL);
+								SavePersoneParamersValues();
+							}
+							else
+							{
+								if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+								{
+									var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+									var data = pers.Split('|');
+									var localName = data[1];
+									var localSurName = data[2];
+									File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + localSurName + "|" + photoPersURL, Encoding.UTF8);
+								}
+							}
+							break;
+						case "CONTACTER GET PHOTO SUCCESS":
+							if (iPersUserID == localPersId)
+							{
+								photoContURL = resp.PATH;
+								SetPhoto(false, photoContURL);
+								try
+								{
+									lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+									File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), lstContactsList, Encoding.UTF8);
+								}
+								catch (Exception e)
+								{
+									MessageBox.Show($"Ошибка {e.Message}");
+								}
+							}
+							else
+							{
+								List<string> localContacters;
+								if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+								{
+									try
+									{
+										var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+										localContacters = new List<String>(srcFile);
+										var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+										var data = cont.Split('|');
+										localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + data[1] + "|" + resp.PATH;
+										File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+									}
+									catch (Exception e) { }
+								}
+							}
+							break;
+					}
+				}
+				else if (resp.STATUS == 200 && resp.FIRST_NAME_PERSONE != null) //получение имени или фамилии персонажа
+				{
+					if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_PERSONE)) continue;
+
+					if (localPersId == iPersUserID)
+					{
+						userNameName = resp.FIRST_NAME_PERSONE;
+						File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+							userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+						dbUserName = "";
+						userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+						SetPersoneParametersValues();
+						PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+					}
+					else
+					{
+						if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+						{
+							var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+							var data = pers.Split('|');
+							//var localName = data[1];
+							var localSurName = data[2];
+							var photo = data[3];
+							File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + resp.FIRST_NAME_PERSONE + "|" + localSurName + "|" + photo, Encoding.UTF8);
+						}
+					}
+				}
+				else if (resp.STATUS == 200 && resp.LAST_NAME_PERSONE != null)
+				{
+					if (String.IsNullOrWhiteSpace(resp.LAST_NAME_PERSONE)) continue;
+
+					if (localPersId == iPersUserID)
+					{
+						userNameFamily = resp.LAST_NAME_PERSONE;
+						File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" +
+							userNameName + "|" + userNameFamily + "|" + photoPersURL, Encoding.UTF8);
+						dbUserName = "";
+						userNameName = ""; //обнуляем, чтобы загрузить из файла в следующем методе
+						SetPersoneParametersValues();
+						PersonenList_AddUser(localPersId.ToString(), userName, userLogin, userPassword);
+					}
+					else
+					{
+						if (File.Exists(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt")))
+						{
+							var pers = File.ReadAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"));
+							var data = pers.Split('|');
+							var localName = data[1];
+							//var localSurName = data[2];
+							var photo = data[3];
+							File.WriteAllText(Path.Combine(sDataPath, "persone_name_" + getSocialNetworkPrefix() + Convert.ToString(localPersId) + ".txt"), localPersId + "|" + localName + "|" + resp.LAST_NAME_PERSONE + "|" + photo, Encoding.UTF8);
+						}
+					}
+				}
+				else if (resp.STATUS == 200 && resp.FIRST_NAME_CONTACTER != null) //получение имени или фамилии контактера
+				{
+					if (String.IsNullOrWhiteSpace(resp.FIRST_NAME_CONTACTER)) continue;
+
+					if (localPersId == iPersUserID)
+					{
+						contName = $"{resp.FIRST_NAME_CONTACTER} {contNameFamily}";
+						lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+						SaveContactParamersValues();
+						contNameName = "";
+						contNameFamily = "";
+						SetContactNamesAndPhoto();
+					}
+					else
+					{
+						List<string> localContacters;
+						if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+						{
+							try
+							{
+								var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+								localContacters = new List<String>(srcFile);
+								var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+								var data = cont.Split('|');
+								var names = data[1].Split(' ');
+								names[0] = resp.FIRST_NAME_CONTACTER;
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1] + "|" + data[2];
+								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+							}
+							catch (Exception e) { }
+						}
+					}
+
+					/*var mode = -1;
+					if (resp.FIRST_NAME_CONTACTER != null) mode = 0;
+					else if (resp.LAST_NAME_CONTACTER != null) mode = 1;
+					else mode = 3;
+
+					switch (mode)
+					{
+						case 0:
+							if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+							else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+							break;
+						case 1:
+							if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+							else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+							break;
+						case 2:
+							if (resp.FIRST_NAME_CONTACTER.Length <= 0) contName = contNameFamily;
+							else contName = resp.FIRST_NAME_CONTACTER + " " + contNameFamily;
+							if (resp.LAST_NAME_CONTACTER.Length <= 0) contName = contNameName;
+							else contName = contNameName + " " + resp.LAST_NAME_CONTACTER;
+							break;
+					}
+
+					lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+					SaveContactParamersValues();
+					contNameName = "";
+					contNameFamily = "";
+					SetContactNamesAndPhoto();*/
+				}
+				else if (resp.STATUS == 200 && resp.LAST_NAME_CONTACTER != null)
+				{
+					if (String.IsNullOrWhiteSpace(resp.LAST_NAME_CONTACTER)) continue;
+
+					if (localPersId == iPersUserID)
+					{
+						contName = $"{contNameName} {resp.LAST_NAME_CONTACTER}";
+						lstContactsList[ContactsList_GetUserIdx(localContId.ToString(), lstContactsList)] = localContId.ToString() + "|" + contName + "|" + photoContURL;
+						SaveContactParamersValues();
+						contNameName = "";
+						contNameFamily = "";
+						SetContactNamesAndPhoto();
+					}
+					else
+					{
+						List<string> localContacters;
+						if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt")))
+						{
+							try
+							{
+								var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"));
+								localContacters = new List<String>(srcFile);
+								var cont = localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)];
+								var data = cont.Split('|');
+								var names = data[1].Split(' ');
+								names[1] = resp.LAST_NAME_CONTACTER;
+								localContacters[ContactsList_GetUserIdx(localContId.ToString(), localContacters)] = localContId.ToString() + "|" + names[0] + " " + names[1] + "|" + data[2];
+								File.WriteAllLines(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + localPersId.ToString() + ".txt"), localContacters, Encoding.UTF8);
+							}
+							catch (Exception e) { }
+						}
+					}
+				}
+
+				else
+				{
+					if (resp.MESSAGE.Length > 100) resp.MESSAGE = resp.MESSAGE.Substring(0, 100);
+					var message = resp.ToString();
+					message = message.Replace("\r\n", " ");
+					message = message.Replace("\n", " ");
+					if (iPersUserID == localPersId)
+					{
+						lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
+						needSelectNextMessage = false;
+						SelectNextReceivedMessage(false);
+					}
+					else { SaveAnswerIfPersoneChanged(localPersId, message); }
+				}
+				//timerWriteMessages.Enabled = true;
+			}
+		}
+
+
+		/// <summary>
+		/// позволяет добавить ответ от интерфейса нужному персонажу, даже если он поменялся
+		/// </summary>
+		private void SaveAnswerIfPersoneChanged(long persId, string message)
 		{
 			var localMsgList = new List<string>();
-            if (File.Exists(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt")))
-            {
-                try
-                {
-                    var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
-                    localMsgList = new List<string>(srcFile);
-                }
-                catch (Exception e)
-                {
-                    ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-                    localMsgList = new List<string>();
-                }
-            }
-            //addToList
+			if (File.Exists(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt")))
+			{
+				try
+				{
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
+					localMsgList = new List<string>(srcFile);
+				}
+				catch (Exception e)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+					localMsgList = new List<string>();
+				}
+			}
+			//addToList
 			localMsgList.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
-            if ((localMsgList.Count > 0) && (/*userSelectUserIdx*/persId >= 0))
-                FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"), localMsgList, Encoding.UTF8);
-            else
-                File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
-        }
+			if ((localMsgList.Count > 0) && (/*userSelectUserIdx*/persId >= 0))
+				FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"), localMsgList, Encoding.UTF8);
+			else
+				File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
+		}
+
+		/// <summary>
+		/// позволяет добавить ответ от интерфейса нужному персонажу, даже если он поменялся
+		/// </summary>
+		private void SaveAnswerIfPersoneChanged2(long persId, string message, long contId)
+		{
+			var localMsgList = new List<string>();
+			if (File.Exists(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt")))
+			{
+				try
+				{
+					var srcFile = File.ReadAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
+					localMsgList = new List<string>(srcFile);
+				}
+				catch (Exception e)
+				{
+					ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+					localMsgList = new List<string>();
+				}
+			}
+			//addToList
+			localMsgList.Add($"0|{contId}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|{message}");
+			if ((localMsgList.Count > 0) && (/*userSelectUserIdx*/persId >= 0))
+				FileWriteAllLines(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"), localMsgList, Encoding.UTF8);
+			else
+				File.Delete(Path.Combine(sDataPath, "_msg_received_pull_" + getSocialNetworkPrefix() + persId.ToString() + (iContactsGroupsMode == 0 ? "_contacter" : "_groups") + ".txt"));
+		}
 
 
 		/// <summary>
@@ -13863,42 +15965,42 @@ namespace Nilsa
 		{
 			if (contMessages.Count <= 0) return;
 
-            var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
-            var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
+			var emptyInMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #FFF4D7\"><body></body></html>";
+			var emptyOuyMessage = "<html style=\"font-family: Verdana, Arial; font-size: 14pt; border:none; border: 0px; margin-top:0px; margin-bottom:0px; background: #D0B8FF\"><body></body></html>";
 			var localResponse = "";
 			var localResponseInterface = new List<TinderResponse>();
-            HideBrowserCommand();
+			HideBrowserCommand();
 
-            if (adbrCurrent.MergeInMessages)
+			if (adbrCurrent.MergeInMessages)
 			{
-                var mergedMessage = new UnreadMessage();
-                foreach (var msg in contMessages)
-                {
-                    mergedMessage.TEXT += $" {msg.TEXT}";
+				var mergedMessage = new UnreadMessage();
+				foreach (var msg in contMessages)
+				{
+					mergedMessage.TEXT += $" {msg.TEXT}";
 					mergedMessage.TYPE_STATUS = msg.TYPE_STATUS;
 					mergedMessage.DATE_TIME = msg.DATE_TIME;
-                }
-                contMessages.Clear();
+				}
+				contMessages.Clear();
 				contMessages.Add(mergedMessage);
-            }
+			}
 
-            for (var i = 0; contMessages.Count > 0; i++)
-            {
-                if (iPersUserID != persId)
+			for (var i = 0; contMessages.Count > 0; i++)
+			{
+				if (iPersUserID != persId)
 				{
 					SaveAnswerIfPersoneChanged(persId, contMessages[i].TEXT);
-                    contMessages.RemoveAt(i);
+					contMessages.RemoveAt(i);
 					i--;
-                    continue;
-                }
-                if (adbrCurrent.SplitTextIntoSentences)
-                {
+					continue;
+				}
+				if (adbrCurrent.SplitTextIntoSentences)
+				{
 					var j = 1;
 					while (contMessages[i].TEXT.Length > 0)
-                    {
-                        var msgSentenceCurrent = SplitTextIntoSentences(contMessages[i].TEXT);
-                        contMessages[i].TEXT = contMessages[i].TEXT.Substring(msgSentenceCurrent.Length).Trim();
-                        msgSentenceCurrent = msgSentenceCurrent.Trim();
+					{
+						var msgSentenceCurrent = SplitTextIntoSentences(contMessages[i].TEXT);
+						contMessages[i].TEXT = contMessages[i].TEXT.Substring(msgSentenceCurrent.Length).Trim();
+						msgSentenceCurrent = msgSentenceCurrent.Trim();
 
 						var msg = new UnreadMessage();
 						msg.TEXT = msgSentenceCurrent;
@@ -13907,73 +16009,67 @@ namespace Nilsa
 
 						contMessages.Insert(i + j, msg);
 						j++;
-                        //var sCurRec = $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msgSentenceCurrent;
-                        //lstReceivedMessages.Insert(0, sCurRec);
-                    }
+						//var sCurRec = $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + msgSentenceCurrent;
+						//lstReceivedMessages.Insert(0, sCurRec);
+					}
 					contMessages.RemoveAt(i);
-                }
+				}
 
-                lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
-                addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
-                contMessages.RemoveAt(i);
-                i--;
-				var started = bServiceStart;
-                StopService();
-                SelectNextReceivedMessage(false);
-				while (!started)
+				lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
+				//addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
+				contMessages.RemoveAt(i);
+				i--;
+				StopService();
+				SelectNextReceivedMessage(false);
+				needSelectNextMessage = false;
+				needAnswer = true;
+				StartService();
+				while (timerWriteMessages.Enabled)
 				{
-                    WaitNSeconds(1);
-					started = bServiceStart;
-                }
-                needSelectNextMessage = false;
-                needAnswer = true;
-                StartService();
-                while (timerWriteMessages.Enabled)
-                {
-                    WaitNSeconds(1);
-                }
-                while (!bServiceStart)
-                {
-                    WaitNSeconds(1);
-                    needAnswer = true;
-                }
-                while (timerWriteMessages.Enabled)
-                {
-                    WaitNSeconds(1);
-                }
-                _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
-                ShowBrowserCommand();
-                if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-                //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
-                webBrowserInMessageText.DocumentText = emptyInMessage;
-                webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
+					WaitNSeconds(1);
+				}
+				while (!bServiceStart)
+				{
+					WaitNSeconds(1);
+					needAnswer = true;
+				}
+				while (timerWriteMessages.Enabled)
+				{
+					WaitNSeconds(1);
+				}
+				//await _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+				ShowBrowserCommand();
+				//if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
+				//очищаем поля с сообщением, чтобы было понятно, что оно отправлено
+				webBrowserInMessageText.DocumentText = emptyInMessage;
+				webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
 
-                localResponse = _interfaceListener.NilsaReadFromResponseFile();
-                localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
-                ResponseFindRightAction(localResponseInterface);
-                /*foreach (var resp in localResponseInterface)
-                {
-                    var localPersId = resp.ID;
-                    var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+				//localResponse = _interfaceListener.NilsaReadFromResponseFile();
+				//localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(await localResponse);
+				ResponseFindRightAction(localResponseInterface);
+				/*foreach (var resp in localResponseInterface)
+				{
+					var localPersId = resp.ID;
+					var localContId = iContUserID; //если в ответе от интерфейса будет пусто
 
-                    if (resp.CONTACTER != null)
-                    {
-                        localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+					if (resp.CONTACTER != null)
+					{
+						localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
 
-                    }
+					}
 
-                    if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
-                    {
-                        addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-                        ReadAllUserMessages(localPersId, localContId);
-                    }
-                }*/
-                HideBrowserCommand();
-            }
+					if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+					{
+						addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+						ReadAllUserMessages(localPersId, localContId);
+					}
+				}*/
+				HideBrowserCommand();
+			}
 
 
 
-            /*switch (adbrCurrent.MergeInMessages)
+			/*switch (adbrCurrent.MergeInMessages)
 			{
 				case true:
 					var mergedMessage = "";
@@ -13982,110 +16078,110 @@ namespace Nilsa
 						mergedMessage += $" {msg.TEXT}";
 					}
 					contMessages.Clear();
-                    lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + mergedMessage);
-                    addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), mergedMessage);
-                    StopService();
-                    SelectNextReceivedMessage(false);
-                    needAnswer = true;
-                    StartService();
-                    while (timerWriteMessages.Enabled)
-                    {
-                        WaitNSeconds(1);
-                    }
-                    while (!bServiceStart)
-                    {
-                        WaitNSeconds(1);
-                        needAnswer = true;
-                    }
-                    while (timerWriteMessages.Enabled)
-                    {
-                        WaitNSeconds(1);
-                    }
-                    _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
-                    ShowBrowserCommand();
-                    if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-                    //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
-                    webBrowserInMessageText.DocumentText = emptyInMessage;
-                    webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
+					lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + mergedMessage);
+					addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), mergedMessage);
+					StopService();
+					SelectNextReceivedMessage(false);
+					needAnswer = true;
+					StartService();
+					while (timerWriteMessages.Enabled)
+					{
+						WaitNSeconds(1);
+					}
+					while (!bServiceStart)
+					{
+						WaitNSeconds(1);
+						needAnswer = true;
+					}
+					while (timerWriteMessages.Enabled)
+					{
+						WaitNSeconds(1);
+					}
+					_interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+					ShowBrowserCommand();
+					if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
+					//очищаем поля с сообщением, чтобы было понятно, что оно отправлено
+					webBrowserInMessageText.DocumentText = emptyInMessage;
+					webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
 
-                    localResponse = _interfaceListener.NilsaReadFromResponseFile();
-                    localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
-                    foreach (var resp in localResponseInterface)
-                    {
-                        var localPersId = resp.ID;
-                        var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+					localResponse = _interfaceListener.NilsaReadFromResponseFile();
+					localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
+					foreach (var resp in localResponseInterface)
+					{
+						var localPersId = resp.ID;
+						var localContId = iContUserID; //если в ответе от интерфейса будет пусто
 
-                        if (resp.CONTACTER != null)
-                        {
-                            localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+						if (resp.CONTACTER != null)
+						{
+							localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
 
-                        }
+						}
 
-                        if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
-                        {
-                            addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-                            ReadAllUserMessages(localPersId, localContId);
-                        }
-                    }
-                    HideBrowserCommand();
+						if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+						{
+							addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+							ReadAllUserMessages(localPersId, localContId);
+						}
+					}
+					HideBrowserCommand();
 
-                    break;
+					break;
 				case false:
-                    for (var i = 0; contMessages.Count > 0; i++)
-                    {
-                        lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
-                        addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
-                        contMessages.RemoveAt(i);
-                        i--;
-                        StopService();
-                        SelectNextReceivedMessage(false);
-                        needAnswer = true;
-                        StartService();
-                        while (timerWriteMessages.Enabled)
-                        {
-                            WaitNSeconds(1);
-                        }
-                        while (!bServiceStart)
-                        {
-                            WaitNSeconds(1);
-                            needAnswer = true;
-                        }
-                        while (timerWriteMessages.Enabled)
-                        {
-                            WaitNSeconds(1);
-                        }
-                        _interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
-                        ShowBrowserCommand();
-                        if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
-                        //очищаем поля с сообщением, чтобы было понятно, что оно отправлено
-                        webBrowserInMessageText.DocumentText = emptyInMessage;
-                        webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
+					for (var i = 0; contMessages.Count > 0; i++)
+					{
+						lstReceivedMessages.Insert(0, $"0|{contId}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + contMessages[i].TEXT);
+						addToHistory(persId, contId, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), contMessages[i].TEXT);
+						contMessages.RemoveAt(i);
+						i--;
+						StopService();
+						SelectNextReceivedMessage(false);
+						needAnswer = true;
+						StartService();
+						while (timerWriteMessages.Enabled)
+						{
+							WaitNSeconds(1);
+						}
+						while (!bServiceStart)
+						{
+							WaitNSeconds(1);
+							needAnswer = true;
+						}
+						while (timerWriteMessages.Enabled)
+						{
+							WaitNSeconds(1);
+						}
+						_interfaceListener.NilsaWriteToRequestFile($"{SetMessageFields(labelOutEqMsgHarTitleValue_Text)}\nId: {iPersUserID}");
+						ShowBrowserCommand();
+						if (lstReceivedMessages.Count > 0) lstReceivedMessages.RemoveAt(0);
+						//очищаем поля с сообщением, чтобы было понятно, что оно отправлено
+						webBrowserInMessageText.DocumentText = emptyInMessage;
+						webBrowserOutEqMessageText.DocumentText = emptyOuyMessage;
 
-                        localResponse = _interfaceListener.NilsaReadFromResponseFile();
-                        localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
-                        foreach (var resp in localResponseInterface)
-                        {
-                            var localPersId = resp.ID;
-                            var localContId = iContUserID; //если в ответе от интерфейса будет пусто
+						localResponse = _interfaceListener.NilsaReadFromResponseFile();
+						localResponseInterface = JsonConvert.DeserializeObject<List<TinderResponse>>(localResponse);
+						foreach (var resp in localResponseInterface)
+						{
+							var localPersId = resp.ID;
+							var localContId = iContUserID; //если в ответе от интерфейса будет пусто
 
-                            if (resp.CONTACTER != null)
-                            {
-                                localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
+							if (resp.CONTACTER != null)
+							{
+								localContId = GetContactIdByParametrValue(6, resp.CONTACTER);
 
-                            }
+							}
 
-                            if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
-                            {
-                                addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
-                                ReadAllUserMessages(localPersId, localContId);
-                            }
-                        }
-                        HideBrowserCommand();
-                    }
-                    break;
+							if (resp.STATUS == 200 && resp.MESSAGE.Contains("MESSAGE SENT SUCCESSFULLY")) //проверка успешная ли отрпавка сообщения персонажа и перемещение в истори.
+							{
+								addToHistory(localPersId, localContId, false, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), resp.TEXT);
+								ReadAllUserMessages(localPersId, localContId);
+							}
+						}
+						HideBrowserCommand();
+					}
+					break;
 			}*/
 			ShowBrowserCommand();
-        }
+		}
 
 
 		private void api_Messages_Send(long lgid, String msg, String attachlist = "")
@@ -14093,8 +16189,8 @@ namespace Nilsa
 			//lstOutgoingMessages_Insert(lgid.ToString(), "-", msg+(attachlist.Length>0 ? ("attach:"+attachlist):""));
 			//lstOutgoingMessages_Insert(String uid, String uname, String text, String channel = "0", long _iGroupAnswerID = -1, long _iGroupAnswerPostID = -1, long _iGroupAnswerCommentID = -1)
 
-			String text = NilsaUtils.TextToString(msg.Trim()) + (attachlist.Length > 0 ? ("attach:" + attachlist) : "");
-			lstOutgoingMessages.Add("*#|0|" + lgid.ToString() + "|-|" + text.Trim());
+			//String text = NilsaUtils.TextToString(msg.Trim()) + (attachlist.Length > 0 ? ("attach:" + attachlist) : "");
+			//lstOutgoingMessages.Add("*#|0|" + lgid.ToString() + "|-|" + text.Trim());
 		}
 
 		private void sendCommandToOperators(string comvar)
@@ -14288,6 +16384,48 @@ namespace Nilsa
 			timerWriteMessagesActivityCount = 6;
 		}
 
+		/*private void timerWriteMessages_Tick(object sender, EventArgs e)
+		{
+			if (timerWriteMessagesActivity)
+			{
+				setWriteMessageActivity();
+				timerWriteMessagesActivity = false;
+			}
+
+			timerWriteMessagesActivityCount--;
+
+			if (timerWriteMessagesActivityCount <= 0)
+				resetTimerWriteMessagesActivity();
+
+			timerWriteCycle--;
+
+			int pbvalue = (int)(100 * (float)(timerDefaultWriteCycle - timerWriteCycle) / (float)(timerDefaultWriteCycle));
+			if (pbvalue < 0) pbvalue = 0;
+			else if (pbvalue > 100) pbvalue = 100;
+			progressBarWrite.Value = pbvalue;
+			progressBarWrite.Invalidate();
+			Application.DoEvents();
+
+			if (needAnswer && timerWriteCycle <= 0)
+			{
+				timerWriteMessagesOff();
+				needAnswer = false;
+				return;
+			}
+			else if (needAnswer) return;
+
+			if (timerWriteCycle <= 0)
+			{
+				// Запуск выполнения операции в фоновом потоке
+				backgroundWorkerTimerWriteMessages.RunWorkerAsync();
+				if (lstReceivedMessages.Count == 0 && bServiceStart)
+				{
+					timerAnswerWaitingOn();
+					timerReadMessagesOn();
+				}
+			}
+		}*/
+
 		private void timerWriteMessages_Tick(object sender, EventArgs e)
 		{
 			if (timerWriteMessagesActivity)
@@ -14307,26 +16445,27 @@ namespace Nilsa
 			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
 			progressBarWrite.Value = pbvalue;
 			progressBarWrite.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 
-            if (needAnswer && timerWriteCycle <= 0)
-            {
-                timerWriteMessagesOff();
-                needAnswer = false;
-                return;
-            }
-            else if (needAnswer) return;
-
-            if (timerWriteCycle <= 0)
+			if (needAnswer && timerWriteCycle <= 0)
 			{
 				timerWriteMessagesOff();
+				needAnswer = false;
+				return;
+			}
+			else if (needAnswer) return;
 
+			if (timerWriteCycle <= 0)
+			{
+				timerWriteMessagesOff();
+				timerReadMessagesOff();
+				timerAnswerWaitingOff();
 				if (lstOutgoingMessagesParts.Count > 0)
 				{
 					string strpartvalue = lstOutgoingMessagesParts[0];
 					lstOutgoingMessages.Insert(0, strpartvalue);
 					lstOutgoingMessagesParts.RemoveAt(0);
-					timerPhysicalSendStart();
+					//timerPhysicalSendStart();
 
 					if (lstOutgoingMessagesParts.Count == 0)
 						SelectNextReceivedMessage();
@@ -14337,7 +16476,7 @@ namespace Nilsa
 						timerWriteCycle = timerDefaultWriteCycle;
 						progressBarWrite.Value = timerDefaultWriteCycle;
 						progressBarWrite.Invalidate();
-						Application.DoEvents();
+						//Application.DoEvents();
 
 						resetTimerWriteMessagesActivity();
 						timerWriteMessages.Enabled = true;
@@ -14346,62 +16485,99 @@ namespace Nilsa
 				else
 				{
 					if (tbSendOutMessage.Enabled)
-						tbSendOutMessageAction();
+					{
+						SendOutMessageAction();
+						if (lstReceivedMessages.Count == 0 && bServiceStart)
+						{
+							timerAnswerWaitingOn();
+							timerReadMessagesOn();
+						}
+						//if (lstReceivedMessages.Count <= 0)
+						//{
+							////timerReadMessagesOn();
+							//timerAnswerWaitingOn();
+						//}
+					}
 					else
 						tbSkipMessage_Click(null, null);
 				}
+
 
 			}
 		}
 
 		//bool bSendBefore = false;
+		//      private void timerAnswerWaiting_Tick(object sender, EventArgs e)
+		//{
+		//	//if (timerWriteMessages.Enabled && TimerPersoneChangeCycle <= 1)
+		//	//{
+		//	//    TimerPersoneChangeCycle += TimerSendAnswerCycle + 5;
+		//	//    bSendBeforeChange = true;
+		//	//}
+
+		//	//if (timerPhysicalSend.Enabled && TimerPersoneChangeCycle <= 1)
+		//	//{
+		//	//    TimerPersoneChangeCycle += TimerPhysicalSendCycle + 5;
+		//	//    bSendBeforeChange = true;
+		//	//}
+
+		//	//if (bSendBeforeChange && TimerPersoneChangeCycle <= 1)
+		//	//{
+		//	//    TimerPersoneChangeCycle += TimerNewMessagesRereadCycle + DefaultTimerNewMessagesRereadDelayCycle + 5;
+		//	//    bSendBeforeChange = false;
+		//	//}
+		//	timerAnswerWaitingCycle--;
+
+		//	int pbvalue = (int)(100 * (float)(timerDefaultAnswerWaitingCycle - timerAnswerWaitingCycle) / (float)(timerDefaultAnswerWaitingCycle));
+		//	if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
+		//	progressBarAnswerWaiting.Value = pbvalue;
+		//	progressBarAnswerWaiting.Invalidate();
+		//	Application.DoEvents();
+		//	/* Timers
+		//	pbPersoneChange.ToolTipText = NilsaUtils.Dictonary_GetText(userInterface, "toolTips_9", this.Name, "Смена Персонажа через") + " " + Convert.ToString(TimerPersoneChangeCycle) + " " + NilsaUtils.Dictonary_GetText(userInterface, "toolTips_8", this.Name, "сек.");
+		//	pbPersoneChange.Value = (int)(100 * (float)(DefaultTimerPersoneChangeCycle - TimerPersoneChangeCycle) / (float)(DefaultTimerPersoneChangeCycle));
+		//	*/
+		//	if (timerAnswerWaitingCycle <= 0)
+		//	{
+		//		timerAnswerWaitingOff();
+		//		//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+		//		//if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+		//		//timerReadMessagesOn();
+		//		//написать получение сообщения END_WAITING_TIMER от The System
+		//		lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
+		//		SelectNextReceivedMessage(false);
+		//		if (lstPersoneChange.Count > 0)
+		//		{
+		//			bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
+		//		}
+		////           else
+		//			//timerAnswerWaitingOn();
+		//	}
+
+		//}
+
 		private void timerAnswerWaiting_Tick(object sender, EventArgs e)
 		{
-			//if (timerWriteMessages.Enabled && TimerPersoneChangeCycle <= 1)
-			//{
-			//    TimerPersoneChangeCycle += TimerSendAnswerCycle + 5;
-			//    bSendBeforeChange = true;
-			//}
-
-			//if (timerPhysicalSend.Enabled && TimerPersoneChangeCycle <= 1)
-			//{
-			//    TimerPersoneChangeCycle += TimerPhysicalSendCycle + 5;
-			//    bSendBeforeChange = true;
-			//}
-
-			//if (bSendBeforeChange && TimerPersoneChangeCycle <= 1)
-			//{
-			//    TimerPersoneChangeCycle += TimerNewMessagesRereadCycle + DefaultTimerNewMessagesRereadDelayCycle + 5;
-			//    bSendBeforeChange = false;
-			//}
 			timerAnswerWaitingCycle--;
 
 			int pbvalue = (int)(100 * (float)(timerDefaultAnswerWaitingCycle - timerAnswerWaitingCycle) / (float)(timerDefaultAnswerWaitingCycle));
-			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
+			if (pbvalue < 0) pbvalue = 0;
+			else if (pbvalue > 100) pbvalue = 100;
 			progressBarAnswerWaiting.Value = pbvalue;
 			progressBarAnswerWaiting.Invalidate();
-			Application.DoEvents();
-			/* Timers
-			pbPersoneChange.ToolTipText = NilsaUtils.Dictonary_GetText(userInterface, "toolTips_9", this.Name, "Смена Персонажа через") + " " + Convert.ToString(TimerPersoneChangeCycle) + " " + NilsaUtils.Dictonary_GetText(userInterface, "toolTips_8", this.Name, "сек.");
-			pbPersoneChange.Value = (int)(100 * (float)(DefaultTimerPersoneChangeCycle - TimerPersoneChangeCycle) / (float)(DefaultTimerPersoneChangeCycle));
-			*/
-			if (timerAnswerWaitingCycle <= 0)
+            //Application.DoEvents();
+
+            if(timerAnswerWaitingCycle <= 0)
 			{
 				timerAnswerWaitingOff();
-				if (lstPersoneChange.Count > 1) timerChangePersone.Enabled = true;
-                //timerReadMessagesOn();
-                //написать получение сообщения END_WAITING_TIMER от The System
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
-                SelectNextReceivedMessage(false);
-                if (lstPersoneChange.Count > 0)
-				{
-                    bSessionAnswerSended = false;// onChangePersoneByTimer(true, true);
+				// Проверяем, свободен ли BackgroundWorker
+                if (!backgroundWorkerTimerAnswerWaiting.IsBusy)
+                {
+                    // Запуск выполнения операции в фоновом потоке
+                    backgroundWorkerTimerAnswerWaiting.RunWorkerAsync();
                 }
-     //           else
-					//timerAnswerWaitingOn();
-			}
-
-		}
+            }
+        }
 
 		private void timerAnswerWaitingOff()
 		{
@@ -14409,7 +16585,7 @@ namespace Nilsa
             timerAnswerWaitingCycle = 0;
 			progressBarAnswerWaiting.Value = 0;
 			progressBarAnswerWaiting.Invalidate();
-			Application.DoEvents(); 
+			//Application.DoEvents();
 		}
 
 
@@ -14460,8 +16636,15 @@ namespace Nilsa
 		{
 			if (!bServiceStart)
 				return;
+			timerDefaultAnswerWaitingCycle = timersValues[5];
+			timerAnswerWaitingCycle = timerDefaultAnswerWaitingCycle;
+			progressBarAnswerWaiting.Value = 0;
+			progressBarAnswerWaiting.Invalidate();
+			//Application.DoEvents();
 
-			if (bSessionAnswerSended && !timerWriteMessages.Enabled)
+			timerAnswerWaiting.Enabled = true;
+
+			/*if (bSessionAnswerSended && !timerWriteMessages.Enabled)
 			{
 				timerDefaultAnswerWaitingCycle = timersValues[5];
 				timerAnswerWaitingCycle = timerDefaultAnswerWaitingCycle;
@@ -14471,7 +16654,7 @@ namespace Nilsa
 				Application.DoEvents();
 
 				timerAnswerWaiting.Enabled = true;
-			}
+			}*/
 		}
 
 		private void setReinitDialogsWhenFreeFlag()
@@ -14824,7 +17007,7 @@ namespace Nilsa
 			setBtnB4(sUID);
 			if (sULogin.Length == 0 || sUPwd.Length == 0)
 			{
-				timerAnswerWaitingOff();
+				//timerAnswerWaitingOff();
 			}
 			else
 			{
@@ -14940,16 +17123,42 @@ namespace Nilsa
 			}
 		}
 
-		private void timerReadMessagesOff()
+		/*private void timerReadMessagesOff()
 		{
 			timerReadMessages.Enabled = false;
 			timerReadCycle = 0;
 			progressBarRead.Value = 0;
 			progressBarRead.Invalidate();
 			Application.DoEvents();
+		}*/
+
+		private void timerReadMessagesOff()
+		{
+			this.Invoke((MethodInvoker)(() =>
+			{
+				timerReadMessages.Enabled = false;
+				timerReadCycle = 0;
+				progressBarRead.Value = 0;
+				progressBarRead.Invalidate();
+			}));
 		}
 
+
 		private void timerReadMessagesOn()
+		{
+			Random rnd = new Random();
+			timerDefaultReadCycle = timersValues[6] + rnd.Next(0, timersValues[0]);
+			timerReadCycle = timerDefaultReadCycle;
+
+			this.Invoke((MethodInvoker)(() =>
+			{
+				progressBarRead.Value = 0;
+				progressBarRead.Invalidate();
+				timerReadMessages.Enabled = true;
+			}));
+		}
+
+		/*private void timerReadMessagesOn()
 		{
 			Random rnd = new Random();
 			timerDefaultReadCycle = timersValues[6] + rnd.Next(0, timersValues[0]);
@@ -14957,9 +17166,9 @@ namespace Nilsa
 			progressBarRead.Value = 0;
 			progressBarRead.Invalidate();
 			Application.DoEvents();
-			if (doDelayedMessages())
+			//if (doDelayedMessages())
 				timerReadMessages.Enabled = true;
-		}
+		}*/
 
 		private bool doDelayedMessages()
 		{
@@ -15055,7 +17264,7 @@ namespace Nilsa
 					Set_labelInEqMsgHarTitleValue_Text("Delayed message");
 					Set_labelInMsgHarTitleValue_Text("Delayed message");
 					SetEQOutMessageParametersValues(_message);
-					tbSendOutMessageAction();
+					SendOutMessageAction();
 					//StartService();
 
 					//if (!lstEQOutMessagesList.Contains(_message))
@@ -15156,53 +17365,98 @@ namespace Nilsa
 
 		private void timerReadMessages_Tick(object sender, EventArgs e)
 		{
+			if (lstReceivedMessages.Count > 0)
+			{
+				timerReadMessagesOff();
+				return;
+			}
+
 			timerReadCycle--;
 
 			int pbvalue = (int)(100 * (float)(timerDefaultReadCycle - timerReadCycle) / (float)(timerDefaultReadCycle));
-			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
+			if (pbvalue < 0) pbvalue = 0;
+			else if (pbvalue > 100) pbvalue = 100;
 			progressBarRead.Value = pbvalue;
 			progressBarRead.Invalidate();
-			Application.DoEvents();
+
+			//Application.DoEvents();
 
 			if (timerReadCycle <= 0)
 			{
 				timerReadMessagesOff();
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
-                SelectNextReceivedMessage(false);
 
-				//задача 53 в рамках нее убран функционал
-
-    //            bool bNotChanged = true;
-    //            if (lstReceivedMessages.Count > 0)
-				//{
-				//	//ReadNewReceivedMessages();
-				//	//if (iInMsgID == -1)
-				//	//	SelectNextReceivedMessage(false);
-
-				//}
-				//else
-				//{
-    //                //tbSkipMessage_Click(null, null);
-    //                if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
-				//	{
-				//		bNotChanged = false;
-    //                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_READ_MESSAGE_FINISHED");
-				//		SelectNextReceivedMessage(false);
-    //                    //onChangePersoneByTimer(true, true);
-    //                }
-				//	else
-				//	{
-    //                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
-				//		//ReadNewReceivedMessages();
-    //                    SelectNextReceivedMessage(false);
-    //                }
-				//}
-
-
-				//if (bNotChanged && iContUserID != -1)
-				//	ReadAllUserMessages(iContUserID);
-
+				// Запуск выполнения операции в фоновом потоке
+				backgroundWorkerReadNewMessagesTimer.RunWorkerAsync();
+				
 			}
+
+			/*await Task.Run(() =>
+			{
+				if (timerReadCycle <= 0)
+				{
+					timerReadMessagesOff();
+					lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+					SelectNextReceivedMessage(false);
+					if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+				}
+			});
+			*/
+			/*if (timerReadCycle <= 0)
+			{
+				//timerReadMessages.Enabled = false;
+				timerReadMessagesOff();
+				//isTimerReadNewMessagesFinished = true;
+				//timerReadMessagesOn();
+				//if (lstReceivedMessages.Count == 0) timerAnswerWaitingOn();
+				//else timerWriteMessagesOn();
+
+
+				//deleted 05/06/2023 
+				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+				SelectNextReceivedMessage(false);
+				//tbSendOutMessageAction();
+
+				//timerReadMessagesOff();
+				if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
+				//timerReadMessagesOn();
+
+				/*if (lstReceivedMessages.Count == 0)
+				{
+					timerAnswerWaitingOn();
+				}*/
+			//задача 53 в рамках нее убран функционал
+
+			//            bool bNotChanged = true;
+			//            if (lstReceivedMessages.Count > 0)
+			//{
+			//	//ReadNewReceivedMessages();
+			//	//if (iInMsgID == -1)
+			//	//	SelectNextReceivedMessage(false);
+
+			//}
+			//else
+			//{
+			//                //tbSkipMessage_Click(null, null);
+			//                if (!bSessionAnswerSended && (lstPersoneChange.Count > 0) && (lstReceivedMessages.Count == 0) && /*SocialNetwork == 0 &&*/ bServiceStart)
+			//	{
+			//		bNotChanged = false;
+			//                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_READ_MESSAGE_FINISHED");
+			//		SelectNextReceivedMessage(false);
+			//                    //onChangePersoneByTimer(true, true);
+			//                }
+			//	else
+			//	{
+			//                    lstReceivedMessages.Insert(0, $"0|{iContUserID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "READ_NEW_MESSAGES");
+			//		//ReadNewReceivedMessages();
+			//                    SelectNextReceivedMessage(false);
+			//                }
+			//}
+
+
+			//if (bNotChanged && iContUserID != -1)
+			//	ReadAllUserMessages(iContUserID);
+
+			//}*/
 
 		}
 
@@ -15214,7 +17468,7 @@ namespace Nilsa
 			{
 				progressBarWrite.Value = 0;
 				progressBarWrite.Invalidate();
-				Application.DoEvents();
+				//Application.DoEvents();
 			}
 		}
 
@@ -15226,13 +17480,17 @@ namespace Nilsa
 			if (labelInEqMsgHarTitleValue_Text.Trim().Length > 0 || labelOutEqMsgHarTitleValue_Text.Trim().Length > 0)
 			{
 				if (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0 && tbSendOutMessage.Enabled)
-					timerAnswerWaitingOff();
+				{
+					//timerAnswerWaitingOff();
+					timerAnswerWaiting.Enabled = false;
+					timerReadMessagesOff();
+				}
 				Random rnd = new Random();
 				timerDefaultWriteCycle = (labelInEqMsgHarTitleValue_Text.Trim().Length * 60) / timersValues[1] + rnd.Next(1, timersValues[3]) + (labelOutEqMsgHarTitleValue_Text.Trim().Length > 0 && tbSendOutMessage.Enabled ? ((labelOutEqMsgHarTitleValue_Text.Trim().Length * 60) / timersValues[4] + timersValues[2]) : timersValues[2]);
 				timerWriteCycle = timerDefaultWriteCycle;
 				progressBarWrite.Value = 0;
 				progressBarWrite.Invalidate();
-				Application.DoEvents();
+				//Application.DoEvents();
 
 				resetTimerWriteMessagesActivity();
 				timerWriteMessages.Enabled = true;
@@ -15263,7 +17521,7 @@ namespace Nilsa
 		public void StartService()//object sender, EventArgs e)
 		{
 
-            SaveProgramState();
+			SaveProgramState();
 			setMonitorTime(true);
 
 			timerFlashStartButton.Enabled = false;
@@ -15271,21 +17529,66 @@ namespace Nilsa
 
 			tbStartService.Enabled = false;
 			tbStopService.Enabled = true;
+			if (timerAnswerWaitingCycle > 0) timerAnswerWaiting.Enabled = true;
 
 			timerCountersStart.Enabled = true;
 
 			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0) timerChangePersone.Enabled = true;
 
+			if (!_firstStart && needActivation)
+			{
+				for (int i = 0; i < lstReceivedMessages.Count; i++)
+				{
+					if (lstReceivedMessages[i].Contains($"0|{theSystemContacter.ContID}|") && (lstReceivedMessages[i].Contains("ACTIVATE_PERSONE")))
+					{
+						lstReceivedMessages.RemoveAt(i);
+						i--;
+					}
+				}
+				needActivation = false;
+				lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|{DateTime.Now.ToShortDateString()}|{DateTime.Now.ToShortTimeString()}|ACTIVATE_PERSONE");
+			}
+
 			bServiceStart = true;
+			//startTimers();
+			//if (fwbVKontakte == null)
+			//{
+			//    fwbVKontakte = new FormWebBrowser(this, true);
+			//    fwbVKontakte.Init();
+			//}
+
+			//if (!fwbVKontakteFirstShow)
+			//{
+			//    fwbVKontakteFirstShow = true;
+			//    fwbVKontakte.Show();
+			//}
 
 			/*убрано 30.05.2023 задача 66
 			timerAnswerWaitingOn();
 			timerWriteMessagesOn();*/
+			//if (tbSendOutMessage.Enabled)
+			//{
+			//    TimerSendAnswerCycle = DefaultTimerSendAnswerCycle;
+			//    Set_pbSendMessage_Value();
+			//    timerWriteMessages.Enabled = true;
+			//    timerPhysicalSend.Enabled = false;
+			//}
+			//else
+			//    if (iInMsgID >= 0) timerSkipMessage.Enabled = true;
 
-            if (lstReceivedMessages.Count == 0) timerReadMessagesOn();
-            else timerWriteMessagesOn();
+			if (lstReceivedMessages.Count == 0)
+			{
+				timerReadMessagesOn();
+				//timerAnswerWaitingOn();
+				timerAnswerWaiting.Enabled = true;
+			}
+			else timerWriteMessagesOn();
 
-            timerPhysicalSendStart();
+			//timerReadMessagesOn();
+
+			timerOutgoingPull.Enabled = true;
+			//timerPhysicalSendStart();
+			TimerReadFromInterface.Enabled = true;
 
 			tbNewOutMessageEnter.Enabled = iPersUserID >= 0 && iContUserID >= 0;
 			tbInitContactDialogContacter.Enabled = iPersUserID >= 0 && (iContUserID >= 0 || iContUserID < -1);
@@ -15304,19 +17607,24 @@ namespace Nilsa
 		public void StopService()
 		{
 			HideBrowserCommand();
-			tbStartServiceIsClickedNow = false;
+			//tbStartServiceIsClickedNow = false;
 			bServiceStart = false;
 			tbStartService.Enabled = true;
 			tbStopService.Enabled = false;
 			timerChangePersone.Enabled = false;
-
+			timerAnswerWaiting.Enabled = false;
+			//stopTimers();
 			//timerWriteMessages.Enabled = false;
 			timerReadMessagesOff();
 			//timerSkipMessage.Enabled = false;
 			//timerAnswerWaiting.Enabled = false;
-			timerAnswerWaitingOff();
+			//if (!tbStartServiceIsClickedNow) timerAnswerWaiting.Enabled = false;//timerAnswerWaitingOff();
+			//timerAnswerWaitingOff();
 
-			timerPhysicalSendStop();
+
+			//timerPhysicalSendStop();
+			timerOutgoingPull.Enabled = false;
+			TimerReadFromInterface.Enabled = false;
 			SaveProgramCountersC1C2C3();
 			SaveProgramCountersC4C5C6();
 			timerCountersStart.Enabled = false;
@@ -15349,16 +17657,22 @@ namespace Nilsa
 		{
 			if (FormMain_FormClosing_Action)
 			{
-				if (fwbVKontakte != null)
+
+				/*var path = _interfaceListener.Path;
+
+				if (_process != null && !_process.HasExited)
 				{
-					if (fwbVKontakte.Visible)
+					while (!File.Exists(Path.Combine(path.PathWebDriver, path.FileFlag)) && File.Exists(Path.Combine(path.PathNilsa, path.FileFlag)))
 					{
-						fwbVKontakte.saveSettings();
-						fwbVKontakte.exitBrowser = true;
-						fwbVKontakte.stopAllTimers(); 
-						fwbVKontakte.Hide();
+						WaitNSeconds(1);
 					}
-				}
+
+					TimerReadFromInterface.Enabled = true;
+
+					_process.CloseMainWindow();
+					_process.Close();
+					_process.Dispose();
+				}*/
 
 				setMonitorTime(false);
 				SaveProgramCountersC1C2C3();
@@ -15614,8 +17928,8 @@ namespace Nilsa
 			contName = contNameName + " " + contNameFamily;
 			labelCont1FIO.Text = contName;
 			toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
-            
-            if (labelCont1FIO.Text == "" || labelCont1FIO.Text ==  " ")
+			
+			if (labelCont1FIO.Text == "" || labelCont1FIO.Text ==  " ")
 			{
 				if (File.Exists(Path.Combine(sDataPath, "_contacts_" + getSocialNetworkPrefix() + Convert.ToString(iPersUserID) + ".txt")))
 				{
@@ -15626,27 +17940,27 @@ namespace Nilsa
 						{
 							if (c.Substring(0, c.IndexOf("|")) == iContUserID.ToString())
 							{
-                                var data = c.Split('|');
-                                iContUserID = Convert.ToInt32(data[0]);
-                                contName = data[1];
-                                photoContURL = data[2];
-                                var names = contName.Split(' ');
-                                if (names.Length == 2)
-                                {
-                                    contNameName = names[0];
-                                    contNameFamily = names[1];
-                                }
-                                else if (names.Length == 1)
-                                {
-                                    contNameName = names[0];
-                                    contNameFamily = "";
-                                }
-                                labelCont1Name.Text = contNameName;
-                                labelCont1Family.Text = contNameFamily;
-                                labelCont1FIO.Text = contNameName + " " + contNameFamily;
-                                toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
+								var data = c.Split('|');
+								iContUserID = Convert.ToInt32(data[0]);
+								contName = data[1];
+								photoContURL = data[2];
+								var names = contName.Split(' ');
+								if (names.Length == 2)
+								{
+									contNameName = names[0];
+									contNameFamily = names[1];
+								}
+								else if (names.Length == 1)
+								{
+									contNameName = names[0];
+									contNameFamily = "";
+								}
+								labelCont1Name.Text = contNameName;
+								labelCont1Family.Text = contNameFamily;
+								labelCont1FIO.Text = contNameName + " " + contNameFamily;
+								toolTipMessage.SetToolTip(labelCont1FIO, labelCont1FIO.Text);
 								break;
-                            }
+							}
 						}
 					}
 					catch (Exception e)
@@ -15657,30 +17971,33 @@ namespace Nilsa
 
 				if (photoContURL != "")
 				{
-                    try
-                    {
-                        if (photoContURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
-                        {
-                            //подставляем фотку
-                            var request = WebRequest.Create(photoContURL);
-                            using (var response = request.GetResponse())
-                            using (var stream = response.GetResponseStream())
-                            {
-                                var bitmapPicture = Bitmap.FromStream(stream);
-                                buttonEditContHarValues.BackgroundImage = bitmapPicture;
-                            }
-                        }
-                        else 
-                        {
-                            buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
-                        }
-
-                    }
-                    catch (Exception e)
-                    {
-                        ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
-                    }
-                }
+					if (File.Exists(photoContURL))
+					{
+						try
+						{
+							buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
+							//if (photoContURL.StartsWith($"https://") || photoContURL.StartsWith($"http://"))
+							//{
+							//    //подставляем фотку
+							//    var request = WebRequest.Create(photoContURL);
+							//    using (var response = request.GetResponse())
+							//    using (var stream = response.GetResponseStream())
+							//    {
+							//        var bitmapPicture = Bitmap.FromStream(stream);
+							//        buttonEditContHarValues.BackgroundImage = bitmapPicture;
+							//    }
+							//}
+							//else
+							//{
+							//    buttonEditContHarValues.BackgroundImage = Image.FromFile(photoContURL);
+							//}
+						}
+						catch (Exception e)
+						{
+							ExceptionToLogList("File.ReadAllLines", "Reading lists", e);
+						}
+					}
+				}
 			}
 		}
 
@@ -15760,7 +18077,7 @@ namespace Nilsa
 			//из-за сложности в множественных перезаписях файла, обнуляем данные и заново читаем их из файла
 			userNameName = "";
 			userNameFamily = "";
-			photoURL = "";
+			photoPersURL = "";
 			dbUserName = "";
 			LoadPersoneParametersValues();
 			SetPersoneParametersValues();
@@ -16429,25 +18746,25 @@ namespace Nilsa
 			ProgressBar_Paint(e, progressBarChangePersone.ProgressBar, Convert.ToString(timerChangePersoneCycle), Color.Black, Color.FromArgb(((System.Byte)(0)), ((System.Byte)(0)), ((System.Byte)(255))));
 		}
 
-		public void timerPhysicalSendStart()
-		{
-			if (bServiceStart)
-			{
-				if (lstOutgoingMessages.Count > 0)
-				{
-					timerOutgoingPull.Enabled = true;
-				}
-				else
-				{
-					timerPhysicalSendStop();
-				}
-			}
-		}
+		//public void timerPhysicalSendStart()
+		//{
+		//	if (bServiceStart)
+		//	{
+		//		if (lstOutgoingMessages.Count > 0)
+		//		{
+		//			timerOutgoingPull.Enabled = true;
+		//		}
+		//		else
+		//		{
+		//			timerPhysicalSendStop();
+		//		}
+		//	}
+		//}
 
-		private void timerPhysicalSendStop()
-		{
-			timerOutgoingPull.Enabled = false;
-		}
+		//private void timerPhysicalSendStop()
+		//{
+		//	timerOutgoingPull.Enabled = false;
+		//}
 
 		public void NILSA_SendMessage(long from, long to, String text)
 		{
@@ -16569,9 +18886,74 @@ namespace Nilsa
 				SetEQInMessageList(labelInMsgHarTitleValue_Text);
 		}
 
-		private void FormMain_Load(object sender, EventArgs e)
+        static void RunInterface()
+        {
+            // Путь к .bat файлу
+            string batFilePath = Path.Combine(Application.StartupPath, "RunInterface.bat");
+
+            if (File.Exists(batFilePath))
+            {
+                // Создание процесса для выполнения .bat файла
+                Process process = new Process();
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = "/c \"" + batFilePath + "\"";
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.StartInfo.CreateNoWindow = true;
+
+                process.EnableRaisingEvents = true;
+                process.Exited += (sender, e) =>
+                {
+                    int exitCode = process.ExitCode;
+					if (exitCode != 0)
+					{
+						MessageBox.Show("Starting Interface Error" + exitCode.ToString());
+					}
+                    // Обработка ошибки или успешного завершения
+                };
+
+                process.Start();
+                process.WaitForExit();
+            }
+            else
+            {
+                Console.WriteLine("Файл .bat не найден.");
+            }
+        }
+
+
+        private void FormMain_Load(object sender, EventArgs e)
 		{
 			backgroundWorkerUpdate.RunWorkerAsync(false);
+
+			RunInterface();
+
+			/*//Start the Interface
+			string pathToExe = @"..\Interface\main.exe"; //@"C:\путь\к\файлу.exe";
+
+
+			if (!File.Exists(pathToExe))
+			{
+				MessageBox.Show("The Interface.exe not found");
+				return;
+			}
+			// Creating the process
+			var _process = new Process();
+			_process.StartInfo.FileName = pathToExe;
+			_process.StartInfo.Verb = "runas";
+			//_process.StartInfo.LoadUserProfile = true;
+			_process.StartInfo.UseShellExecute = true;
+			//_process.StartInfo.CreateNoWindow = true;  // Do not create winwow
+			//_process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+
+			try
+			{
+				_process.Start();
+				if (_process.HasExited) { MessageBox.Show("Failed to start Interface"); }
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Failed to start Interface: {ex.Message}");
+			}*/
 		}
 
 		private void labelCont1Name_Click(object sender, EventArgs e)
@@ -16666,7 +19048,7 @@ namespace Nilsa
 
 			if (formEditPersonenDB.bNeedPersoneChange)
 			{
-				timerAnswerWaitingOff();
+				//timerAnswerWaitingOff();
 
 				initPersonenLists(formEditPersonenDB);
 
@@ -17004,7 +19386,7 @@ namespace Nilsa
 							SaveProgramCountersE4E5E6();
 							UpdateProgramCountersInfoE4E5E6();
 						}
-						timerPhysicalSendStart();
+						//timerPhysicalSendStart();
 						//---
 					}
 				}
@@ -17872,15 +20254,15 @@ namespace Nilsa
 
 		private void FormMain_FormClosed(object sender, FormClosedEventArgs e)
 		{
-			try
-			{
-				if (FormWebBrowserEnabled)
-					Cef.Shutdown();
-			}
-			catch
-			{
+			//try
+			//{
+			//	if (FormWebBrowserEnabled)
+			//		Cef.Shutdown();
+			//}
+			//catch
+			//{
 
-			}
+			//}
 		}
 
 		private void tbContacterWorkMode_ButtonClick(object sender, EventArgs e)
@@ -18200,7 +20582,7 @@ namespace Nilsa
 				fwb.Setup(userLogin, userPassword, WebBrowserCommand.SendMessage, id, message, "", userName);
 				fwb.ShowDialog();
 				*/
-				addToHistory(iPersUserID, id, false, DateTime.Now.ToShortDateString(), DateTime.Now.ToShortTimeString(), NilsaUtils.TextToString(message));
+				//addToHistory(iPersUserID, id, false, DateTime.Now.ToShortDateString(), DateTime.Now.ToShortTimeString(), NilsaUtils.TextToString(message));
 
 				ShowBrowserCommand();
 
@@ -18221,8 +20603,8 @@ namespace Nilsa
 			if (iPersUserID >= 0 && SocialNetwork == 0)
 			{
 				stopTimers();
-				if (message.Length>0)
-					addToHistory(iPersUserID, id, false, DateTime.Now.ToShortDateString(), DateTime.Now.ToShortTimeString(), NilsaUtils.TextToString(message));
+				//if (message.Length>0)
+					//addToHistory(iPersUserID, id, false, DateTime.Now.ToShortDateString(), DateTime.Now.ToShortTimeString(), NilsaUtils.TextToString(message));
 
 				ShowBrowserCommand();
 
@@ -18238,556 +20620,25 @@ namespace Nilsa
 			}
 		}
 
-		private void timerOutgoingPull_Tick(object sender, EventArgs e)
+		private OutgoingMessage OutgoingMsgParser(string outMsg)
 		{
-			timerPhysicalSendStop();
-			if (lstOutgoingMessages.Count > 0)
-			{
-				bool bErrorParsing = false;
-				String srec = lstOutgoingMessages[0];
-				lstOutgoingMessages.RemoveAt(0);
-				long contid = 0;
-				long _iGroupAnswerID = -1;
-				long _iGroupAnswerPostID = -1;
-				long _iGroupAnswerCommentID = -1;
-				String message = "";
-				long channel = 0; // 0 - ЛС, 1 - стена
-				string name = "";
-				try
-				{
-					if (srec.StartsWith("*#|"))
-					{
-						message = srec.Substring(srec.IndexOf("|") + 1);
-						channel = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
-						message = message.Substring(message.IndexOf("|") + 1);
-						if (channel == 4)
-						{
-							string strUsrId = message.Substring(0, message.IndexOf("|"));
-							//Convert.ToString(_ownerId)+"/"+ Convert.ToString(_postId) + "/"+ Convert.ToString(msg.Id) + "/" + Convert.ToString(msg.FromId) + "|";
-							_iGroupAnswerID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
-							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
-							_iGroupAnswerPostID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
-							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
-							_iGroupAnswerCommentID = Convert.ToInt64(strUsrId.Substring(0, strUsrId.IndexOf('/')));
-							strUsrId = strUsrId.Substring(strUsrId.IndexOf('/') + 1);
-							contid = Convert.ToInt64(strUsrId);
+			var  outMessages = new OutgoingMessage();
 
-						}
-						else
-							contid = Convert.ToInt64(message.Substring(0, message.IndexOf("|")));
+			//отбрасываем начало
+			outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+			//берем канал
+			outMessages.Channel = outMsg.Substring(0, outMsg.IndexOf("|"));
+			outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+			//берем айди контактера
+			outMessages.ContacterId = Convert.ToInt64(outMsg.Substring(0, outMsg.IndexOf("|")));
+			outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+			//берем имя контактера
+			outMessages.ContacterName = outMsg.Substring(0, outMsg.IndexOf("|"));
+			outMsg = outMsg.Substring(outMsg.IndexOf("|") + 1);
+			//берем сообщение
+			outMessages.Message = outMsg.Replace("<br>","\n");
 
-						message = message.Substring(message.IndexOf("|") + 1);
-						name = message.Substring(message.IndexOf("|") + 1);
-						message = message.Substring(message.IndexOf("|") + 1);
-
-						if (contid < 0 && channel == 0)
-						{
-							contid = -contid;
-							channel = 3;
-						}
-
-					}
-					else
-					{
-						contid = Convert.ToInt64(srec.Substring(0, srec.IndexOf("|")));
-						message = srec.Substring(srec.IndexOf("|") + 1);
-						message = message.Substring(message.IndexOf("|") + 1);
-					}
-				}
-				catch (Exception exp)
-				{
-					bErrorParsing = true;
-					ExceptionToLogList("timerOutgoingPull_Tick Parsing srec error", contid.ToString() + ", " + srec, exp);
-				}
-				finally { }
-
-				if (!bErrorParsing)
-				{
-					/*
-					bool bNotDelayed = true;
-					if (message.IndexOf("time_delay:") >= 0)
-					{
-						bNotDelayed = false;
-						String timeDelay = message.Substring(message.IndexOf("time_delay:") + 11).Trim();
-
-						int iDelayType = 1;
-						if (timeDelay.EndsWith("min"))
-						{
-							iDelayType = 0;
-							timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("min")).Trim();
-						}
-						else if (timeDelay.EndsWith("hour"))
-						{
-							iDelayType = 1;
-							timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("hour")).Trim();
-						}
-						else if (timeDelay.EndsWith("day"))
-						{
-							iDelayType = 2;
-							timeDelay = timeDelay.Substring(0, timeDelay.IndexOf("day")).Trim();
-						}
-
-						int iDelay = -1;
-						try
-						{
-							iDelay = Convert.ToInt32(timeDelay);
-						}
-						catch
-						{
-							iDelay = -1;
-						}
-
-						if (iDelay >= 0)
-						{
-							String text = srec.Substring(0, srec.IndexOf("time_delay:"));
-							DateTime dtDelay = DateTime.Now;
-							if (iDelayType == 0)
-								dtDelay = dtDelay.AddMinutes((double)iDelay);
-							else if (iDelayType == 1)
-								dtDelay = dtDelay.AddHours((double)iDelay);
-							else if (iDelayType == 2)
-								dtDelay = dtDelay.AddDays((double)iDelay);
-
-							lstOutgoingMessagesDelayed.Add(dtDelay.ToBinary().ToString() + "|" + text);
-							SaveOutgoingDelayedMessagesPull();
-						}
-					}
-					*/
-
-					if (((message.Length > 0) || (channel == 2))/* && bNotDelayed*/)
-					{
-						cntE1++;
-						cntE2++;
-						cntE7++;
-						cntE8++;
-						SaveProgramCountersE1E2E3();
-						UpdateProgramCountersInfoE1E2E3();
-
-						cntE4++;
-						cntE5++;
-						SaveProgramCountersE4E5E6();
-						UpdateProgramCountersInfoE4E5E6();
-
-						if (SocialNetwork == 0)
-						{
-							try
-							{
-								if (channel == 0)
-								{
-									string attachlist = null;
-									if (message.IndexOf("attach:") >= 0)
-									{
-										attachlist = message.Substring(message.IndexOf("attach:") + 7);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									if (attachlist == null)
-									{
-										apiMessagesSend(contid, false, message);
-									}
-									else
-										apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, null, null, attachlist);
-								}
-								else if (channel == 1)
-								{
-									/*
-									string attachlist = null;
-									if (message.IndexOf("wallattach:") >= 0)
-									{
-										attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									if (attachlist == null)
-									{
-										//api.Messages.Send(contid, false, message);
-										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message));
-									}
-									else
-										api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, null, null, attachlist);
-										*/
-								}
-								else if (channel == 2)
-								{
-									//api.Friends.Add(contid, message);
-									apiFriendsAdd(contid, false, message);
-								}
-								else if (channel == 3)
-								{
-									/*
-									string attachlist = null;
-									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-									if (msgrealtext.IndexOf("attach:") >= 0)
-									{
-										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									long postId = -1;
-									if (attachlist == null)
-									{
-										postId = api.Wall.Post(-contid, false, false, msgrealtext);
-									}
-									else
-										postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
-
-									if (postId >= 0)
-									{
-										Wall_AddPostToMonitoring(contid, postId);
-
-										if (listAdditionalPersonen.Count > 0)
-										{
-											DBPersonListItem personListItem = listAdditionalPersonen[0];
-											listAdditionalPersonen.RemoveAt(0);
-											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
-
-											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
-										}
-									}
-									*/
-								}
-								else if (channel == 4)
-								{
-									/*
-									string attachlist = null;
-									List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-									string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-									if (msgrealtext.IndexOf("attach:") >= 0)
-									{
-										attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-										if (attachlist.Length == 0)
-											attachlist = null;
-									}
-
-									long postId = -1;
-									if (attachlist == null)
-									{
-										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext);
-										else
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID);
-									}
-									else
-									{
-										if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist);
-										else
-											postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist);
-									}
-
-									if (postId >= 0)
-									{
-										if (listAdditionalPersonen.Count > 0)
-										{
-											DBPersonListItem personListItem = listAdditionalPersonen[0];
-											listAdditionalPersonen.RemoveAt(0);
-											putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
-
-											if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-												Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
-										}
-									}
-									*/
-								}
-							}
-							/*
-							catch (VkNet.Exception.CaptchaNeededException ex)
-							{
-								bool bStatusService = !tbStartService.Enabled;
-								tbStopService_Click(null, null);
-
-								long? captcha_sid = ex.Sid;
-								string captcha_key = null;
-								Uri imguri = ex.Img;
-								bool bCycle = true;
-								do
-								{
-									var form = new FormCaptcha(this, imguri, captcha_sid);
-									DialogResult dr = DialogResult.Cancel;
-									try
-									{
-										dr = form.ShowDialog();
-									}
-									catch
-									{
-										dr = DialogResult.Cancel;
-									}
-									if (dr == DialogResult.OK)
-									{
-										captcha_key = form.CaptchaKey.Text;
-										//---
-										try
-										{
-											if (channel == 0)
-											{
-												string attachlist = null;
-												if (message.IndexOf("attach:") >= 0)
-												{
-													attachlist = message.Substring(message.IndexOf("attach:") + 7);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												if (attachlist == null)
-												{
-													apiMessagesSend(contid, false, message, "", null, null, false, null, null, null, captcha_sid, captcha_key);
-												}
-												else
-													apiMessagesSend(contid, false, message.Substring(0, message.IndexOf("attach:")), "", null, null, false, null, null, null, captcha_sid, captcha_key, attachlist);
-											}
-											else if (channel == 1)
-											{
-												//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
-												//bCycle = false;
-												string attachlist = null;
-												if (message.IndexOf("wallattach:") >= 0)
-												{
-													attachlist = message.Substring(message.IndexOf("wallattach:") + 11);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												if (attachlist == null)
-												{
-													//api.Messages.Send(contid, false, message);
-													api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
-												}
-												else
-													api.Wall.Post(contid, false, false, NilsaUtils.StringToText(message.Substring(0, message.IndexOf("wallattach:"))), null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key, attachlist);
-											}
-											else if (channel == 2)
-											{
-												api.Friends.Add(contid, message, captcha_sid, captcha_key);
-											}
-											else if (channel == 3)
-											{
-												string attachlist = null;
-												List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-												string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-												if (msgrealtext.IndexOf("attach:") >= 0)
-												{
-													attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												long postId = -1;
-												if (attachlist == null)
-												{
-													postId = api.Wall.Post(-contid, false, false, msgrealtext, null, null, null, false, null, null, null, null, null, captcha_sid, captcha_key);
-												}
-												else
-													postId = api.Wall.Post(-contid, false, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, null, false, null, null, null, null, null, captcha_sid, captcha_key);
-
-												if (postId >= 0)
-												{
-													Wall_AddPostToMonitoring(contid, postId);
-
-													if (listAdditionalPersonen.Count > 0)
-													{
-														DBPersonListItem personListItem = listAdditionalPersonen[0];
-														listAdditionalPersonen.RemoveAt(0);
-														putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, contid, postId, postId, iPersUserID, listAdditionalPersonen);
-
-														if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-															Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), contid, postId);
-													}
-												}
-
-											}
-											else if (channel == 4)
-											{
-												string attachlist = null;
-												List<DBPersonListItem> listAdditionalPersonen = getAdditionPersonList(message);
-												string msgrealtext = removeTagValue(message, "<ADD_PERS_LIST>", "</ADD_PERS_LIST>");
-												if (msgrealtext.IndexOf("attach:") >= 0)
-												{
-													attachlist = msgrealtext.Substring(msgrealtext.IndexOf("attach:") + 7);
-													if (attachlist.Length == 0)
-														attachlist = null;
-												}
-
-												if (attachlist == null)
-												{
-													api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
-												}
-												else
-													api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
-
-												long postId = -1;
-												if (attachlist == null)
-												{
-													if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, null, null, captcha_sid, captcha_key);
-													else
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext, _iGroupAnswerCommentID, null, captcha_sid, captcha_key);
-												}
-												else
-												{
-													if ((_iGroupAnswerPostID == _iGroupAnswerCommentID))
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), null, attachlist, captcha_sid, captcha_key);
-													else
-														postId = api.Wall.AddComment(-_iGroupAnswerID, _iGroupAnswerPostID, false, msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")), _iGroupAnswerCommentID, attachlist, captcha_sid, captcha_key);
-												}
-
-												if (postId >= 0)
-												{
-													if (listAdditionalPersonen.Count > 0)
-													{
-														DBPersonListItem personListItem = listAdditionalPersonen[0];
-														listAdditionalPersonen.RemoveAt(0);
-														putAdditionalPersoneMessage(personListItem.UserID, msgrealtext.IndexOf("attach:") >= 0 ? msgrealtext.Substring(0, msgrealtext.IndexOf("attach:")) : msgrealtext, _iGroupAnswerID, _iGroupAnswerPostID, postId, iPersUserID, listAdditionalPersonen);
-
-														if (!personListItem.UserID.Equals(iPersUserID.ToString()))
-															Wall_UserAddPostToMonitoring(Convert.ToInt64(personListItem.UserID), _iGroupAnswerID, _iGroupAnswerPostID);
-													}
-												}
-
-											}
-											bCycle = false;
-										}
-										catch (VkNet.Exception.CaptchaNeededException ex1)
-										{
-											captcha_sid = ex1.Sid;
-											imguri = ex1.Img;
-										}
-										catch (VkNet.Exception.AccessTokenInvalidException atiexp)
-										{
-											ReAutorize(userLogin, userPassword);
-											lstOutgoingMessages.Add(srec);
-											bCycle = false;
-										}
-										catch (System.Net.WebException)
-										{
-											ReAutorize(userLogin, userPassword);
-											lstOutgoingMessages.Add(srec);
-											bCycle = false;
-										}
-										catch (VkNet.Exception.VkApiException vkexpapi)
-										{
-											if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
-											{
-												GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-												ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-											}
-											else if (vkexpapi as VkNet.Exception.PostLimitException != null)
-											{
-												GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-												ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-											}
-											else if (vkexpapi.Message != null)
-											{
-												ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-												if (vkexpapi.Message.IndexOf("Flood control") < 0)
-												{
-													GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-												}
-												if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
-												{
-													ReAutorize(userLogin, userPassword);
-													lstOutgoingMessages.Add(srec);
-												}
-											}
-											else
-											{
-												ReAutorize(userLogin, userPassword);
-												lstOutgoingMessages.Add(srec);
-											}
-											bCycle = false;
-										}
-										catch (Exception exp)
-										{
-											//GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
-											ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
-										}
-										//---
-									}
-									else
-									{
-										GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? "VkNet.Exception.CaptchaNeededException" : ""));
-										//ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, "VkNet.Exception.CaptchaNeededException");
-										bCycle = false;
-									}
-								}
-								while (bCycle);
-
-								if (bStatusService)
-									StartService();
-							}
-							catch (VkNet.Exception.AccessTokenInvalidException atiexp)
-							{
-								ReAutorize(userLogin, userPassword);
-								lstOutgoingMessages.Add(srec);
-							}
-							catch (System.Net.WebException)
-							{
-								ReAutorize(userLogin, userPassword);
-								lstOutgoingMessages.Add(srec);
-							}
-							catch (VkNet.Exception.VkApiException vkexpapi)
-							{
-								if (vkexpapi as VkNet.Exception.AccessDeniedException != null)
-								{
-									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-								}
-								else if (vkexpapi as VkNet.Exception.PostLimitException != null)
-								{
-									GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-								}
-								else if (vkexpapi.Message != null)
-								{
-									ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, vkexpapi);
-									if (vkexpapi.Message.IndexOf("Flood control") < 0)
-									{
-										GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? vkexpapi.Message : ""));
-									}
-									if (vkexpapi.Message.IndexOf("Базовое соединение закрыто") > 0)
-									{
-										ReAutorize(userLogin, userPassword);
-										lstOutgoingMessages.Add(srec);
-									}
-								}
-								else
-								{
-									ReAutorize(userLogin, userPassword);
-									lstOutgoingMessages.Add(srec);
-								}
-
-							}
-							*/
-							catch (Exception exp)
-							{
-								//lstOutgoingMessages.Add(srec);
-								GenerateFaceContacterMessage(contid, "ERROR_SEND_MESSAGE " + (adbrCurrent.ShowErrorDetails ? exp.Message : ""));
-								ExceptionToLogList("timerOutgoingPull_Tick", contid.ToString() + ", " + message, exp);
-							}
-							finally { }
-
-							// 2019-04-13
-							if ((channel == 0 || channel == 4) && contid == iContUserID && iContUserID != -1)
-								ReadAllUserMessages(iPersUserID,iContUserID);
-						}
-						else if (SocialNetwork == 1)
-						{
-							NILSA_SendMessage(iPersUserID, contid, message);
-						}
-					}
-				}
-				//--
-			}
-
-			if (!tbStartService.Enabled && lstOutgoingMessages.Count > 0)
-			{
-				timerPhysicalSendStart();
-			}
-
+			return outMessages;
 		}
 
 		private string NILSA_ARCHIVE_Create(string strExternalZipFileName = "", int[] _settings = null)
@@ -19826,20 +21677,20 @@ namespace Nilsa
 		private void timerChangePersone_Tick(object sender, EventArgs e)
 		{
 			timerChangePersoneCycle--;
-            int pbvalue = timerDefaultChangePersoneCycle > 0 ? (int)(100 * (float)(timerDefaultChangePersoneCycle - timerChangePersoneCycle) / (float)(timerDefaultChangePersoneCycle)) : 0;
+			int pbvalue = timerDefaultChangePersoneCycle > 0 ? (int)(100 * (float)(timerDefaultChangePersoneCycle - timerChangePersoneCycle) / (float)(timerDefaultChangePersoneCycle)) : 0;
 			if (pbvalue < 0) pbvalue = 0; else if (pbvalue > 100) pbvalue = 100;
 			progressBarChangePersone.Value = pbvalue;
 			progressBarChangePersone.Invalidate();
-			Application.DoEvents();
-			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle <=0 && timerReadCycle <=0 && timerWriteCycle <= 0 && !tbStartService.Enabled)
+			//Application.DoEvents();
+			if (timerChangePersoneCycle <= 0 && timerAnswerWaitingCycle > 0 /*&& timerReadCycle <=0*/ && timerWriteCycle <= 0 /*&& !tbStartService.Enabled*/)
 			{
 				timerChangePersoneOff();
-				StopService();
-                lstReceivedMessages.Insert(0, $"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "CHANGE_THE_PERSON");
+				//StopService();
+				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "CHANGE_THE_PERSON");
 				SelectNextReceivedMessage(false);
-				StartService();
-                //onChangePersoneByTimer(true, true);
-            }
+				//StartService();
+				//onChangePersoneByTimer(true, true);
+			}
 		}
 
 		private void timerChangePersoneOff()
@@ -19848,7 +21699,7 @@ namespace Nilsa
 			timerChangePersoneCycle = 0;
 			progressBarChangePersone.Value = 0;
 			progressBarChangePersone.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 		}
 
 		private void timerChangePersoneOn()
@@ -19859,13 +21710,109 @@ namespace Nilsa
 			timerChangePersoneCycle = timerDefaultChangePersoneCycle;
 			progressBarChangePersone.Value = 0;
 			progressBarChangePersone.Invalidate();
-			Application.DoEvents();
+			//Application.DoEvents();
 
 			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0)// && SocialNetwork == 0)
 				timerChangePersone.Enabled = true;
 		}
 
-		private void tbMessagesDBEqInEditMessage_Click(object sender, EventArgs e)
+        private string GetMessageCharacteristics(string selectedMessage)
+        {
+            string sMsgSrcRec = "";
+
+            if (!string.IsNullOrEmpty(selectedMessage))
+            {
+                sMsgSrcRec = "000000|";
+                string[] messageParts = selectedMessage.Split('|');
+                for (int i = 0; i < iMsgHarCount; i++)
+                {
+                    sMsgHar[i, 3] = messageParts[i];
+                    sMsgSrcRec += messageParts[i] + "|";
+                }
+                string sMessage = labelInEqMsgHarTitleValue_Text;
+                sMsgSrcRec += "@!" + NilsaUtils.TextToString(sMessage);
+                string sMarker = labelInEqMsgHarTitleMarker.Text;
+                if (!string.IsNullOrEmpty(sMarker))
+                    sMsgSrcRec += "|!*#0" + sMarker;
+            }
+
+            return sMsgSrcRec;
+        }
+
+
+		private void GetMessageCharacteristicsFromEditMessageButton(string selectedMessage)
+		{
+            if (listBoxInMsg.SelectedIndex < 0)
+                return;
+
+            // manual set timers
+            SetEQInMessageParametersDefaultValues();
+            String sMessage = labelInEqMsgHarTitleValue_Text;
+            String sMarker = labelInEqMsgHarTitleMarker.Text;
+            String sMsgSrcRec = "";
+            if (sMessage.Trim().Length > 0)
+            {
+                sMsgSrcRec = "000000|";
+                string _tmp = lstEQInMessagesList[listBoxInMsg.SelectedIndex];
+                for (int i = 0; i < iMsgHarCount; i++)
+                {
+                    _tmp = _tmp.Substring(_tmp.IndexOf("|") + 1);
+                    String _s = _tmp.Substring(0, _tmp.IndexOf("|"));
+                    sMsgHar[i, 3] = _s;
+                    sMsgSrcRec = sMsgSrcRec + _s + "|";
+                }
+                sMsgSrcRec = sMsgSrcRec + "@!" + NilsaUtils.TextToString(sMessage) + (sMarker.Length > 0 ? ("|!*#0" + sMarker) : "");
+
+            }
+
+            FormEditMsgValues fe = new FormEditMsgValues(this);
+            fe.Text += " " + "Сообщения Контактера";
+            fe.sPersHar = new String[iMsgHarCount, iMsgHarAttrCount + 1];
+            for (int i = 0; i < iMsgHarCount; i++)
+            {
+                for (int j = 0; j < iMsgHarAttrCount; j++)
+                    fe.sPersHar[i, j] = sMsgHar[i, j];
+                fe.sPersHar[i, iMsgHarAttrCount] = sMsgHar[i, 3];//(i > 0 ? "" : sMsgHar[i, 3]);
+            }
+
+            fe.iPersHarAttrCount = iMsgHarAttrCount;
+            fe.iPersHarCount = iMsgHarCount;
+            fe.textBox1.Text = NilsaUtils.StringToText(NilsaUtils.TextToString(sMessage));
+            fe.comboBox2.SelectedIndex = sMarker.Length > 0 ? (Convert.ToInt32(sMarker)) : 0;
+            fe.Setup();
+
+            if (fe.ShowDialog() == DialogResult.OK)
+            {
+                String sMsgNewRec = "000000|";
+                for (int i = 0; i < iMsgHarCount; i++)
+                {
+                    sMsgHar[i, 3] = fe.sPersHar[i, iMsgHarAttrCount].Trim();
+                    sMsgNewRec = sMsgNewRec + fe.sPersHar[i, iMsgHarAttrCount] + "|";
+                }
+
+                sMsgNewRec = sMsgNewRec + "@!" + NilsaUtils.TextToString(fe.textBox1.Text) + (fe.comboBox2.SelectedIndex > 0 ? ("|!*#0" + Convert.ToString(fe.comboBox2.SelectedIndex)) : "");
+
+                if (hashsetEQInMessagesDB.Contains(sMsgSrcRec))
+                {
+                    lstEQInMessagesDB.Remove(sMsgSrcRec);
+                    hashsetEQInMessagesDB.Remove(sMsgSrcRec);
+                }
+
+                if (!hashsetEQInMessagesDB.Contains(sMsgNewRec))
+                {
+                    lstEQInMessagesDB.Add(sMsgNewRec);
+                    hashsetEQInMessagesDB.Add(sMsgNewRec);
+                    SaveEQInMessageDB();
+                    iMsgINMaxID++;
+                    NilsaUtils.SaveLongValue(0, iMsgINMaxID);
+                }
+                UndoMarkerChanges();
+                SetEQInMessageList(labelInMsgHarTitleValue_Text);
+            }
+            StartAnswerTimer();
+        }
+
+        private void tbMessagesDBEqInEditMessage_Click(object sender, EventArgs e)
 		{
 			if (listBoxInMsg.SelectedIndex < 0)
 				return;
@@ -21134,6 +23081,146 @@ namespace Nilsa
 				msg += m + "\n";
 			}
 			MessageBox.Show(msg);
+		}
+
+		private void toolStripButtonShowOutgoingPull_Click(object sender, EventArgs e)
+		{
+			var msg = "";
+			foreach (var m in lstOutgoingMessages)
+			{
+				msg += m + "\n";
+			}
+			MessageBox.Show(msg);
+		}
+
+		private void backgroundWorkerReadNewMessagesTimer_DoWork(object sender, DoWorkEventArgs e)
+		{
+			if (lstReceivedMessages.Count == 0)
+			{
+				lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "TIMER_01_FINISHED_READ_NEW_MESSAGE");
+                addToHistory(iPersUserID, theSystemContacter.ContID, true, DateTime.Now.Date.ToString(), DateTime.Now.TimeOfDay.ToString(), "TIMER_01_FINISHED_READ_NEW_MESSAGE");
+                Invoke((MethodInvoker)delegate
+				{
+					SelectNextReceivedMessage(false);
+				});
+				//SelectNextReceivedMessage(false);
+			}
+		}
+
+		private void backgroundWorkerReadNewMessagesTimer_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			if (lstReceivedMessages.Count == 0)
+			{
+				timerReadMessagesOn();
+			}
+		}
+
+		private void backgroundWorkerTimerWriteMessages_DoWork(object sender, DoWorkEventArgs e)
+		{
+			if (lstOutgoingMessagesParts.Count > 0)
+			{
+				string strpartvalue = lstOutgoingMessagesParts[0];
+				lstOutgoingMessages.Insert(0, strpartvalue);
+				lstOutgoingMessagesParts.RemoveAt(0);
+				//timerPhysicalSendStart();
+
+				if (lstOutgoingMessagesParts.Count == 0)
+					SelectNextReceivedMessage();
+				else
+				{
+					Random rnd = new Random();
+					timerDefaultWriteCycle = rnd.Next(1, timersValues[3]) + (strpartvalue.Trim().Length * 60) / timersValues[4];
+					timerWriteCycle = timerDefaultWriteCycle;
+					// Обновление прогресса: backgroundWorkerWriteMessages.ReportProgress(timerDefaultWriteCycle);
+				}
+			}
+			else
+			{
+				if (tbSendOutMessage.Enabled)
+				{
+					SendOutMessageAction();
+					if (lstReceivedMessages.Count == 0 && bServiceStart)
+					{
+						timerAnswerWaitingOn();
+						timerReadMessagesOn();
+					}
+				}
+				else
+					tbSkipMessage_Click(null, null);
+			}
+		}
+
+		private void backgroundWorkerTimerWriteMessages_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			progressBarWrite.Value = timerDefaultWriteCycle;
+			progressBarWrite.Invalidate();
+
+			if (lstOutgoingMessagesParts.Count > 0)
+			{
+				// Выполнение обновлений в главном потоке
+				Invoke((MethodInvoker)delegate
+				{
+					SelectNextReceivedMessage();
+				});
+
+				Random rnd = new Random();
+				string strpartvalue = lstOutgoingMessagesParts[0];
+				timerDefaultWriteCycle = rnd.Next(1, timersValues[3]) + (strpartvalue.Trim().Length * 60) / timersValues[4];
+				timerWriteCycle = timerDefaultWriteCycle;
+				// Обновление прогресса: backgroundWorkerWriteMessages.ReportProgress(timerDefaultWriteCycle);
+			}
+			else
+			{
+				if (tbSendOutMessage.Enabled)
+				{
+					// Выполнение обновлений в главном потоке
+					Invoke((MethodInvoker)delegate
+					{
+						SendOutMessageAction();
+					});
+				}
+				else
+				{
+					// Выполнение обновлений в главном потоке
+					Invoke((MethodInvoker)delegate
+					{
+						tbSkipMessage_Click(null, null);
+					});
+				}
+			}
+		}
+
+		private void backgroundWorkerTimerAnswerWaiting_DoWork(object sender, DoWorkEventArgs e)
+		{
+			lstReceivedMessages.Add($"0|{theSystemContacter.ContID}|" + DateTime.Now.ToShortDateString() + "|" + DateTime.Now.ToShortTimeString() + "|" + "END_WAITING_TIMER");
+			Invoke((MethodInvoker)delegate
+			{
+				SelectNextReceivedMessage(false);
+			});
+            if (lstPersoneChange.Count > 0)
+            {
+                bSessionAnswerSended = false;
+            }
+        }
+
+		private void backgroundWorkerTimerAnswerWaiting_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+		{
+			// Операция завершена
+			// Обновление UI или выполнение других действий
+
+			// Выполнение обновлений в главном потоке
+			/*Invoke((MethodInvoker)delegate
+			{
+				if (lstPersoneChange.Count > 0)
+				{
+					// Проверяем, свободен ли BackgroundWorker
+					if (!backgroundWorkerTimerAnswerWaiting.IsBusy)
+					{
+						// Запуск выполнения операции в фоновом потоке
+						backgroundWorkerTimerAnswerWaiting.RunWorkerAsync();
+					}
+				}
+			});*/
 		}
 
 		private void tbMessagesDBEqOutDeleteMessage_Click(object sender, EventArgs e)

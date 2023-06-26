@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CefSharp;
+using Newtonsoft.Json;
 using Nilsa.ConfigFiles;
 using Nilsa.TinderAssistent;
 using System;
@@ -14,122 +15,165 @@ namespace Nilsa.NilsaAndInterface
     // this class writes to file system request to interface and listens for answer
     internal class InterfaceListener
     {
-        private FilesNilsaToInterfacePath _path;
+        public FilesNilsaToInterfacePath NilsaToInterfacePath { get; set; }
+
         public InterfaceListener()
         {
             SetPathConfig();
         }
 
-        private void SetPathConfig()
+        public FilesNilsaToInterfacePath SetPathConfig()
         {
-            _path = new FilesNilsaToInterfacePath();
+            NilsaToInterfacePath = new FilesNilsaToInterfacePath();
             var configPath = Path.Combine(Path.Combine(Application.StartupPath, "Data"), "FilesNilsaToInterfacePath.json");
             try
             {
                 if (File.Exists(configPath))
                 {
                     var config = File.ReadAllText(configPath);
-                    _path = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+                    NilsaToInterfacePath = JsonConvert.DeserializeObject<FilesNilsaToInterfacePath>(config);
+                }
+                else
+                {
+                    string browserPath = @"..\Interface\Sockets\Browser";
+                    string fullBrowserPath = Path.GetFullPath(browserPath);
+                    NilsaToInterfacePath.PathWebDriver = fullBrowserPath;
+
+                    string nilsaPath = @"..\Interface\Sockets\Nilsa";
+                    string fullNilsaPath = Path.GetFullPath(nilsaPath);
+                    NilsaToInterfacePath.PathNilsa = fullNilsaPath;
+
+                    NilsaToInterfacePath.FileData = "data";
+                    NilsaToInterfacePath.FileFlag = "FLAG";
                 }
             }
-            catch (Exception e) { MessageBox.Show(e.Message); }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
+
+            return NilsaToInterfacePath;
         }
 
-        public void NilsaWriteToRequestFile(TinderRequest tinderRequest)
+        public async Task NilsaWriteToRequestFile(TinderRequest tinderRequest)
         {
             var settings = new JsonSerializerSettings
             {
                 DefaultValueHandling = DefaultValueHandling.Ignore,
-
             };
-            string flagPath = Path.Combine(_path.PathNilsa, _path.FileFlag);
+
+            string flagPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag);
             var request = JsonConvert.SerializeObject(tinderRequest, Formatting.Indented, settings);
-            try
-            {
-                while (File.Exists(flagPath)) WaitNSeconds(3);
-                string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
 
-                // Write the request to file
-
-                File.WriteAllText(requestPath, request, Encoding.UTF8);
-                File.WriteAllText(flagPath, "OK");
-            }
-            catch (Exception) { }
-        }
-
-        public void NilsaWriteToRequestFile(string tinderRequest)
-        {
-            string flagPath = Path.Combine(_path.PathNilsa, _path.FileFlag);
-            try
-            {
-                while (File.Exists(flagPath)) WaitNSeconds(3);
-                string requestPath = Path.Combine(_path.PathNilsa, _path.FileData);
-
-                // Write the request to file
-
-                File.WriteAllText(requestPath, tinderRequest);
-
-                while (!File.Exists(flagPath))
-                {
-                    try
-                    {
-                        File.WriteAllText(flagPath, "OK");
-                    }
-                    catch (Exception e)
-                    {
-
-                        File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
-                    }
-                }
-            }
-            catch (Exception) { }
-        }
-
-        public string NilsaReadFromResponseFile()
-        {
-            string flagPath = Path.Combine(_path.PathWebDriver, _path.FileFlag);
-            var incomeInterfaceMessage = "";
-            try
-            {
-                while (!File.Exists(flagPath)) WaitNSeconds(3);
-
-                string responsePath = Path.Combine(_path.PathWebDriver, _path.FileData);
-
-                // Read the request from file
-
-                incomeInterfaceMessage = File.ReadAllText(responsePath);
-            }
-            catch (Exception) { }
-            while (File.Exists(flagPath))
+            if (!File.Exists(flagPath))
             {
                 try
                 {
-                    File.Delete(flagPath);
+                    string requestPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData);
+                    await Task.Run(() => File.WriteAllText(requestPath, request));
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+
+        public async Task NilsaWriteToRequestFile(string tinderRequest)
+        {
+            string flagPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag);
+
+            if (!File.Exists(flagPath))
+            {
+                try
+                {
+                    string requestPath = Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData);
+                    await Task.Run(() =>
+                    {
+                        File.WriteAllText(requestPath, tinderRequest);
+                        var logPath = Path.Combine(Application.StartupPath, "RequestLogs.txt");
+                        File.AppendAllText(logPath, tinderRequest + "\n");
+                    });
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+
+        public async Task NilsaCreateFlag()
+        {
+            while (!File.Exists(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag)))
+            {
+                try
+                {
+                    await Task.Run(() => File.WriteAllText(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag), "OK"));
                 }
                 catch (Exception e)
                 {
-
                     File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
                 }
             }
+        }
+
+        public async Task NilsaDeleteFlag()
+        {
+            while (File.Exists(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag)))
+            {
+                try
+                {
+                    await Task.Run(() => File.Delete(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag)));
+                }
+                catch (Exception e)
+                {
+                    File.WriteAllText(Path.Combine(Application.StartupPath, "blockinFLAG_LOG.txt"), e.Message);
+                }
+            }
+        }
+
+        public async Task<string> NilsaReadFromResponseFile()
+        {
+            string flagPath = Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag);
+            var incomeInterfaceMessage = "";
+
+            if (File.Exists(flagPath))
+            {
+                try
+                {
+                    string responsePath = Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileData);
+                    incomeInterfaceMessage = await Task.Run(() => File.ReadAllText(responsePath));
+                    var logPath = Path.Combine(Application.StartupPath, "ResponseLogs.txt");
+                    File.AppendAllText(logPath, incomeInterfaceMessage + "\n");
+                }
+                catch (Exception)
+                {
+                }
+            }
+
             return incomeInterfaceMessage;
         }
 
-        public void ResetCommunicationFoulders()
+        public void ResetCommunicationFolders()
         {
-            if (File.Exists(Path.Combine(_path.PathNilsa, _path.FileFlag))) File.Delete(Path.Combine(_path.PathNilsa, _path.FileFlag));
-            if (File.Exists(Path.Combine(_path.PathWebDriver, _path.FileFlag))) File.Delete(Path.Combine(_path.PathWebDriver, _path.FileFlag));
-            if (File.Exists(Path.Combine(_path.PathNilsa, _path.FileData))) File.Delete(Path.Combine(_path.PathNilsa, _path.FileData));
-            if (File.Exists(Path.Combine(_path.PathWebDriver, _path.FileData))) File.Delete(Path.Combine(_path.PathWebDriver, _path.FileData));
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileFlag));
+
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileFlag));
+
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathNilsa, NilsaToInterfacePath.FileData));
+
+            if (File.Exists(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileData)))
+                File.Delete(Path.Combine(NilsaToInterfacePath.PathWebDriver, NilsaToInterfacePath.FileData));
         }
 
-        private void WaitNSeconds(int segundos)
+        private void WaitNSeconds(int seconds)
         {
-            if (segundos < 1) return;
-            DateTime _desired = DateTime.Now.AddSeconds(segundos);
-            while (DateTime.Now < _desired)
+            if (seconds < 1) return;
+            DateTime desiredTime = DateTime.Now.AddSeconds(seconds);
+            while (DateTime.Now < desiredTime)
             {
-                System.Windows.Forms.Application.DoEvents();
+                Application.DoEvents();
             }
         }
     }

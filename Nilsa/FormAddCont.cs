@@ -18,10 +18,14 @@ namespace Nilsa
         {
             InitializeComponent();
             Persone = new PersoneAllData();
-            firstNameTextBox.DataBindings.Add(new Binding("Text", Persone, "FirstName", false, DataSourceUpdateMode.OnPropertyChanged));
-            lastNameTextBox.DataBindings.Add(new Binding("Text", Persone, "LastName", false, DataSourceUpdateMode.OnPropertyChanged));
-            ownerTextBox.DataBindings.Add(new Binding("Text", Persone, "Owner", false, DataSourceUpdateMode.OnPropertyChanged));
             cidTextBox.DataBindings.Add(new Binding ("Text", Persone, "Login", false, DataSourceUpdateMode.OnPropertyChanged));
+
+
+            // Добавляем обработчики событий TextChanged
+            cidTextBox.TextChanged += CheckFieldsValidity;
+
+            // Проверяем валидность полей при запуске формы
+            CheckFieldsValidity(null, EventArgs.Empty);
         }
         public PersoneAllData Persone { get; set;  }
 
@@ -33,6 +37,15 @@ namespace Nilsa
         private void cancelButton_Click(object sender, EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
+        }
+
+        private void CheckFieldsValidity(object sender, EventArgs e)
+        {
+            // Проверяем, заполнены ли оба поля
+            bool isValid = !string.IsNullOrEmpty(cidTextBox.Text);
+
+            // Устанавливаем свойство Enabled кнопки "OK" в соответствии с валидностью полей
+            okButton.Enabled = isValid;
         }
     }
 }

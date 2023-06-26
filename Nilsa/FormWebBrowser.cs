@@ -279,19 +279,19 @@ namespace Nilsa
         public void stopAllTimers()
         {
             processEnd = true;
-            this.InvokeOnUiThreadIfRequired(() =>
-            {
-                timer0.Enabled = false;
-                timer1.Enabled = false;
-                timer2.Enabled = false;
-                timer3.Enabled = false;
-                timer4.Enabled = false;
-                timer5.Enabled = false;
-                timerAutoClose.Enabled = false;
-                timerAutorize.Enabled = false;
-                timerDisconnect.Enabled = false;
-                timerCondition.Enabled = false;
-            });
+            //this.InvokeOnUiThreadIfRequired(() =>
+            //{
+            //    timer0.Enabled = false;
+            //    timer1.Enabled = false;
+            //    timer2.Enabled = false;
+            //    timer3.Enabled = false;
+            //    timer4.Enabled = false;
+            //    timer5.Enabled = false;
+            //    timerAutoClose.Enabled = false;
+            //    timerAutorize.Enabled = false;
+            //    timerDisconnect.Enabled = false;
+            //    timerCondition.Enabled = false;
+            //});
         }
 
         string personeName;
@@ -1644,12 +1644,12 @@ namespace Nilsa
             if (browserAddress == null)
                 browserAddress = "";
 
-            this.InvokeOnUiThreadIfRequired(() =>
-            {
-                addressStatusLabelTime.Text = DateTime.Now.ToString("HH:mm:ss:fff");
-                urlTextBox.Text = browserAddress;
-                addressStatusLabel.Text = browserAddress;
-            });
+            //this.InvokeOnUiThreadIfRequired(() =>
+            //{
+            //    addressStatusLabelTime.Text = DateTime.Now.ToString("HH:mm:ss:fff");
+            //    urlTextBox.Text = browserAddress;
+            //    addressStatusLabel.Text = browserAddress;
+            //});
         }
 
         public class Message
@@ -1741,16 +1741,16 @@ namespace Nilsa
 
         private void setStatusMessage(string text)
         {
-            this.InvokeOnUiThreadIfRequired(() =>
-            {
-                this.Text = text;
-                label1.Text = text;
-            });
+            //this.InvokeOnUiThreadIfRequired(() =>
+            //{
+            //    this.Text = text;
+            //    label1.Text = text;
+            //});
         }
 
         private void setButtonExitMessage(string text)
         {
-            this.InvokeOnUiThreadIfRequired(() => buttonExit.Text = text);
+            //this.InvokeOnUiThreadIfRequired(() => buttonExit.Text = text);
         }
 
         private Task<object> getBrowserElementByID(String id)
@@ -1829,27 +1829,27 @@ namespace Nilsa
             browserIsLoading = args.IsLoading;
             browserCanReload = args.CanReload;
 
-            this.InvokeOnUiThreadIfRequired(() =>
-            {
-                loadingStatusLabel.Text = ((browserIsLoading && !browserCanReload) ? "Loading..." : "Loaded");
-                loadingStatusLabelTime.Text = DateTime.Now.ToString("HH:mm:ss:fff");
-            });
+            //this.InvokeOnUiThreadIfRequired(() =>
+            //{
+            //    loadingStatusLabel.Text = ((browserIsLoading && !browserCanReload) ? "Loading..." : "Loaded");
+            //    loadingStatusLabelTime.Text = DateTime.Now.ToString("HH:mm:ss:fff");
+            //});
 
             if (!args.IsLoading)
             {
                 if (!initBrowser)
                 {
                     initBrowser = true;
-                    if (noClose)
-                    {
-                        browser.SetZoomLevel(scaleBrowser);
-                        this.InvokeOnUiThreadIfRequired(() => { trackBar1.Enabled = true; trackBar1.Value = scaleBrowser; });
-                    }
-                    else
-                    {
-                        browser.SetZoomLevel(scaleBrowser);
-                        this.InvokeOnUiThreadIfRequired(() => { trackBar1.Enabled = true; trackBar1.Value = 0; });
-                    }
+                    //if (noClose)
+                    //{
+                    //    browser.SetZoomLevel(scaleBrowser);
+                    //    this.InvokeOnUiThreadIfRequired(() => { trackBar1.Enabled = true; trackBar1.Value = scaleBrowser; });
+                    //}
+                    //else
+                    //{
+                    //    browser.SetZoomLevel(scaleBrowser);
+                    //    this.InvokeOnUiThreadIfRequired(() => { trackBar1.Enabled = true; trackBar1.Value = 0; });
+                    //}
                 }
                 else
                     browser.SetZoomLevel(scaleBrowser);
@@ -1941,12 +1941,12 @@ namespace Nilsa
         {
             browserTitle = args.Title;
 
-            this.InvokeOnUiThreadIfRequired(() =>
-            {
-                groupBox1.Text = personeName != null ? (personeName + (personeName.Length > 0 ? ": " : "")) : "" + browserTitle;
-                titleStatusLabel.Text = browserTitle;
-                titleStatusLabelTime.Text = DateTime.Now.ToString("HH:mm:ss:fff");
-            });
+            //this.InvokeOnUiThreadIfRequired(() =>
+            //{
+            //    groupBox1.Text = personeName != null ? (personeName + (personeName.Length > 0 ? ": " : "")) : "" + browserTitle;
+            //    titleStatusLabel.Text = browserTitle;
+            //    titleStatusLabelTime.Text = DateTime.Now.ToString("HH:mm:ss:fff");
+            //});
 
             /*
             if (args.Title.Equals("Проверка безопасности"))
@@ -2532,26 +2532,26 @@ namespace Nilsa
 
         private void enableTimer(System.Windows.Forms.Timer timer)
         {
-            this.InvokeOnUiThreadIfRequired(() => { timer.Enabled = true; });
+            //this.InvokeOnUiThreadIfRequired(() => { timer.Enabled = true; });
         }
 
         private void disableTimer(System.Windows.Forms.Timer timer)
         {
-            this.InvokeOnUiThreadIfRequired(() => { timer.Enabled = false; });
+            //this.InvokeOnUiThreadIfRequired(() => { timer.Enabled = false; });
         }
 
         private void enableTimer(int timerIdx)
         {
-            this.InvokeOnUiThreadIfRequired(() =>
-            {
-                workTimersCycle[timerIdx] = workTimersInterval[timerIdx];
-                workTimers[timerIdx].Enabled = true;
-            });
+            //this.InvokeOnUiThreadIfRequired(() =>
+            //{
+            //    workTimersCycle[timerIdx] = workTimersInterval[timerIdx];
+            //    workTimers[timerIdx].Enabled = true;
+            //});
         }
 
         private void disableTimer(int timerIdx)
         {
-            this.InvokeOnUiThreadIfRequired(() => { workTimers[timerIdx].Enabled = false; });
+            //this.InvokeOnUiThreadIfRequired(() => { workTimers[timerIdx].Enabled = false; });
         }
 
         private bool TryToClickElementByID(string elementID, int timerNextIdx, int timerPrevousIdx)

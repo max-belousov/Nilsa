@@ -972,7 +972,7 @@ namespace Nilsa
 
         private String ResolveID(String text)
         {
-            String shortname = "";
+            //String shortname = "";
             try
             {
                 long _id = Convert.ToInt64(text);
@@ -5066,7 +5066,7 @@ namespace Nilsa
             }
         }
 
-        private void firstAuthorizationButton_Click(object sender, EventArgs e)
+        private async void firstAuthorizationButton_Click(object sender, EventArgs e)
         {
             var interfaceListener = new InterfaceListener();
             if (lvList.SelectedIndices.Count <= 0)
@@ -5095,7 +5095,7 @@ namespace Nilsa
                 }
                 var requestString = $"{networkPrefix}FirstAuthorization\nLogin: {currentUserLogin}\nId: {currentUserID}";
                 interfaceListener.NilsaWriteToRequestFile(requestString);
-                var response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
+                var response = JsonConvert.DeserializeObject<TinderResponse>(await interfaceListener.NilsaReadFromResponseFile());
                 if (response.STATUS != 200) MessageBox.Show(response.MESSAGE, "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 if (response.STATUS == 200 && MessageBox.Show("Получилось авторизовать персонажа?", "Проверка авторизации персонажа", 
@@ -5104,7 +5104,7 @@ namespace Nilsa
                     //todo доделать запись кукис в пароль или самоописание или туда и туда пока
                     var saveCookiesRequest = $"SaveCookies\nId: {currentUserID}";
                     interfaceListener.NilsaWriteToRequestFile(saveCookiesRequest);
-                    response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
+                    response = JsonConvert.DeserializeObject<TinderResponse>(await interfaceListener.NilsaReadFromResponseFile());
                     if (response.STATUS == 200) MessageBox.Show("Успешная авторизация", "Завершение авторизации", MessageBoxButtons.OK);
                     else MessageBox.Show(response.MESSAGE, "Завершение авторизации", MessageBoxButtons.OK);
                 }
@@ -5114,7 +5114,7 @@ namespace Nilsa
                 {
                     var saveCookiesRequest = $"DeleteCookies\nId: {currentUserID}";
                     interfaceListener.NilsaWriteToRequestFile(saveCookiesRequest);
-                    response = JsonConvert.DeserializeObject<TinderResponse>(interfaceListener.NilsaReadFromResponseFile());
+                    response = JsonConvert.DeserializeObject<TinderResponse>(await interfaceListener.NilsaReadFromResponseFile());
                     if (response.STATUS == 200) MessageBox.Show("Данные удалены", "Удаление данных", MessageBoxButtons.OK);
                     else MessageBox.Show(response.MESSAGE, "Удаление данных", MessageBoxButtons.OK);
                 }

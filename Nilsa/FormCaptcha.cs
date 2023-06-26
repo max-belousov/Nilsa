@@ -100,7 +100,7 @@ namespace Nilsa
             {
                 captcha_idCaptchaClient = ruCaptchaClient.UploadCaptchaFile(_RecognizeFileName);
             }
-            catch (Exception exp)
+            catch (Exception)
             {
                 captcha_idCaptchaClient = null;
             }
