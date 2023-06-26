@@ -9311,6 +9311,7 @@ namespace Nilsa
 			//timerReadMessagesOff();
 
 			// получаем id пользователей из группы, макс. кол-во записей = 1000
+			/*
 			int totalCount; // общее кол-во участников
 			int unreadCount;
 
@@ -9377,7 +9378,7 @@ namespace Nilsa
 							//if (!ReAutorize(userLogin, userPassword))
 							//    return;
 						}
-						/*
+						//
 						catch (VkNet.Exception.AccessTokenInvalidException atiexp)
 						{
 							ReAutorize(userLogin, userPassword);
@@ -9390,7 +9391,7 @@ namespace Nilsa
 						{
 							ReAutorize(userLogin, userPassword);
 						}
-						*/
+						//
 						catch (Exception e)
 						{
 							ExceptionToLogList("ReadNewReceivedMessages", userLogin + "/" + userPassword, e);
@@ -9444,6 +9445,8 @@ namespace Nilsa
 					}
 				}
 			}
+			*/
+
 			if (bServiceStart)
 			{
 				//if (lstReceivedMessages.Count == 0)
@@ -12327,11 +12330,15 @@ namespace Nilsa
 
 			for (int i = 0; i < iPersHarCount; i++)
 			{
-				retval = retval.Replace("#persone_" + (i + 1).ToString() + "#", makeTextVariants(lblPersHarValues[i].Text));
+				var outCharacteristic = String.Empty;
+				if (!lblPersHarValues[i].Text.Contains("#")) outCharacteristic = lblPersHarValues[i].Text;
+                retval = retval.Replace("#persone_" + (i + 1).ToString() + "#", makeTextVariants(outCharacteristic));
 			}
 			for (int i = 0; i < iContHarCount; i++)
 			{
-				retval = retval.Replace("#contacter_" + (i + 1).ToString() + "#", makeTextVariants(lblContHarValues[i].Text));
+                var outCharacteristicCont = String.Empty;
+                if (!lblContHarValues[i].Text.Contains("#")) outCharacteristicCont = lblContHarValues[i].Text;
+                retval = retval.Replace("#contacter_" + (i + 1).ToString() + "#", makeTextVariants(outCharacteristicCont));
 			}
 			return retval;
 		}
@@ -16575,7 +16582,7 @@ namespace Nilsa
 		private void timerAnswerWaitingOff()
 		{
 			timerAnswerWaiting.Enabled = false;
-			timerAnswerWaitingCycle = 0;
+            timerAnswerWaitingCycle = 0;
 			progressBarAnswerWaiting.Value = 0;
 			progressBarAnswerWaiting.Invalidate();
 			//Application.DoEvents();
@@ -16641,7 +16648,8 @@ namespace Nilsa
 			{
 				timerDefaultAnswerWaitingCycle = timersValues[5];
 				timerAnswerWaitingCycle = timerDefaultAnswerWaitingCycle;
-				progressBarAnswerWaiting.Value = 0;
+                timerChangePersone.Enabled = false;
+                progressBarAnswerWaiting.Value = 0;
 				progressBarAnswerWaiting.Invalidate();
 				Application.DoEvents();
 
@@ -17506,17 +17514,6 @@ namespace Nilsa
 		
 		public void tbStartService_Click(object sender, EventArgs e)
 		{
-			//if (tbStartServiceIsClickedNow) 
-			//{
-			//    //LoadProgramState();
-			//    StartService();
-			//}
-			//else
-			//{
-			//    tbStartServiceIsClickedNow = true;
-			//    tbStartService.Enabled = false;
-			//    tbStopService.Enabled = true;
-			//}
 			StartService();
 			tbStartServiceIsClickedNow = true;
 
@@ -17536,7 +17533,7 @@ namespace Nilsa
 
 			timerCountersStart.Enabled = true;
 
-			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0 /*&& SocialNetwork == 0*/) timerChangePersone.Enabled = true;
+			if (timerChangePersoneCycle > 0 && lstPersoneChange.Count > 0) timerChangePersone.Enabled = true;
 
 			if (!_firstStart && needActivation)
 			{
@@ -18007,9 +18004,9 @@ namespace Nilsa
 		private void onAfterPersonenListChanged()
 		{
 			setRandomizeRotatePersonenButtonIcon();
-			toolStripMenuItemClearInMsgPullPersonen.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
-			toolStripButtonPersoneForward.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
-			toolStripButtonPersoneRewind.Enabled = lstPersoneChange.Count > 0 && SocialNetwork == 0;
+			toolStripMenuItemClearInMsgPullPersonen.Enabled = lstPersoneChange.Count > 0;// && SocialNetwork == 0;
+			toolStripButtonPersoneForward.Enabled = lstPersoneChange.Count > 0;// && SocialNetwork == 0;
+			toolStripButtonPersoneRewind.Enabled = lstPersoneChange.Count > 0;// && SocialNetwork == 0;
 			toolStripButtonPersonePause.Enabled = false;// lstPersoneChange.Count > 0 && SocialNetwork == 0;
 			toolStripButtonPersonePlay.Enabled = false;// lstPersoneChange.Count > 0 && SocialNetwork == 0;
 
